@@ -1,5 +1,9 @@
 # pr-review-loop — PR 审核闭环
 
+> 安装方式见[仓库根 README](../README.md)（Claude 与 Codex 通用）。
+
+## 用途
+
 修改方/审核方分离的 PR 审核全流程，`Verdict: CLEAR` 是唯一合并入口：
 
 1. **主 Agent**：代码修改完成且本地基础验证通过后，建分支、创建中文标题 PR，启动审核子 Agent
@@ -10,33 +14,24 @@
 
 ## 前提条件
 
-- 当前工作目录在 git 仓库内（`git rev-parse --is-inside-work-tree` 为 `true`）
+- 当前工作目录在 git 仓库内
 - 代码改动已完成本地基础验证（按项目约定跑测试 / typecheck / build）；未通过前不建 PR
-- `gh` CLI 已安装并登录（需 repo scope）；远端可用 CI
+- `gh` CLI 已安装并登录（需 repo scope），远端 CI 可用
 - 宿主支持启动子 agent（Agent 工具）
 
-## 用法
+## 使用方法
 
-- 本流程**不自动触发**：仅当用户明确要求时执行（点名本 skill，或明确说「走 PR 审核闭环」）
-- 显式调用 `/pr-review-loop`
-- 风险分级：高风险改动（DB 迁移、认证、并发、任务分发等）走完整循环；低风险改动（UI 细节、文案、文档、单文件小改）单次审核，报告无任何发现项才直接结束，有发现项仍进入修复复审循环
+本流程**不自动触发**：仅当用户明确要求时执行——
 
-## 安装
+- 「走 PR 审核闭环」「对这个 PR 走审核闭环流程」
+- 显式调用：Claude Code 中用 `/pr-review-loop`；Codex 中在提示词里点名该 skill
 
-```bash
-git clone --depth 1 https://github.com/1010323691/MySkills.git
-cp -r MySkills/pr-review-loop ~/.claude/skills/
-```
+进入流程前主 Agent 会做风险分级：
 
-Windows PowerShell：
+- **高风险**（DB 迁移、认证/额度、并发逻辑、路径处理与子进程、任务分发等）→ 完整循环（步骤 1 → 5）
+- **低风险**（UI 细节、文案、文档、单文件小改）→ 单次审核：仅当报告无任何发现项时直接结束；存在任何未处置项（含建议修/仅供参考）就进入修复复审循环
 
-```powershell
-git clone --depth 1 https://github.com/1010323691/MySkills.git
-New-Item -ItemType Directory -Force "$HOME\.claude\skills" | Out-Null
-Copy-Item -Recurse "MySkills\pr-review-loop" "$HOME\.claude\skills\"
-```
-
-验证：`test -f ~/.claude/skills/pr-review-loop/SKILL.md && echo OK`，然后重启 Claude Code 或开新会话。
+拿不准时按高风险处理。
 
 ## 目录结构
 
@@ -50,5 +45,5 @@ pr-review-loop/
 ## 注意
 
 - 审核权归审核子 Agent；主 Agent 不得自我裁决「跳过」，反驳必须书面化并经审核子 Agent 再裁决。
-- 修复提交后必须取得新 HEAD 上的 `Verdict: CLEAR`，旧 HEAD 的 CLEAR 不算数。
-- 流程内红线（不擅自合并、不改审核规则、不绕过 CI 等）见 SKILL.md 文末。
+- 修复提交后必须取得新 HEAD 上的 `Verdict: CLEAR`，旧 HEAD 上的 CLEAR 不算数。
+- 流程内红线（不擅自合并、不绕过 CI、不改审核规则等）见 SKILL.md 文末。

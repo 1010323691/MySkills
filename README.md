@@ -1,69 +1,82 @@
 # MySkills
 
-个人 Claude Code skill 集合。本仓库每个顶层目录都是一个可独立安装的 skill（含 `SKILL.md`），其他 agent（Claude Code CLI、Claude Desktop，或任何读取 `~/.claude/skills/` 的宿主）都可以直接拉取本仓库安装。
+个人 Agent skill 集合。每个顶层目录是一个可独立安装的 skill（`SKILL.md` 标准：目录 + `SKILL.md` + 可选 references/scripts/assets），纯提示词内容，无二进制依赖。各目录内的 `README.md` 介绍该 skill 的用途与使用方法。
 
-## Skill 列表
+| Skill | 用途 |
+|---|---|
+| [start-context](./start-context/) | 接手开发上下文（读侧）：新 agent 开始工作、接手旧窗口时读取交接入口并核实可执行状态 |
+| [end-context](./end-context/) | 保存开发交接（写侧）：结束工作、切换窗口前增量维护项目上下文文档 |
+| [deep-research](./deep-research/) | 结构化深度研究：outline → 并行 deep → report 三阶段流水线 |
+| [pr-review-loop](./pr-review-loop/) | PR 审核闭环：修改方/审核方分离，循环至 `Verdict: CLEAR` 且 CI 全绿才合并 |
 
-| Skill | 用途 | 搭配 / 依赖 |
-|---|---|---|
-| [start-context](./start-context/) | 接手开发上下文：新 agent 开始工作、接手旧窗口时，读取 `docs/agent-context/` 交接入口并核实当前可执行状态 | 与 [end-context](./end-context/) 成对（读侧），建议一起安装 |
-| [end-context](./end-context/) | 保存开发交接：结束工作、切换窗口前增量维护项目架构、改动、待办与命令经验 | 与 [start-context](./start-context/) 成对（写侧），建议一起安装 |
-| [deep-research](./deep-research/) | 结构化深度研究三阶段流水线（outline → 并行 deep → report） | Exa MCP 可选（有 DuckDuckGo 兜底）；使用子 agent（Agent 工具） |
-| [pr-review-loop](./pr-review-loop/) | PR 审核闭环：修改方/审核方分离，循环审核至 `Verdict: CLEAR` 且 CI 全绿才合并 | `gh` CLI + git + CI；使用子 agent（Agent 工具） |
+## 安装方式
 
-## 安装
-
-前置条件：已安装 `git`；目标环境使用用户级 skill 目录 `~/.claude/skills/`（Claude Code 的默认位置）。
-
-### 1. 克隆仓库
+通用做法：克隆本仓库，把目标 skill 目录**原样复制**到宿主对应的 skills 目录。目录名不能改（需与 `SKILL.md` frontmatter 的 `name` 一致）：
 
 ```bash
 git clone --depth 1 https://github.com/1010323691/MySkills.git
 ```
 
-### 2. 复制目标 skill 目录
+### Claude（Claude Code CLI / 桌面版）
 
-目录名必须保持不变（需与 `SKILL.md` frontmatter 的 `name` 一致）：
+用户级 skills 目录：`~/.claude/skills/`
 
-Linux / macOS / Windows Git Bash：
+Linux / macOS / Git Bash：
 
 ```bash
-cp -r MySkills/<skill名> ~/.claude/skills/
+cp -r MySkills/start-context ~/.claude/skills/
+cp -r MySkills/end-context ~/.claude/skills/
+# 按需：deep-research、pr-review-loop
 ```
 
 Windows PowerShell：
 
 ```powershell
-New-Item -ItemType Directory -Force "$HOME\.claude\skills" | Out-Null
-Copy-Item -Recurse "MySkills\<skill名>" "$HOME\.claude\skills\"
+Copy-Item -Recurse "MySkills\start-context" "$HOME\.claude\skills\"
 ```
 
-本仓库可用的 `<skill名>`：`start-context`、`end-context`、`deep-research`、`pr-review-loop`。
+重启 Claude Code（或开新会话）后生效。验证：`test -f ~/.claude/skills/start-context/SKILL.md && echo OK`。
 
-### 3. 验证
+### Codex（Codex CLI）
+
+个人级 skills 目录：`~/.agents/skills/`（对本机所有仓库生效）；也可放进目标仓库的 `.agents/skills/`（仓库级，仅该仓库生效）。
+
+Linux / macOS / Git Bash：
 
 ```bash
-test -f ~/.claude/skills/<skill名>/SKILL.md && echo OK
+cp -r MySkills/start-context ~/.agents/skills/
+cp -r MySkills/end-context ~/.agents/skills/
 ```
 
-然后重启 Claude Code（或开新会话），skill 列表中出现对应条目即安装成功。
+Windows PowerShell：
 
-### 更新
+```powershell
+Copy-Item -Recurse "MySkills\start-context" "$HOME\.agents\skills\"
+```
+
+Codex 会自动检测新增的 skill；没有立即出现时重启 Codex。也可以在 Codex 会话里让内置的 skill-installer 直接从本仓库安装，例如：「用 skill-installer 从 https://github.com/1010323691/MySkills 安装 start-context」。
+
+只想临时停用（不删除）时，在 `~/.codex/config.toml` 中添加：
+
+```toml
+[[skills.config]]
+path = "/path/to/skill/SKILL.md"
+enabled = false
+```
+
+### 更新与卸载
 
 ```bash
+# 更新：拉取后重新复制覆盖
 cd MySkills && git pull
-cp -r MySkills/<skill名> ~/.claude/skills/   # 重新复制覆盖
-```
+cp -r MySkills/<skill名> ~/.claude/skills/    # Claude；Codex 换成 ~/.agents/skills/
 
-### 卸载
-
-```bash
+# 卸载：删除对应目录
 rm -rf ~/.claude/skills/<skill名>
-# Windows PowerShell: Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 ```
 
-## 说明
+## 备注
 
-- `start-context` / `end-context` 实现 `context-protocol/v2` 交接协议：交接文档存放在**目标项目**的 `docs/agent-context/`，由 end-context 写入、start-context 读取；两个 skill 只管理该目录内的 Markdown 文档，不修改业务代码。
-- 本仓库均为纯提示词型 skill（`SKILL.md` + 可选的 references/scripts/templates），无二进制依赖；`start-context`/`end-context` 中的 `scripts/context_check.py` 为可选的只读结构检查脚本（Python 3.9+）。
-- 每个 skill 目录下另有独立 README（功能、用法、目录结构、注意事项）。
+- `start-context` / `end-context` 实现 `context-protocol/v2` 交接协议，交接文档存放在目标项目的 `docs/agent-context/`，建议成对安装；`scripts/context_check.py` 为可选的只读结构检查脚本（Python 3.9+）。
+- `deep-research` 依赖 Exa MCP（可选，未安装时走 DuckDuckGo 兜底通道）与子 agent 工具。
+- `pr-review-loop` 依赖 `gh` CLI（已登录、具备 repo scope）与可用的 CI。
