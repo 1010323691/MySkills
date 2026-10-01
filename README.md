@@ -24,6 +24,7 @@ git clone --depth 1 https://github.com/1010323691/MySkills.git
 Linux / macOS / Git Bash：
 
 ```bash
+mkdir -p ~/.claude/skills
 cp -r MySkills/start-context ~/.claude/skills/
 cp -r MySkills/end-context ~/.claude/skills/
 # 按需：deep-research、pr-review-loop
@@ -32,7 +33,7 @@ cp -r MySkills/end-context ~/.claude/skills/
 Windows PowerShell：
 
 ```powershell
-Copy-Item -Recurse "MySkills\start-context" "$HOME\.claude\skills\"
+Copy-Item -Recurse -Force "MySkills\start-context" "$HOME\.claude\skills\"
 ```
 
 重启 Claude Code（或开新会话）后生效。验证：`test -f ~/.claude/skills/start-context/SKILL.md && echo OK`。
@@ -44,6 +45,7 @@ Copy-Item -Recurse "MySkills\start-context" "$HOME\.claude\skills\"
 Linux / macOS / Git Bash：
 
 ```bash
+mkdir -p ~/.agents/skills
 cp -r MySkills/start-context ~/.agents/skills/
 cp -r MySkills/end-context ~/.agents/skills/
 ```
@@ -51,7 +53,7 @@ cp -r MySkills/end-context ~/.agents/skills/
 Windows PowerShell：
 
 ```powershell
-Copy-Item -Recurse "MySkills\start-context" "$HOME\.agents\skills\"
+Copy-Item -Recurse -Force "MySkills\start-context" "$HOME\.agents\skills\"
 ```
 
 Codex 会自动检测新增的 skill；没有立即出现时重启 Codex。也可以在 Codex 会话里让内置的 skill-installer 直接从本仓库安装，例如：「用 skill-installer 从 https://github.com/1010323691/MySkills 安装 start-context」。
@@ -66,13 +68,22 @@ enabled = false
 
 ### 更新与卸载
 
-```bash
-# 更新：拉取后重新复制覆盖
-cd MySkills && git pull
-cp -r MySkills/<skill名> ~/.claude/skills/    # Claude；Codex 换成 ~/.agents/skills/
+更新：拉取后重新复制覆盖；卸载：删除对应的 skill 目录。
 
-# 卸载：删除对应目录
+Linux / macOS / Git Bash：
+
+```bash
+cd MySkills && git pull
+cp -r <skill名> ~/.claude/skills/    # 源为克隆内相对路径；Codex 换成 ~/.agents/skills/
 rm -rf ~/.claude/skills/<skill名>
+```
+
+Windows PowerShell：
+
+```powershell
+cd MySkills; git pull
+Copy-Item -Recurse -Force "<skill名>" "$HOME\.claude\skills\"    # -Force：更新场景目标已存在需覆盖；Codex 换成 "$HOME\.agents\skills\"
+Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 ```
 
 ## 备注

@@ -18,7 +18,7 @@
 
 1. **Exa MCP（首选）**：环境里有 `web_search_exa` / `web_fetch_exa` 等 Exa 工具时使用，语义检索 + 直接返回正文，质量最高。遇 401/429 时提示用户完成 OAuth 或配置 API key，不静默降级。
 2. **DuckDuckGo HTML（兜底，始终可用）**：用 `web_fetch` 类工具抓取 `https://html.duckduckgo.com/html/?q=<查询>` 并解析结果。
-3. 禁止用 `curl` / `wget` / `requests` 等原始 HTTP 方式抓网页。
+3. 默认不用 `curl` / `wget` / `requests` 等原始 HTTP 方式抓网页；例外：确认抓取通道不可用时，curl 可作最后兜底抓取**目标页面**（细节见 SKILL.md §0 第 3、4 条）。
 
 ## 依赖
 

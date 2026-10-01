@@ -19,7 +19,7 @@ Use when the user asks for 调研 / 深度研究 / benchmark 调研 / 技术选�
 2. **DuckDuckGo HTML（兜底，始终可用）**：用 `mcp__workspace__web_fetch` 抓 `https://html.duckduckgo.com/html/?q=<URL编码查询>`（备用 `https://lite.duckduckgo.com/lite/?q=`）。解析：标题在 `<h2 class="result__title">`，真实 URL 是结果链接中 `uddg=` 参数 URL 解码，摘要在 `a.result__snippet`，日期为 ISO 格式的 `<span>`。支持 `kl=<region>`（jp-jp、cn-zh 等）与 `df=` 时间过滤（d/w/m/y）。目标页面直接用 web_fetch 抓取；超大页面会落盘为 txt，用 bash/python 按字符范围切片提取关键部分（如 `<title>`、正文段落）。落盘后再用原生解释器（python/node）处理时：Windows 下 Git Bash 的 `/tmp` 不是原生解释器的 `/tmp`，必须传宿主绝对路径，并在解析前确认文件存在、检查大小。
 3. **原始 HTTP 原则与例外**：默认不用 bash 的 curl/wget/lynx 或 Python requests 等原始 HTTP 方式抓网页（让搜索与抓取留在可审计的通道内）；某域名抓取失败时换信源，不得换通道绕过。例外：抓取通道被确认不可用（见第 4 条）时，可用 curl 作最后兜底抓取**目标页面**（不是搜索结果页），次数以够用为限，并在报告中明确注明降级。
 4. **通道故障判定（先判错误来源，再定动作）**：
-   - 工具链错误（宿主搜索/抓取工具报内部错误：缺 schema/executor、抓取服务 4xx/5xx、模板/渲染错误等）→ 该通道当前不可用；同一工具不重试超过 2 次，按「专用搜索工具 → web_fetch 抓搜索页 → curl 落盘本地解析」顺序降级，并在报告中注明通道异常（Exa 401/429 仍按第 1 条：提示用户认证，不静默降级）。
+   - 工具链错误（宿主搜索/抓取工具报内部错误：缺 schema/executor、抓取服务 4xx/5xx、模板/渲染错误等）→ 该通道当前不可用；同一工具不重试超过 2 次，按「专用搜索工具 → web_fetch 抓搜索页 → curl 落盘**目标页面**本地解析（搜索页仍限 web_fetch，见第 3 条例外）」顺序降级，并在报告中注明通道异常（Exa 401/429 仍按第 1 条：提示用户认证，不静默降级）。
    - 页面级失败（404、超时、空响应、反爬）→ 换信源，保持通道。
    - web_fetch 类工具通常不自动跟随跨域重定向（返回重定向 URL 而非内容）：拿到目标后手动再取一次；重定向目标本身也报工具链错误时，判抓取通道不可用，转第 3 条的 curl 兜底。
    - 落盘文件读不到：先核对路径与工具链差异（第 2 条的 Windows `/tmp` 坑），不要误判为抓取失败。
@@ -78,6 +78,7 @@ Use when the user asks for 调研 / 深度研究 / benchmark 调研 / 技术选�
    1. 按fields.yaml字段输出JSON  2. 不确定值标注[不确定]
    3. JSON末尾加 uncertain 数组列出所有不确定字段名
    4. 字段值使用中文（调研过程可用英文）
+   5. JSON末尾加 sources 数组：[{title, url}]，只列关键证据（不倾倒全量链接）
    ## 验证
    完成后运行 python {topic_slug}/validate_json.py -f {fields_path} -j {output_path}，通过才算完成。
    ```
@@ -88,14 +89,14 @@ Use when the user asks for 调研 / 深度研究 / benchmark 调研 / 技术选�
 2. 生成 `{topic_slug}/generate_report.py`，要求：
    - 读取 output_dir 全部 JSON + fields.yaml；兼容扁平与嵌套结构（顶层 → category key → 遍历嵌套 dict）；category 中英名双向映射（如 基本信息↔basic_info、技术特性↔technical_features、性能指标↔performance_metrics、商业信息↔business_info、竞争与生态↔competition_ecosystem、里程碑意义↔milestones、历史沿革↔history、市场定位↔market_positioning，未命中的按实际 key 自适应）。
    - 跳过：值含 `[不确定]`、字段名在 uncertain 数组、值为 null/空。
-   - 格式：目录（每个 item 必须出现：序号 + 名称锚点链接 + 用户选定的摘要字段，示例 `1. [GitHub Copilot](#github-copilot) - Stars: 10k | Score: 85%`）+ 按字段分类的详细内容。
+   - 格式：目录（每个 item 必须出现：序号 + 名称锚点链接 + 用户选定的摘要字段，示例 `1. [GitHub Copilot](#github-copilot) - Stars: 10k | Score: 85%`）+ 按字段分类的详细内容 + 末尾「Sources」节（汇总各 item JSON 的 sources 数组并去重，标签逐条链接）。
    - 复杂值格式化：list-of-dicts 每项一行用 ` | ` 分隔 kv；长列表换行；>100 字符的长文本用 `<br>` 或 blockquote。
    - 未定义字段收进"其他信息"分类（过滤内部字段 `uncertain`、`_source_file` 及嵌套结构的顶级 category key）。
 3. 运行脚本生成 `{topic_slug}/report.md`，用 present_files / computer:// 链接呈现给用户。
 
 ## 3. 子 agent 搜索方法论（所有搜索子 agent 必须遵守）
 
-- 每个子任务生成 5–10 个查询变体：新手 vs 专家术语、问题本身 + 解决方案、报错信息加引号原文、版本号与环境细节。
+- 每个子任务生成 5–10 个查询变体：新手 vs 专家术语、问题本身 + 解决方案、报错信息加引号原文、版本号与环境细节；实际从中挑选 3–5 个变体执行搜索调用（与阶段模板的单 item 预算一致），不必全部跑完。
 - 不只看前几条结果；交叉核对日期，注明已过时的方案；区分官方解决方案与社区 workaround；标注实验性/未验证内容。
 - 多源交叉验证关键事实；源间冲突时明确写出差异；区分"事实"与"观点/推测"。
 - 输出格式：调用方指定格式优先；未指定时用：执行摘要（2–3 句）→ 详细发现（按方案/主题分节，含来源链接、代码/配置示例、版本要求）→ **Sources（永远必须有**，`[标题](URL)` 逐条列出）→ 建议 → 备注（存疑/需进一步研究）。
@@ -104,7 +105,7 @@ Use when the user asks for 调研 / 深度研究 / benchmark 调研 / 技术选�
 ## 4. Exa 高级编排（仅当 Exa MCP 可用时）
 
 - **上下文隔离**：原始搜索结果不得进入主上下文——用子 agent 承接检索，只回传提炼后的紧凑结果。每个子 agent 末尾按原文输出 `sources_reviewed: N`（N = 该 agent 所有 web_search_exa 调用的 numResults 之和，含重试）。
-- **规模控制**：每子 agent 3–5 次搜索；独立工作流并行分发（同一消息）；同一消息发出全部子 agent 后等待结果，不用后台。
+- **规模控制**：每子 agent **每 item** 3–5 次搜索调用（items_per_agent>1 时按 item 累加，不是整个 agent 的总上限；与阶段 2 模板「每 item 3–5 个查询」一致）；本节适用于 Exa 多轮/多子 agent 编排（含阶段 2 分批），搜索通道本身仍按 §0 选择；独立工作流并行分发（同一消息）；同一消息发出全部子 agent 后等待结果，不用后台。
 - **汇总**：先按 URL 去重（同一实体不同源则合并字段取最完整/最新）；检查覆盖缺口（时间段/地区/实体类型），针对性补搜；开头写 "使用 Exa 审阅了 {X} 个来源（跨 {Y} 个子 agent）"。
 - **多轮（multi-pass）**：实体链式（先找公司再找人物再找言论）、先探路后深挖、标准发现式；每轮之间先汇总去重再开下一轮。
 - **信源质量**：高信号来源（实践者、有 stake 的人）的收敛才有意义；实践者 > 评论者；先定义排除名单（利益错位/无法证伪的来源）；对汇总结果做红队检查（缺什么视角？有什么偏差？）。专家/最佳实践类问题：先给"优秀来源的一致结论"，再引用谁说的。
