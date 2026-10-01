@@ -33,7 +33,7 @@ cp -r MySkills/end-context ~/.claude/skills/
 Windows PowerShell：
 
 ```powershell
-Copy-Item -Recurse "MySkills\start-context" "$HOME\.claude\skills\"
+Copy-Item -Recurse -Force "MySkills\start-context" "$HOME\.claude\skills\"
 ```
 
 重启 Claude Code（或开新会话）后生效。验证：`test -f ~/.claude/skills/start-context/SKILL.md && echo OK`。
@@ -53,7 +53,7 @@ cp -r MySkills/end-context ~/.agents/skills/
 Windows PowerShell：
 
 ```powershell
-Copy-Item -Recurse "MySkills\start-context" "$HOME\.agents\skills\"
+Copy-Item -Recurse -Force "MySkills\start-context" "$HOME\.agents\skills\"
 ```
 
 Codex 会自动检测新增的 skill；没有立即出现时重启 Codex。也可以在 Codex 会话里让内置的 skill-installer 直接从本仓库安装，例如：「用 skill-installer 从 https://github.com/1010323691/MySkills 安装 start-context」。
@@ -74,7 +74,7 @@ Linux / macOS / Git Bash：
 
 ```bash
 cd MySkills && git pull
-cp -r MySkills/<skill名> ~/.claude/skills/    # Claude；Codex 换成 ~/.agents/skills/
+cp -r <skill名> ~/.claude/skills/    # 源为克隆内相对路径；Codex 换成 ~/.agents/skills/
 rm -rf ~/.claude/skills/<skill名>
 ```
 
@@ -82,7 +82,7 @@ Windows PowerShell：
 
 ```powershell
 cd MySkills; git pull
-Copy-Item -Recurse "MySkills\<skill名>" "$HOME\.claude\skills\"    # Codex 换成 "$HOME\.agents\skills\"
+Copy-Item -Recurse -Force "<skill名>" "$HOME\.claude\skills\"    # -Force：更新场景目标已存在需覆盖；Codex 换成 "$HOME\.agents\skills\"
 Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 ```
 
