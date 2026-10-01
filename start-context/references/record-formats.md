@@ -2,7 +2,7 @@
 
 ## 固定规则
 
-- 文件正文模板位于 context-end 的 assets/templates/；context-start 无需依赖这些文件才能接手。
+- 文件正文模板位于 end-context 的 assets/templates/；start-context 无需依赖这些文件才能接手。
 - 生成正式记录时替换所有尖括号占位符。信息缺失写 unknown + 核实入口；不适用写 not_applicable + 原因。
 - ID 只用字母、数字和连字符。任务 T-、模块 M-、命令 C-、坑 P-、决策 D-、session S-。
 - 生成 ID 时使用 UTC 时间戳和短随机串，例如 S-20261001T082000Z-a1b2c3；记录可读时间带时区。

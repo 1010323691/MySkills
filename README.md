@@ -6,8 +6,8 @@
 
 | Skill | 用途 | 搭配 / 依赖 |
 |---|---|---|
-| [context-start](./context-start/) | 接手开发上下文：新 agent 开始工作、接手旧窗口时，读取 `docs/agent-context/` 交接入口并核实当前可执行状态 | 与 [context-end](./context-end/) 成对（读侧），建议一起安装 |
-| [context-end](./context-end/) | 保存开发交接：结束工作、切换窗口前增量维护项目架构、改动、待办与命令经验 | 与 [context-start](./context-start/) 成对（写侧），建议一起安装 |
+| [start-context](./start-context/) | 接手开发上下文：新 agent 开始工作、接手旧窗口时，读取 `docs/agent-context/` 交接入口并核实当前可执行状态 | 与 [end-context](./end-context/) 成对（读侧），建议一起安装 |
+| [end-context](./end-context/) | 保存开发交接：结束工作、切换窗口前增量维护项目架构、改动、待办与命令经验 | 与 [start-context](./start-context/) 成对（写侧），建议一起安装 |
 | [deep-research](./deep-research/) | 结构化深度研究三阶段流水线（outline → 并行 deep → report） | Exa MCP 可选（有 DuckDuckGo 兜底）；使用子 agent（Agent 工具） |
 | [pr-review-loop](./pr-review-loop/) | PR 审核闭环：修改方/审核方分离，循环审核至 `Verdict: CLEAR` 且 CI 全绿才合并 | `gh` CLI + git + CI；使用子 agent（Agent 工具） |
 
@@ -38,7 +38,7 @@ New-Item -ItemType Directory -Force "$HOME\.claude\skills" | Out-Null
 Copy-Item -Recurse "MySkills\<skill名>" "$HOME\.claude\skills\"
 ```
 
-本仓库可用的 `<skill名>`：`context-start`、`context-end`、`deep-research`、`pr-review-loop`。
+本仓库可用的 `<skill名>`：`start-context`、`end-context`、`deep-research`、`pr-review-loop`。
 
 ### 3. 验证
 
@@ -64,6 +64,6 @@ rm -rf ~/.claude/skills/<skill名>
 
 ## 说明
 
-- `context-start` / `context-end` 实现 `context-protocol/v2` 交接协议：交接文档存放在**目标项目**的 `docs/agent-context/`，由 context-end 写入、context-start 读取；两个 skill 只管理该目录内的 Markdown 文档，不修改业务代码。
-- 本仓库均为纯提示词型 skill（`SKILL.md` + 可选的 references/scripts/templates），无二进制依赖；`context-end`/`context-start` 中的 `scripts/context_check.py` 为可选的只读结构检查脚本（Python 3.9+）。
+- `start-context` / `end-context` 实现 `context-protocol/v2` 交接协议：交接文档存放在**目标项目**的 `docs/agent-context/`，由 end-context 写入、start-context 读取；两个 skill 只管理该目录内的 Markdown 文档，不修改业务代码。
+- 本仓库均为纯提示词型 skill（`SKILL.md` + 可选的 references/scripts/templates），无二进制依赖；`start-context`/`end-context` 中的 `scripts/context_check.py` 为可选的只读结构检查脚本（Python 3.9+）。
 - 每个 skill 目录下另有独立 README（功能、用法、目录结构、注意事项）。
