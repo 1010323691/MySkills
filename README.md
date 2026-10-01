@@ -24,6 +24,7 @@ git clone --depth 1 https://github.com/1010323691/MySkills.git
 Linux / macOS / Git Bash：
 
 ```bash
+mkdir -p ~/.claude/skills
 cp -r MySkills/start-context ~/.claude/skills/
 cp -r MySkills/end-context ~/.claude/skills/
 # 按需：deep-research、pr-review-loop
@@ -44,6 +45,7 @@ Copy-Item -Recurse "MySkills\start-context" "$HOME\.claude\skills\"
 Linux / macOS / Git Bash：
 
 ```bash
+mkdir -p ~/.agents/skills
 cp -r MySkills/start-context ~/.agents/skills/
 cp -r MySkills/end-context ~/.agents/skills/
 ```
@@ -66,13 +68,22 @@ enabled = false
 
 ### 更新与卸载
 
+更新：拉取后重新复制覆盖；卸载：删除对应的 skill 目录。
+
+Linux / macOS / Git Bash：
+
 ```bash
-# 更新：拉取后重新复制覆盖
 cd MySkills && git pull
 cp -r MySkills/<skill名> ~/.claude/skills/    # Claude；Codex 换成 ~/.agents/skills/
-
-# 卸载：删除对应目录
 rm -rf ~/.claude/skills/<skill名>
+```
+
+Windows PowerShell：
+
+```powershell
+cd MySkills; git pull
+Copy-Item -Recurse "MySkills\<skill名>" "$HOME\.claude\skills\"    # Codex 换成 "$HOME\.agents\skills\"
+Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 ```
 
 ## 备注

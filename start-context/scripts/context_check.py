@@ -69,7 +69,7 @@ def check(project_root, context_dir='docs/agent-context', limit=20):
                     issue('warning', 'partial_handoff', rel)
             fence = None
             for number, line in enumerate(lines, 1):
-                marker = re.match(r'^\s*(`{3,}|~{3,})', line)
+                marker = re.match(r'^ {0,3}(`{3,}|~{3,})', line)
                 if marker:
                     mark = marker.group(1)
                     if fence is None:
