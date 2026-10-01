@@ -16,8 +16,13 @@ Use when the user asks for 调研 / 深度研究 / benchmark 调研 / 技术选�
 1. **Exa MCP（首选）**：若工具列表中存在 `web_search_exa` / `web_fetch_exa` / `web_search_advanced_exa` / `agent_run`（工具名前缀因客户端而异，如 `mcp__exa__web_search_exa`）则用 Exa：语义检索 + 直接返回正文，质量最高。
    - Exa 认证：OAuth（首选）> API key（dashboard.exa.ai/api-keys，经 `?exaApiKey=` 或 `Authorization: Bearer`）> 匿名（有速率限制）。
    - 遇到 401/429 时：明确告诉用户需要 OAuth 登录或配置 key，不要静默降级到通用搜索。
-2. **DuckDuckGo HTML（兜底，始终可用）**：用 `mcp__workspace__web_fetch` 抓 `https://html.duckduckgo.com/html/?q=<URL编码查询>`（备用 `https://lite.duckduckgo.com/lite/?q=`）。解析：标题在 `<h2 class="result__title">`，真实 URL 是结果链接中 `uddg=` 参数 URL 解码，摘要在 `a.result__snippet`，日期为 ISO 格式的 `<span>`。支持 `kl=<region>`（jp-jp、cn-zh 等）与 `df=` 时间过滤（d/w/m/y）。目标页面直接用 web_fetch 抓取；超大页面会落盘为 txt，用 bash/python 按字符范围切片提取关键部分（如 `<title>`、正文段落）。
-3. **硬性禁止**：不得用 bash 的 curl/wget/lynx 或 Python requests 等原始 HTTP 方式抓网页；某域名抓取失败时换信源，不得换通道绕过。
+2. **DuckDuckGo HTML（兜底，始终可用）**：用 `mcp__workspace__web_fetch` 抓 `https://html.duckduckgo.com/html/?q=<URL编码查询>`（备用 `https://lite.duckduckgo.com/lite/?q=`）。解析：标题在 `<h2 class="result__title">`，真实 URL 是结果链接中 `uddg=` 参数 URL 解码，摘要在 `a.result__snippet`，日期为 ISO 格式的 `<span>`。支持 `kl=<region>`（jp-jp、cn-zh 等）与 `df=` 时间过滤（d/w/m/y）。目标页面直接用 web_fetch 抓取；超大页面会落盘为 txt，用 bash/python 按字符范围切片提取关键部分（如 `<title>`、正文段落）。落盘后再用原生解释器（python/node）处理时：Windows 下 Git Bash 的 `/tmp` 不是原生解释器的 `/tmp`，必须传宿主绝对路径，并在解析前确认文件存在、检查大小。
+3. **原始 HTTP 原则与例外**：默认不用 bash 的 curl/wget/lynx 或 Python requests 等原始 HTTP 方式抓网页（让搜索与抓取留在可审计的通道内）；某域名抓取失败时换信源，不得换通道绕过。例外：抓取通道被确认不可用（见第 4 条）时，可用 curl 作最后兜底抓取**目标页面**（不是搜索结果页），次数以够用为限，并在报告中明确注明降级。
+4. **通道故障判定（先判错误来源，再定动作）**：
+   - 工具链错误（宿主搜索/抓取工具报内部错误：缺 schema/executor、抓取服务 4xx/5xx、模板/渲染错误等）→ 该通道当前不可用；同一工具不重试超过 2 次，按「专用搜索工具 → web_fetch 抓搜索页 → curl 落盘本地解析」顺序降级，并在报告中注明通道异常（Exa 401/429 仍按第 1 条：提示用户认证，不静默降级）。
+   - 页面级失败（404、超时、空响应、反爬）→ 换信源，保持通道。
+   - web_fetch 类工具通常不自动跟随跨域重定向（返回重定向 URL 而非内容）：拿到目标后手动再取一次；重定向目标本身也报工具链错误时，判抓取通道不可用，转第 3 条的 curl 兜底。
+   - 落盘文件读不到：先核对路径与工具链差异（第 2 条的 Windows `/tmp` 坑），不要误判为抓取失败。
 
 ## 1. 日期计算（先做）
 
@@ -119,4 +124,8 @@ Use when the user asks for 调研 / 深度研究 / benchmark 调研 / 技术选�
 - 忘记去重；把搜索结果当已验证事实（相似 ≠ 合格，必须验证）。
 - 日期漂移（一律以当前环境日期为准）。
 - 子 agent 返回空：换角度重写查询，仍空则该主题网络覆盖有限——如实报告。返回跑题：查询太泛，加长、加具体约束重试。
+- 混淆错误来源：把抓取服务的内部工具链错误（缺 schema/executor、4xx/5xx、模板渲染错误）当目标页面问题反复重试同一工具——先判错误来源；工具链错误最多重试 2 次即降级（§0 第 4 条）。
+- 假定 web_fetch 自动跟随重定向：跨域重定向返回的是 URL 而非内容，且重定向目标本身可能失败——准备好 curl 兜底。
+- Windows 路径错位：bash 的 `/tmp`（→ AppData\Local\Temp）与原生解释器的 `/tmp`（→ 盘符根目录）不是同一处，跨工具链处理时文件“消失”——统一用宿主绝对路径。
+- 文档站解析：大 HTML 内嵌整棵文档树与导航菜单，同一内容多处出现——剥离 script/style 后按关键词开窗提取并去重；终端回显乱码（GBK 控制台 vs UTF-8 内容）时以显式 UTF-8 读文件为准。
 
