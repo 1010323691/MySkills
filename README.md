@@ -8,6 +8,7 @@
 | [end-context](./end-context/) | 保存开发交接（写侧）：结束工作、切换窗口前增量维护项目上下文文档 |
 | [deep-research](./deep-research/) | 结构化深度研究：outline → 并行 deep → report 三阶段流水线 |
 | [pr-review-loop](./pr-review-loop/) | PR 审核闭环：修改方/审核方分离，循环至 `Verdict: CLEAR` 且 CI 全绿才合并 |
+| [book-to-skill](./book-to-skill/) | 书/文档 → Agent skill 转换器：提取框架/心智模型/反模式生成完整 skill（含本地 Step 6.5 原文自动备份规则） |
 
 ## 安装方式
 
@@ -91,3 +92,4 @@ Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 - `start-context` / `end-context` 实现 `context-protocol/v2` 交接协议，交接文档存放在目标项目的 `docs/agent-context/`，建议成对安装；`scripts/context_check.py` 为可选的只读结构检查脚本（Python 3.9+）。
 - `deep-research` 依赖 Exa MCP（可选，未安装时走 DuckDuckGo 兜底通道）与子 agent 工具。
 - `pr-review-loop` 依赖 `gh` CLI（已登录、具备 repo scope）与可用的 CI。
+- `book-to-skill` 基于开源项目 [virgiliojr94/book-to-skill](https://github.com/virgiliojr94/book-to-skill)（MIT，含本地 Step 6.5 修改）；依赖 Python 3（可选 Calibre 与 `gh`），`SKILL.md` + `scripts/` + `tools/` + `book_to_skill/` 须整体成目录复制安装。
