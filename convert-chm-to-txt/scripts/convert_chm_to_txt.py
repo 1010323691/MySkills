@@ -242,15 +242,17 @@ def convert_reader(tmp, out, pages_js):
 
 def convert_html(tmp, out, html_files):
     n = 0
-    used = {}
+    used = set()
     for p in html_files:
         rel = os.path.relpath(p, tmp)
         base = os.path.splitext(rel)[0]
-        idx = used.get(base, 0)
-        used[base] = idx + 1
-        # 同一路径下 .htm/.html 同名时加序号，避免后者覆盖前者
-        suffix = '' if idx == 0 else '_%d' % (idx + 1)
-        dest = os.path.join(out, base + suffix + '.txt')
+        # 目标 base 已被占用（同名 .htm/.html，或真实存在的兄弟文件）则递增后缀，避免覆盖
+        cand, k = base, 1
+        while cand + '.txt' in used:
+            k += 1
+            cand = '%s_%d' % (base, k)
+        used.add(cand + '.txt')
+        dest = os.path.join(out, cand + '.txt')
         text = clean_html(decode_bytes(open(p, 'rb').read()))
         if text:
             write_text(dest, text + '\n')
