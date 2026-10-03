@@ -9,7 +9,7 @@
 | [deep-research](./deep-research/) | 结构化深度研究：outline → 并行 deep → report 三阶段流水线 |
 | [pr-review-loop](./pr-review-loop/) | PR 审核闭环：修改方/审核方分离，循环至 `Verdict: CLEAR` 且 CI 全绿才合并 |
 | [local-review-loop](./local-review-loop/) | 本地审核闭环（无 PR 介质）：修改方/审核方分离，不建 PR/CI，用文件哈希基线锚定结论，循环至 `Verdict: CLEAR` 收尾 |
-| [convert-chm-to-txt](./convert_chm_to_txt/) | CHM 转常规 txt：自动识别阅读器式/HTML Help/纯文本三种结构，输出 UTF-8（BOM）纯文本、分章与目录 |
+| [convert-chm-to-txt](./convert-chm-to-txt/) | CHM 转常规 txt：自动识别阅读器式/HTML Help/纯文本三种结构，输出 UTF-8（BOM）纯文本、分章与目录 |
 | [book-to-skill](./book-to-skill/) | 书/文档 → Agent skill 转换器：提取框架/心智模型/反模式生成完整 skill（含本地 Step 6.5 原文自动备份规则） |
 
 ## 安装方式

@@ -35,8 +35,16 @@ def extract_chm(chm_path):
     if not seven_zip:
         raise SystemExit('未找到 7-Zip，请先安装: winget install 7zip.7zip -e --silent --disable-interactivity')
     tmp = tempfile.mkdtemp(prefix='chm_')
-    subprocess.run([seven_zip, 'x', '-y', chm_path, '-o' + tmp],
-                   check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    try:
+        r = subprocess.run([seven_zip, 'x', '-y', chm_path, '-o' + tmp],
+                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    except Exception:
+        shutil.rmtree(tmp, ignore_errors=True)
+        raise
+    # 7z 退出码: 0=OK, 1=warning（内容已解出）, >=2=fatal
+    if r.returncode >= 2:
+        shutil.rmtree(tmp, ignore_errors=True)
+        raise SystemExit('7z 解包失败（退出码 %d）: %s' % (r.returncode, chm_path))
     return tmp
 
 
@@ -108,6 +116,8 @@ def extract_write_payloads(js_text):
             break
         k = js_text.find('(', i)
         if k < 0:
+            break
+        if k + 1 >= len(js_text):
             break
         q = js_text[k+1]
         if q not in ('"', "'"):
@@ -206,7 +216,10 @@ def convert_reader(tmp, out, pages_js):
     toc = [title, '']
     cur_vol = None
     for fname, chap, vol in entries:
-        txt = chapter_to_text(by_name[fname])
+        p = by_name.get(fname)
+        if p is None:
+            continue
+        txt = chapter_to_text(p)
         write_text(os.path.join(out, 'chapters', fname + '.txt'), txt + '\n')
         body = txt
         if chap and txt.split('\n')[0].strip() == chap:
@@ -220,18 +233,25 @@ def convert_reader(tmp, out, pages_js):
     write_text(os.path.join(out, '全书.txt'), '\n'.join(merged))
     write_text(os.path.join(out, '目录.txt'), '\n'.join(toc) + '\n')
     # 封面/插图只取章节文件所在目录，避免混入阅读器 UI 图片
-    if entries:
-        copy_images(tmp, out, os.path.dirname(by_name[entries[0][0]]))
+    first_src = next((by_name[e[0]] for e in entries if e[0] in by_name), None)
+    if first_src is not None:
+        copy_images(tmp, out, os.path.dirname(first_src))
     print('结构: 网页阅读器式 | 书名: %s | 章节: %d | 缺文件: %s'
           % (title, len(entries), missing or '无'))
 
 
 def convert_html(tmp, out, html_files):
     n = 0
+    used = {}
     for p in html_files:
         rel = os.path.relpath(p, tmp)
+        base = os.path.splitext(rel)[0]
+        idx = used.get(base, 0)
+        used[base] = idx + 1
+        # 同一路径下 .htm/.html 同名时加序号，避免后者覆盖前者
+        suffix = '' if idx == 0 else '_%d' % (idx + 1)
+        dest = os.path.join(out, base + suffix + '.txt')
         text = clean_html(decode_bytes(open(p, 'rb').read()))
-        dest = os.path.join(out, os.path.splitext(rel)[0] + '.txt')
         if text:
             write_text(dest, text + '\n')
             n += 1
@@ -271,7 +291,7 @@ def main():
         pages_js = find_pages_js(tmp)
         html_files = walk_files(tmp, ('.htm', '.html'))
         txt_files = walk_files(tmp, ('.txt',))
-        if pages_js and txt_files:
+        if pages_js:
             convert_reader(tmp, out, pages_js)
         elif html_files:
             convert_html(tmp, out, html_files)
