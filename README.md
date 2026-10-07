@@ -1,6 +1,6 @@
 # MySkills
 
-个人 Agent skill 集合。每个顶层目录是一个可独立安装的 skill（`SKILL.md` 标准：目录 + `SKILL.md` + 可选 references/scripts/assets），纯提示词内容，无二进制依赖。各目录内的 `README.md` 介绍该 skill 的用途与使用方法。
+个人 Agent skill 集合。每个顶层目录是一个可独立安装的 skill（`SKILL.md` 标准：目录 + `SKILL.md` + 可选 references/scripts/assets），部分 skill 附带脚本；各目录内的 `README.md` 介绍该 skill 的用途、来源与依赖。
 
 | Skill | 用途 |
 |---|---|
@@ -11,6 +11,9 @@
 | [local-review-loop](./local-review-loop/) | 本地审核闭环（无 PR 介质）：修改方/审核方分离，不建 PR/CI，用文件哈希基线锚定结论，循环至 `Verdict: CLEAR` 收尾 |
 | [convert-chm-to-txt](./convert-chm-to-txt/) | CHM 转常规 txt：自动识别阅读器式/HTML Help/纯文本三种结构，输出 UTF-8（BOM）纯文本、分章与目录 |
 | [book-to-skill](./book-to-skill/) | 书/文档 → Agent skill 转换器：提取框架/心智模型/反模式生成完整 skill（含本地 Step 6.5 原文自动备份规则） |
+| [torrentclaw](./torrentclaw/) | TorrentClaw 影视 torrent 检索：聚合 30+ 来源，按画质/语言/HDR/季集筛选，磁力直投 Transmission/aria2 |
+| [lov-media-fetch](./lov-media-fetch/) | 影视寻宝端到端闭环：多源发现 → 排序选版 → 容量预检 → aria2 测速下载 → ffprobe 验收出报告 |
+| [the-pirate-bay](./the-pirate-bay/) | The Pirate Bay 检索与磁力提取：apibay.org JSON API，整季/电影智能搜索，按 seeders 与可信上传者排序 |
 
 ## 安装方式
 
@@ -97,3 +100,6 @@ Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 - `local-review-loop` 依赖宿主支持启动子 agent（Agent 工具），无其他外部依赖；适用于非 git 目录，或在 git 仓库中不想/不便开 PR 的改动。
 - `convert-chm-to-txt` 依赖 7-Zip（解包 CHM，`winget install 7zip.7zip -e --silent --disable-interactivity` 可装）与 Python 3；转换脚本 `scripts/convert_chm_to_txt.py`。
 - `book-to-skill` 基于开源项目 [virgiliojr94/book-to-skill](https://github.com/virgiliojr94/book-to-skill)（MIT，含本地 Step 6.5 修改）；依赖 Python 3（可选 Calibre 与 `gh`），`SKILL.md` + `scripts/` + `tools/` + `book_to_skill/` 须整体成目录复制安装。
+- `torrentclaw` 为上游 [torrentclaw/torrentclaw-skill](https://github.com/torrentclaw/torrentclaw-skill)（MIT）完整副本；依赖 bash + curl，下载需本机 Transmission 或 aria2，API 匿名可用（可选 `TORRENTCLAW_API_KEY` 提额）。
+- `lov-media-fetch` 为上游 [lovstudio/media-fetch-skill](https://github.com/lovstudio/media-fetch-skill)（MIT）完整副本（不含上游测试案例 `cases/`）；依赖 Python 3.9+ 与 aria2 1.36+，验收需 ffprobe，qBittorrent 可选。
+- `the-pirate-bay` 取自 [glittercowboy/taches-cc-resources](https://github.com/glittercowboy/taches-cc-resources)（MIT）原样副本；依赖 Node.js（`npx tsx` 按需拉取运行时）。
