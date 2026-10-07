@@ -17,6 +17,7 @@
 | [JavBus-GetMagnet](./JavBus-GetMagnet/) | JavBus 磁力 + 封面：自动过 18+ 验证门，每作选最小 1080p（无则 720p），生成自包含展示页（含「获取更新」） |
 | [movie-magnet-hunt](./movie-magnet-hunt/) | 片单批量磁力检索：sidhub/番号楼/6V 三源，默认「1080p 中文字幕优先」，消歧同名片、验证磁力，输出 资源清单.md + magnets.txt |
 | [skill-creator](./skill-creator/) | 创建/迭代 skill 官方版：草稿 → 跑 evals → 定性+定量评审 → 重写循环，含 description 触发优化脚本 |
+| [tool-call-pitfalls](./tool-call-pitfalls/) | 工具调用陷阱记录与同步：仓库 tool-call-pitfalls.md 为事实源，同步 CLAUDE.md 与个人记忆，含新增/移除（按环境补充观察）/核对三模式与 dry run |
 
 ## 安装方式
 
@@ -109,3 +110,4 @@ Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 - `JavBus-GetMagnet` 为自制；依赖 Python 3（仅标准库）与 javbus.com 网络；`cookies.txt`（年龄验证 + 会话缓存）为本地文件，不入仓库（被目录内 `.gitignore` 忽略），首次运行自动产生，验证门重现时删除重跑即可。
 - `movie-magnet-hunt` 为自制（2026-10-07 实战固化）；依赖真 Python 3（Windows 上 `python3` 可能是静默失败的 stub）与 sidhub/番号楼/6V 三站连通；`evals/` 含评测案例。
 - `skill-creator` 为 Anthropic 官方 skill 完整副本（Apache-2.0，见其 `LICENSE.txt`），未做修改；依赖 Python 3，跑 evals 需宿主能启动子 agent。
+- `tool-call-pitfalls` 为自制（2026-10-07 实战固化）；无外部依赖（git + 文件读写）；路径绑定本机（`D:\projectPath\MySkills` 与个人记忆目录），换机器安装前需改 `SKILL.md` 路径表；`evals/` 含评测案例。

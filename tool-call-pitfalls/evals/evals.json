@@ -1,0 +1,26 @@
+{
+  "skill_name": "tool-call-pitfalls",
+  "evals": [
+    {
+      "id": 0,
+      "name": "dry-run-add-new-tool",
+      "prompt": "刚才发现：当前环境里 NotebookEdit 也不可用，调用发出去无法被识别执行。把这个新陷阱记下来，仓库和记忆两边都同步，但先别提交，我要先看改了什么。",
+      "expected_output": "仓库 tool-call-pitfalls.md 末尾新增 NotebookEdit 条目（含日期/环境/现象/替代方案）；CLAUDE.md 不可用清单加入 NotebookEdit；记忆文件正文与 description 同步；全程无 git commit。",
+      "files": []
+    },
+    {
+      "id": 1,
+      "name": "annotate-existing-grep",
+      "prompt": "我发现 Grep 在当前会话里其实能用了，调用是成功的，但陷阱记录还写着 Grep 不可用。按规则处理一下。",
+      "expected_output": "Grep 条目保留、追加补充观察行（日期+当前环境可用）；CLAUDE.md 结论与记忆文件同步为\"按环境\"表述；提交并推送（中文提交信息，只 add 两个仓库文件）。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "verify-drift-readonly",
+      "prompt": "帮我核对一下 MySkills 仓库里的 tool-call-pitfalls.md 和 ~/.claude 记忆里的那份记录是否一致，有出入就列出来，先别改。",
+      "expected_output": "只读核对报告：比对事实源条目、CLAUDE.md 清单、记忆正文，列出漂移（如无则报告一致）；零文件改动、零提交。",
+      "files": []
+    }
+  ]
+}
