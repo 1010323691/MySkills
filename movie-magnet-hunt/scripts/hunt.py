@@ -8,11 +8,18 @@ Usage:
 movies.json:
   [
     {"no": 1, "cn": "闪烁的爱情", "year": 2015, "country": "日本",
+     "names": ["闪烁的爱情", "Strobe Edge", "ストロボ・エッジ"],
      "keywords": {"sidhub": ["闪烁的爱情", "Strobe Edge"],
-                  "fhl": ["Strobe Edge", "Strobe.Edge"],
+                  "fhl": ["闪烁的爱情", "Strobe Edge"],
                   "vw": "闪烁的爱情"},
      "type": "movie"}
   ]
+
+  'names' (optional but strongly recommended): every canonical spelling of the
+  film's title. Candidates whose name contains none of these spellings are
+  HARD-REJECTED (homonym filter), so list the original-language title too.
+  fhl keywords may be Chinese - fanhaolou accepts UTF-8-hex keywords of any
+  language, and some releases are findable only by their Chinese title.
 
 Outputs into --outdir:
   results/<no>.json   full per-movie detail (candidates, picks, magnets, warnings)
@@ -36,6 +43,45 @@ SUBS_CN = ['中字', '中文字幕', '内封中字', '简繁', '中英双字', '
 SUBS_NONE = ['无字', 'no-sub', 'nosub', '无字幕']
 SUBS_ORIG = ['JAPANESE', 'KOREAN', '日字', '韩字', '日韓', 'Japanese']
 ANIME_RE = re.compile(r's\d{1,2}\s*e\d{1,3}|ep\d{2,3}|oad|ova|season|第.{0,4}话', re.I)
+# Adult-content markers: a candidate carrying these is not a general movie release.
+ADULT_RE = re.compile(r'xxx|porn|hentai|pinup|18\+', re.I)
+
+def norm_name(s):
+    """Casefold; drop everything except letters, digits and CJK so that
+    'Steel.Cold.Winter' matches 'steel cold winter' and dot-free CJK variants."""
+    return re.sub(r'[^0-9a-z一-鿿가-힣]', '', (s or '').lower())
+
+def name_tokens(movie):
+    """All canonical name spellings of the film: explicit 'names' list plus the
+    per-site keyword candidates."""
+    toks = set(movie.get('names', []))
+    for kws in movie.get('keywords', {}).values():
+        toks.update(kws)
+    return [t for t in toks if len(t) >= 2]
+
+def rel_ok(name, movie, tokens):
+    """Relevance gate: the candidate name must contain a canonical spelling of the
+    film. When a SPECIFIC name exists (>=4 chars after normalization, e.g.
+    'Steel Cold Winter'), only specific names are accepted - a bare short title
+    like '少女' alone would let every same-title film through. Homonyms such as
+    A.Clockwork.Orange.1971 or OITNB series for the 2011 Korean Orange are
+    filtered here (the 1971 one is also year-demotioned)."""
+    n = norm_name(name)
+    specific = [t for t in tokens if len(norm_name(t)) >= 4]
+    pool = specific if specific else tokens
+    return any(norm_name(t) in n for t in pool)
+
+def cover_year_conflict(cover, movie):
+    """True when the sidhub cover's meta line states a 4-digit year that differs
+    from the film's expected year. Catches same-title wrong films (a 2026 drama
+    or a same-named anime whose FRESH upload dates would otherwise beat the older
+    film on the recency score)."""
+    y = movie.get('year')
+    if not y or not cover:
+        return False
+    meta = cover.get('meta_line', '') or ''
+    m = re.search(r'(19\d\d|20\d\d)', meta)
+    return bool(m) and int(m.group(1)) != y
 
 def res_tier(name):
     n = name.lower()
@@ -125,6 +171,11 @@ def gather(movie):
             return s
         covers.sort(key=cover_rank, reverse=True)
         for c in covers[:3]:
+            if cover_year_conflict(c, movie):
+                m = re.search(r'(19\d\d|20\d\d)', c.get('meta_line', '') or '')
+                warnings.append('sidhub page %s skipped: cover year %s != expected %s (same-title different film)'
+                                % (c['title'], m.group(1) if m else '?', movie.get('year')))
+                continue
             try:
                 info = sites.sidhub_movie(c['url'])
             except Exception as e:
@@ -200,15 +251,26 @@ def main():
         for c in cands:
             c['res'] = res_tier(c['name'])
             c['subs'] = subs_tier(c['name'])
-        # relevance guard: same-title different movie (anime vs film, 2021 vs 2018) demoted
+        # hard rejects: adult markers / anime / candidates whose name carries NO canonical
+        # spelling of the film (homonyms such as A.Clockwork.Orange.1971 or OITNB series
+        # are filtered here and can no longer occupy a pick slot)
+        tokens = name_tokens(movie)
         for c in cands:
-            if c.get('anime_suspect'):
-                c['score'] = (0, 0, 0, 0, 0)
+            if ADULT_RE.search(c['name']):
+                c['rejected'], c['score'] = 'adult-marker', (0, 0, 0, 0, 0)
+            elif c.get('anime_suspect'):
+                c['rejected'], c['score'] = 'anime-suspect', (0, 0, 0, 0, 0)
+            elif not rel_ok(c['name'], movie, tokens):
+                c['rejected'], c['score'] = 'not-a-variant-of-this-film', (0, 0, 0, 0, 0)
             else:
                 score(c, movie, a.priority)
-        cands = [c for c in cands if c.get('score') is not None]
         cands.sort(key=lambda c: c['score'], reverse=True)
-        picks = cands[:a.top]
+        picks = [c for c in cands if not c.get('rejected')][:a.top]
+        rej = [c for c in cands if c.get('rejected')]
+        if rej:
+            warnings.append('%d candidates hard-filtered (%s): %s'
+                            % (len(rej), '/'.join(sorted(set(c['rejected'] for c in rej))),
+                               '; '.join(c['name'][:40] for c in rej[:3])))
         # fetch real magnets for picks
         for p in picks:
             try:

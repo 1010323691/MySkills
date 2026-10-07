@@ -108,16 +108,18 @@ def sidhub_magnet(seed_url):
 # ---------------- fanhaolou.com ----------------
 
 def fhl_search(kw, pages=2):
-    """Keyword search. ASCII ONLY (hex-encoded URL). Substring match, 10 items/page.
-    Returns [{title,size,age,seeds,url,files}].
+    """Keyword search. Accepts ANY language (Chinese/Japanese/Korean/English):
+    the keyword is UTF-8-hex encoded into the URL (identical to plain hex for
+    pure-ASCII words). Substring match, 10 items/page.
+    Chinese keywords are NOT redundant: many releases (e.g. Chinese-release
+    groups) are findable ONLY by the Chinese/native title. Returns
+    [{title,size,age,seeds,url,files}].
     WARNING: the 'files' (flist) on search pages frequently belong to a NEIGHBORING
     torrent - never use flist to assert a torrent's contents; verify via the item
     title / magnet dn or the detail page."""
-    if any(ord(c) > 127 for c in kw):
-        raise ValueError('fanhaolou search keyword must be pure ASCII: %r' % kw)
     items = []
     for p in range(1, pages + 1):
-        h = get('https://www.fanhaolou.com/search/' + kw.encode('ascii').hex() + '-%d-id.html' % p)
+        h = get('https://www.fanhaolou.com/search/' + kw.encode('utf-8').hex() + '-%d-id.html' % p)
         if len(h) < 3000 and '没有找到' in h:
             break
         for m in re.finditer(r"<dl class='item'>.*?<a href='(/hash/[0-9a-f]+\.html)'[^>]*>(.*?)</a>.*?<dd class='attr'>(.*?)</dd>.*?<dd class='flist'>(.*?)</dd>", h, re.S):

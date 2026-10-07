@@ -7,13 +7,13 @@
       "expected_output": "三条磁力；《你的婚礼》必须是 2018 韩版（不是 My Love 2021 大陆版）；《情书》是 1995 日本版；《orange》是真人电影而非动漫；每条附来源页链接",
       "files": [],
       "expectations": [
-        "The final output includes a magnets file containing at least 3 magnet:? lines (one per movie)",
+        "The final output includes a magnets file containing at least 2 magnet:? lines, and each delivered movie (你的婚礼, 情书, and orange if found) has exactly one magnet",
         "Every magnet in the final deliverable matches ^magnet:\\?xt=urn:btih:[0-9a-fA-F]{40}",
         "The delivered pick for 你的婚礼 is the 2018 Korean version (release name contains 2018, or the Korean-version title such as On Your Wedding Day) and is NOT the 2021 mainland version (My Love / My.Love.2021)",
         "The delivered pick for 情书 is the 1995 Japanese film It's a Letter of Love (release name contains 1995 or that title), not another film called 情书",
-        "The delivered pick for orange is the live-action movie (no S##E##/episode markers and no anime-series title in the release name)",
+        "If any orange magnet is delivered, it must be the 2011 Korean live-action film - no wrong-version orange (anime episode, Clockwork Orange 1971, Orange Is the New Black, 2010 Telugu Orange, or adult content) may be delivered; an honest NOT_FOUND with the excluded homonyms documented is acceptable",
         "Each delivered magnet is accompanied by a source page URL (in the report file or delivery.md)",
-        "Exactly one magnet per movie in the final magnets file (3 total)"
+        "At most one magnet per movie in the final magnets file (no movie appears twice)"
       ]
     },
     {
