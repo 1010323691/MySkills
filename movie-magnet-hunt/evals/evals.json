@@ -1,0 +1,46 @@
+{
+  "skill_name": "movie-magnet-hunt",
+  "evals": [
+    {
+      "id": 1,
+      "prompt": "帮我找这三部电影的磁力下载链接，1080p 中文字幕优先：1.《你的婚礼》（韩国 2018 版，宋恩伊/朴柱炫主演；不是 2021 年大陆版）2.《情书》（It's a Letter of Love，日本 1995，中山美穗/丰川悦司）3.《orange》（韩国 2011 真人电影，林允浩/朴宝英；不是同名动漫）。每部只给一条最合适的磁力。",
+      "expected_output": "三条磁力；《你的婚礼》必须是 2018 韩版（不是 My Love 2021 大陆版）；《情书》是 1995 日本版；《orange》是真人电影而非动漫；每条附来源页链接",
+      "files": [],
+      "expectations": [
+        "The final output includes a magnets file containing at least 3 magnet:? lines (one per movie)",
+        "Every magnet in the final deliverable matches ^magnet:\\?xt=urn:btih:[0-9a-fA-F]{40}",
+        "The delivered pick for 你的婚礼 is the 2018 Korean version (release name contains 2018, or the Korean-version title such as On Your Wedding Day) and is NOT the 2021 mainland version (My Love / My.Love.2021)",
+        "The delivered pick for 情书 is the 1995 Japanese film It's a Letter of Love (release name contains 1995 or that title), not another film called 情书",
+        "The delivered pick for orange is the live-action movie (no S##E##/episode markers and no anime-series title in the release name)",
+        "Each delivered magnet is accompanied by a source page URL (in the report file or delivery.md)",
+        "Exactly one magnet per movie in the final magnets file (3 total)"
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "帮我找这几部的磁力链接，1080p 中字优先，实在没有更好的版本就告诉我最好的替代并说明原因：1.《ストロボ・エッジ / 闪烁的爱情》（日本 2014，横山由依/杉野希）2.《少女》（Steel Cold Winter，韩国 2013，金瑟祺）3.《同感》（Ditto，韩国 2022，崔显旭/车珠英）",
+      "expected_output": "三部尽量都找到磁力（《闪烁的爱情》《少女》大概率不在 sidhub 索引，应经其他站找到）；不允许把 sidhub 的 0 结果判成站点故障；每条磁力附来源页；降级/无 1080p 中字的情况显式说明",
+      "files": [],
+      "expectations": [
+        "At least 2 of the 3 movies end up with at least one valid magnet (format magnet:?xt=urn:btih:<40 hex>)",
+        "At least one of 闪烁的爱情 or 少女 (the films likely absent from sidhub's index) obtains a magnet, proving cross-site fallback works",
+        "The delivery does NOT blame sidhub being broken/down for failures; sidhub's zero-result is handled as a partial index and covered by other sites",
+        "Any movie without a 1080p Chinese-sub pick is delivered with an explicit downgrade/best-alternative explanation",
+        "Each delivered magnet is accompanied by a source page URL"
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "帮我找《建筑学概论》（Architecture 101，韩国 2012）和《热血青春》（Hot Young Bloods，韩国 2014）的磁力。注意这次和通常不一样：我要分辨率优先——4K/1080p 越高越好，字幕无所谓。每部只要一条磁力，写成能直接导入下载工具的格式。",
+      "expected_output": "两条磁力（每部一条，可直接导入下载工具）；选择上高分辨率优先于中字（如 1080p 原字应排在 720p 中字之前）；交付说明与实际选择一致",
+      "files": [],
+      "expectations": [
+        "The final magnets file contains exactly 2 magnets (exactly one per movie)",
+        "Every magnet in the final deliverable matches ^magnet:\\?xt=urn:btih:[0-9a-fA-F]{40}",
+        "Picks respect resolution priority: for each movie the delivered pick is the highest-resolution candidate found (no 720p pick while a 1080p-or-higher candidate existed)",
+        "The final magnets file is a plain importable format (magnet lines, one per movie, no commentary mixed into the magnet lines)",
+        "Each delivered magnet is accompanied by a source page URL (in the report file or delivery.md)"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,2 @@
+# 本地会话缓存（18+ 验证 + PHPSESSID），首次运行自动产生，勿提交
+cookies.txt
