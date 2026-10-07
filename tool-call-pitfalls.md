@@ -32,4 +32,5 @@
 - 首次记录：2026-10-07 ｜ Claude 桌面应用（Code tab），Windows / Git Bash
 - 现象：模型发出 `Grep` 调用，Agent 无法识别该工具、无法执行（本环境可用工具列表中不含 Grep）。
 - 原因：当前 harness 的工具集里没有 Grep（只有 Glob 按文件名匹配）。
-- 替代方案：文件名匹配用 `Glob`；内容搜索用 Bash 执行 `grep -rn "<pattern>" <path>`（Git Bash 自带 grep）。**禁止再调用 Grep。**
+- 替代方案：文件名匹配用 `Glob`；内容搜索用 Bash 执行 `grep -rn "<pattern>" <path>`（Git Bash 自带 grep）。**调用前先核对当前会话函数表是否有 Grep，没有则禁止调用。**
+- 补充：2026-10-07 在 Claude 桌面应用（Code tab）当前会话观察到可用（Grep 在函数表中，实测调用成功）；禁令仅适用于函数表不含 Grep 的环境。
