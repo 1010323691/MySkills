@@ -100,7 +100,7 @@ Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 
 - `start-context` / `end-context` 实现 `context-protocol/v2` 交接协议，交接文档存放在目标项目的 `docs/agent-context/`，建议成对安装；`scripts/context_check.py` 为可选的只读结构检查脚本（Python 3.9+）。
 - `deep-research` 依赖 Exa MCP（可选，未安装时走 DuckDuckGo 兜底通道）与子 agent 工具。
-- `pr-review-loop` 依赖 `gh` CLI（已登录、具备 repo scope）与可用的 CI。
+- `pr-review-loop` 依赖已登录且具备所需仓库权限的 `gh` CLI 与独立子 agent；适用 CI 必须通过，核实确无适用 CI 时记录不适用。
 - `local-review-loop` 依赖宿主支持启动子 agent（Agent 工具），无其他外部依赖；适用于非 git 目录，或在 git 仓库中不想/不便开 PR 的改动。
 - `convert-chm-to-txt` 依赖 7-Zip（解包 CHM，`winget install 7zip.7zip -e --silent --disable-interactivity` 可装）与 Python 3；转换脚本 `scripts/convert_chm_to_txt.py`。
 - `book-to-skill` 基于开源项目 [virgiliojr94/book-to-skill](https://github.com/virgiliojr94/book-to-skill)（MIT，含本地 Step 6.5 修改）；依赖 Python 3（可选 Calibre 与 `gh`），`SKILL.md` + `scripts/` + `tools/` + `book_to_skill/` 须整体成目录复制安装。

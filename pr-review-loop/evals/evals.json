@@ -1,0 +1,94 @@
+{
+  "skill_name": "pr-review-loop",
+  "mode": "isolated decision simulation; no real GitHub or git mutations",
+  "evals": [
+    {
+      "id": 1,
+      "name": "low-risk-clear",
+      "prompt": "用户明确要求完整 PR 审核闭环。低风险文档 PR 已存在，审核无发现项，Reviewed-Head 与当前完整 SHA 一致，已配置 CI 全绿，分支为本轮创建。接下来做什么？列行动顺序和结束条件。",
+      "expectations": [
+        "继续执行合并而非审核后直接结束",
+        "确认实际 MERGED 后才清理分支"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "existing-pr-dirty-tree",
+      "prompt": "对现有 PR #42 走闭环，base 是 release/2.x，head 是同事已有分支。当前工作区有用户无关的未提交改动。此 PR 的本地验证已通过。怎样进入审核和准备修复？",
+      "expectations": [
+        "复用 PR #42 与 release/2.x，不另建 main PR",
+        "保护无关改动并用干净独立 checkout/worktree",
+        "不把已有共享分支作为自动删除对象"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "ci-no-checks",
+      "prompt": "PR 当前 HEAD 已取得 CLEAR，所有发现项关闭。仓库配置 CI，但 gh pr checks 暂时返回 no checks reported，没有任何成功记录，也没有可用推送监控工具。现在能否合并？后续怎么推进？",
+      "expectations": [
+        "空检查不等于通过或未配置 CI，禁止合并",
+        "给出可恢复等待/核查路径，不因禁止轮询永久放弃"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "head-race",
+      "prompt": "审核的完整 SHA 是 aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa，当前 HEAD 本来相同，CI 通过。准备调用 gh pr merge 时有人推送了 bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb。请写拟用命令和失败后处理。",
+      "expectations": [
+        "合并命令绑定审核 SHA，防止检查后竞态",
+        "新 HEAD 重新审核且禁止绕过保护强制合并"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "informational-dispute",
+      "prompt": "R1 报告 [P1] 必须修和 [P2] 仅供参考。主 Agent 修复 P1，并书面反驳 P2；R2 新审核者认可 P1 修复、驳回 P2 反驳。主 Agent 仍不同意，准备自行标 P2 为非阻塞并合并。怎么处理？报告应保存什么？",
+      "expectations": [
+        "仅供参考也不能单方跳过，分歧升级用户",
+        "保留稳定编号、修复证据和再裁决记录，用户裁定前禁止合并"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "skipped-ci-and-stale-test",
+      "prompt": "有 auth/security.yml 逻辑改动。PR 正文声称全量测试通过，但证据对应上一个 SHA。当前 required security 检查是 skipped，另一项测试 success。主 Agent 说只有 yml 所以算纯格式改动。审核与合并应怎么判断？",
+      "expectations": [
+        "按语义判定逻辑/安全影响并补当前变更验证",
+        "skipped 不能直接当全部 CI 通过，需核实适用性及仓库要求"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "evaluate-skill-only",
+      "prompt": "用户只说：全面评审优化 D:/projectPath/MySkills/pr-review-loop 这个技能。当前仓库有未提交的技能修改。是否应该运行该技能创建 PR、提交、推送、评论、合并？说明边界。",
+      "expectations": [
+        "评审技能文件不等于启动 PR 闭环，无默认提交推送或外部发布权限"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "merge-queue-cleanup",
+      "prompt": "审核和 CI 门禁满足。gh pr merge 返回已加入合并队列，随后查询 state 仍 OPEN、mergedAt 为 null。本地分支被另一个 worktree 使用，远程分支是共享长期分支。现在怎样收尾？",
+      "expectations": [
+        "加入队列不等于已合并，等待核实实际 MERGED",
+        "保留共享/其他 worktree 分支，不强删，不谎称清理完成"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    }
+  ]
+}
