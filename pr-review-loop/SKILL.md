@@ -176,7 +176,8 @@ gh pr view <N> --repo <R> --json state,mergedAt,mergeCommit,headRefOid
 
 - 远端：确认远端分支 SHA 仍等于已合并的 `headRefOid`，用带租约的删除，分支若已前进会被拒绝而保留：
   `git push origin --delete --force-with-lease=refs/heads/<分支>:<headRefOid> <分支>`
-- 本地：先确认工作区干净、分支未被其他 worktree 占用（`git worktree list`），切离该分支后 `git branch -d <分支>`。squash/rebase 合并会让 `-d` 因祖先检查拒绝——此时保留并说明，不用 `-D`。
+- 回到 base：本轮为 PR 新建的 worktree 先 `git worktree remove <目录>`（有未提交内容会被拒，此时保留）；主 checkout 执行 `git switch <base> && git pull --ff-only && git fetch --prune origin`，收尾时当前分支应是已同步的 base。
+- 本地分支：先 `git branch -d <分支>`。squash/rebase 合并或远端分支已删时 `-d` 常因祖先检查被拒——此时核对 `git rev-parse <分支>` 是否**等于**已合并 PR 的 `headRefOid`：相等说明分支内容已全部经 PR 合并，用 `git branch -D <分支>` 删除；不相等（有未推送/未合并提交）则保留并说明。不做该 SHA 核对就不用 `-D`。
 - 仓库自动删除了远端分支：核实并记录即可。
 - 已有/共享/长期分支、被其他 worktree 使用的分支、条件不满足的分支一律保留，报告「已合并，清理未完成/保留原因」，不谎称全部完成。
 
