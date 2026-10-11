@@ -41,6 +41,19 @@
         "The final magnets file is a plain importable format (magnet lines, one per movie, no commentary mixed into the magnet lines)",
         "Each delivered magnet is accompanied by a source page URL (in the report file or delivery.md)"
       ]
+    },
+    {
+      "id": 4,
+      "prompt": "帮我找这几部的磁力下载链接，1080p 中文字幕优先：1.《你的婚礼》（朴宝英主演的那部）2.《奥本海默》3.《果戈里·复仇》（2018 俄罗斯）。",
+      "expected_output": "三部各一条磁力（至少两部找到）；片单 JSON 中三片的年份/产地/多语言规范名来自 TMDB 规范化（你的婚礼 2018 韩国、奥本海默 2023 美国且 names 含 Oppenheimer、果戈里·复仇 2018 俄罗斯），而不是靠猜；奥本海默交付的是 2023 长片而非同名纪录片",
+      "files": [],
+      "expectations": [
+        "The session uses the TMDB normalization flow (tmdb_normalize.py or equivalent API calls) to build the movie list, and the movie list JSON contains for 你的婚礼 year 2018 / country 韩国, for 奥本海默 year 2023 / country 美国 with names including 'Oppenheimer', and for 果戈里·复仇 year 2018 / country 俄罗斯",
+        "If the TMDB search for 奥本海默 returns multiple candidates (e.g. the 2023 film and a same-year documentary), the agent resolves the ambiguity deliberately (casts/original title/year) instead of blindly taking the first candidate",
+        "At least 2 of the 3 movies end up with a valid magnet matching ^magnet:\\?xt=urn:btih:[0-9a-fA-F]{40}, each with a source page URL",
+        "The delivered pick for 奥本海默, if any, is the 2023 feature film (release name contains Oppenheimer), not the documentary 'To End All War: Oppenheimer & the Atomic Bomb'",
+        "If TMDB credentials are unavailable in the session, the agent degrades to manual normalization (year/country/names filled by other means) and says so in the delivery, rather than silently guessing titles"
+      ]
     }
   ]
 }
