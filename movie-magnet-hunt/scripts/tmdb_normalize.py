@@ -43,8 +43,10 @@ left out of the draft - fill them in by hand (SKILL.md step 1 fallback).
 
 --out merge: if the --out file already holds a draft (JSON array of entries),
 entries with the same 'no' are replaced and the rest kept, so the second
-(ambiguous-fill) run does not wipe the first run's ok entries. "no" values
-must be unique integers; the script rejects missing/non-integer ones.
+(ambiguous-fill) run does not wipe the first run's ok entries. "no" must be
+a unique integer across the list: a missing "no" falls back to the entry's
+1-based position (same as raw string lines), but non-integer or duplicated
+"no" values are rejected - hunt.py reports its status lines by "no".
 
 Requests: 1 search + (for each ok entry) 1 details + 1 credits. ~36 for a
 12-title list - far below TMDB rate limits, keep the 0.3s courtesy pace.
@@ -370,6 +372,14 @@ def main():
                 y = m.get('year_hint')
                 entry = m if 'tmdb_id' in m else None
                 items.append((no, q, y, entry))
+        nos = [it[0] for it in items]
+        dup = sorted({n for n in nos if nos.count(n) > 1})
+        if dup:
+            # duplicate 'no' (explicit-explicit or explicit vs the implicit
+            # 1-based position) makes hunt.py's per-entry status lines
+            # unattributable - reject instead of writing an ambiguous draft
+            sys.exit('duplicate "no" value(s) in --list: %r - every entry '
+                     'needs a distinct "no"' % dup)
     else:
         try:
             f = open(a.titles, encoding='utf-8')
