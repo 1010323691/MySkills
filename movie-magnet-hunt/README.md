@@ -16,6 +16,9 @@
 
 - Python 3（须为真解释器：Windows 上 `python3` 常是 WindowsApps stub，静默失败、退出码 49；前置检查见 `SKILL.md`）
 - 三站网络连通：开工前须探测，各站全 200 才开始
+- TMDB API 凭证（推荐）：系统环境变量 `TMDB_API_TOKEN` / `TMDB_API_KEY`，供 `scripts/tmdb_normalize.py`
+  在第 1 步自动规范化片名（多语言规范片名 / 年份 / 产地 / 主演）；未设置或失效时降级手工规范化，不阻塞。
+  API 使用链路与字段坑见 `SKILL.md` 的「TMDB API 使用链路」一节
 
 `evals/` 为本 skill 的评测案例。
 

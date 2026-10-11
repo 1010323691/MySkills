@@ -1,6 +1,6 @@
 ---
 name: movie-magnet-hunt
-description: 为片单（日文/韩文/中文/英文电影或剧集名）批量查找磁力下载链接，默认优先级"1080p 中文字幕优先"。数据源：sidhub.cc（PT 系磁力）、番号楼 fanhaolou.com（全网磁力索引）、6V/6vw.cc（旧帖记录）。自动消歧同名片、验证磁力、输出 资源清单.md + magnets.txt。用户说"帮我找这些电影的链接/磁力/资源"、"1080p 中文字幕"、提到 sidhub/番号楼/6V 时触发。
+description: 为片单（日文/韩文/中文/英文电影或剧集名）批量查找磁力下载链接，默认优先级"1080p 中文字幕优先"。数据源：sidhub.cc（PT 系磁力）、番号楼 fanhaolou.com（全网磁力索引）、6V/6vw.cc（旧帖记录）。用 TMDB 自动规范化片名（多语言规范名/年份/产地/主演，凭证取系统环境变量 TMDB_API_KEY / TMDB_API_TOKEN）。自动消歧同名片、验证磁力、输出 资源清单.md + magnets.txt。用户说"帮我找这些电影的链接/磁力/资源"、"1080p 中文字幕"、提到 sidhub/番号楼/6V 时触发。
 ---
 
 # movie-magnet-hunt
@@ -30,16 +30,47 @@ base64 磁力等）。**先跑通脚本，再谈手工兜底；手工操作时�
    ```
    三个数都 >0 才算通。任一为 0：先换词再试一次（站点偶发抽风）；仍失败则该站降级为"不可用"，
    用剩下的站继续，并在结果里注明。
-3. **确定输出目录**：在当前会话工作目录下建子文件夹（如 `movie_search/`）。
+3. **TMDB 凭证检查**（片名规范化数据源）：
+   ```bash
+   python -c "import os; print(bool(os.environ.get('TMDB_API_TOKEN') or os.environ.get('TMDB_API_KEY')))"
+   ```
+   `True` → 第 1 步走 TMDB 规范化；`False` → 降级手工规范化（不阻塞主流程），并在交付说明里注明。
+   凭证在系统环境变量 `TMDB_API_TOKEN` / `TMDB_API_KEY`：新终端自动继承；若会话进程没有继承
+   （进程启动早于变量写入），重开会话或在当前 shell 里导出。**不要把值打进终端、写进任何文件。**
+4. **确定输出目录**：在当前会话工作目录下建子文件夹（如 `movie_search/`）。
    **Windows Python 没有 `/tmp`**，一切中间文件用相对路径或该子目录。
 
 ## 标准流程
 
-### 第 1 步：片名规范化 + 建关键词表
+### 第 1 步：片名规范化 + 建关键词表（TMDB 优先）
 
-对每部片子确定：标准中文片名、原语言片名、英文/罗马音名、**年份**、**产地（国家）**、类型（电影/剧集）。
-- 年份/产地拿不准时，用 sidhub 搜索结果 cover 上的豆瓣链接（`https://movie.douban.com/subject/<id>/`）核对；
-  豆瓣自己的 API（`/j/subject_suggest`）返回 404，**不要依赖它**。
+有 TMDB 凭证时**先跑规范化脚本**——用户给的片名不规范（中文俗称、拼写变体、原语言混写）时，
+脚本能精确查到该片的中文/原语言/官方英文名、年份、产地和主演前五：
+
+1. 把用户原始片名一行一个写入 `raw_titles.txt`（用户给了年份就在行尾加 `(年份)` 提示，
+   `#` 开头是注释），然后：
+   ```bash
+   python -X utf8 <skill>/scripts/tmdb_normalize.py --titles raw_titles.txt --out movies.json
+   ```
+   每片约 1 次搜索 + 1 次详情 + 1 次演职员 API 请求，不占三站的请求预算。
+2. `status: "ok"` 的条目：脚本写出的 `movies.json` 草稿每片已含 `cn`/`year`/`country`/`type`、
+   全量 `names`（中文/原语言/官方英文）、各站 `keywords`、`tmdb_id`、`top_cast`——
+   第 2 步硬过滤需要的字段一步到位。
+3. **脚本从不猜**：片名与该片 zh/en/原名**精确相等**（归一化后）才自动通过；多候选、或
+   "唯一候选只是模糊命中"（如 `复仇(2018)` → 果戈里·复仇、`Vengeance (2018)` → Peppermint）
+   一律返回 `ambiguous` 并附候选列表（`tmdb_id`/片名/年份/类型）。由 agent 消歧：
+   - 能从用户上下文/主演判断 → 把 `{"no": …, "cn": …, "en": …, "type": …, "tmdb_id": …}`
+     （字段照抄候选）写成 JSON 数组，重跑 `tmdb_normalize.py --list <该.json> --out movies.json`
+     补全该片的年份/产地/names/keywords/top_cast；第二次运行会按 `no` 与已有
+     movies.json 自动合并（同号覆盖、异号保留），`no` 必须逐片唯一整数；
+   - 判断不了 → 用**原语言片名 + `(年份)` 提示**重新查询。
+4. **自动通过的条目也要快核**：对照 `top_cast`/`year`/`country` 与用户意图（用户的中文可能是
+   另一版译名，如 复仇 vs 報復）。对不上 → 用原语言片名重查，不许照单全收。
+5. 降级手工规范化（无凭证 / API 全挂 / TMDB 无此片 / 重查后仍 ambiguous）：对每部片子确定
+   标准中文片名、原语言片名、英文/罗马音名、**年份**、**产地（国家）**、类型（电影/剧集），
+   并在该片标 `tmdb_source: "manual"`。
+   - 年份/产地拿不准时，用 sidhub 搜索结果 cover 上的豆瓣链接（`https://movie.douban.com/subject/<id>/`）核对；
+     豆瓣自己的 API（`/j/subject_suggest`）返回 404，**不要依赖它**。
 - 每部片子必须尽量给全 `year` 和 `country`——它们是后续同名消歧的唯一可靠依据。
 
 生成片单 JSON（`movies.json`）：
@@ -99,6 +130,48 @@ python -X utf8 <skill>/scripts/hunt.py --list movies.json --outdir <输出目录
 把 `magnets.txt` 内容（或 `资源清单.md`）发给用户，附：每片的最终选择摘要、降级/存疑说明、
 来源站链接（供用户自行核对）。
 
+## TMDB API 使用链路（2026-10-12 实测验证，手工兜底/调试/改脚本时按此链路）
+
+`tmdb_normalize.py` 已把下面的链路固化在代码里；链路本身在此备查，便于脚本异常时
+人工走同一条链路，或核对脚本行为是否符合预期。**所有字段结论均为实测，不是文档推测。**
+
+**认证**（凭证在系统环境变量，值不打印、不落盘）：
+
+1. `TMDB_API_TOKEN` 存在 → 请求头 `Authorization: Bearer <token>`（v4 JWT，约 240 字符，会过期）
+2. 401 或无 token → `TMDB_API_KEY` 走 query 参数 `?api_key=`（legacy key 的用法）
+3. 仍 401 且响应体含 "api_key deprecated" → 该 key 是新式 key，改走 `Authorization: Bearer <key>`
+4. 三段都失败 → 到 TMDB 后台重新生成凭证并更新系统环境变量；该期间片子降级手工规范化
+
+**每片的请求链**（按序，共 1~3 次请求）：
+
+1. `GET /search/multi?query=<片名>&language=en-US`
+   - 模糊搜索，**匹配任意语言的片名**（中文 query 能命中英文片）；结果跨 movie/tv/person，
+     必须按 `media_type` 过滤
+   - 可用字段：`id`、`title`（英文名）、`original_title`（原名）、`release_date`/
+     `first_air_date`（取 4 位年份）、`popularity`（候选排序用）
+   - **搜索结果里没有 `production_countries`**（实测全空）——产地不要从这一步取
+   - 模糊匹配会"中"到别的片：`复仇(2018)` 命中 果戈里·复仇、`Vengeance (2018)` 命中
+     Peppermint（经其营销名 *Vengeance: Let Them Burn*）——所以唯一候选也必须过
+     "标题精确相等"关（归一化后与该片 zh/en/原名之一全等），不能只靠候选数=1
+2. **消歧**（agent 的事）：多候选按 年份 + 原名 + 类型 挑；选定后取 `id`
+3. `GET /movie/<id>?language=zh-CN`（剧集换 `/tv/<id>`）
+   - `title` = 中文片名（无中文翻译时回退原名）；`original_title` 恒为原片名（不随
+     language 变）
+   - **产地坑**：`production_countries[].name` 即使 language=zh-CN 也恒为英文且
+     **没有 `iso_code`**（直接下标取 `iso_code` 会 KeyError）——产地必须取
+     `origin_country` 字段（ISO 代码数组，取第一个；KR→韩国、JP→日本、US→美国、
+     CN→中国大陆、RU→俄罗斯，全表见脚本 `COUNTRY_ZH`）
+   - `release_date`（电影）/ `first_air_date`（剧集）取年份
+4. `GET /movie/<id>/credits?language=zh-CN`（剧集换 `/tv/<id>/credits`）
+   - `cast` 数组的 `name` 是中文名，前 5 位即 `top_cast`；该请求失败**非致命**
+     （top_cast 置空，不阻塞规范化）
+
+**为什么 en 搜索 + zh 详情分两次**：实测按"单请求单语言"取字段才稳（一次请求的
+`language` 只本地化一次响应）；不要试图用逗号多语言一次拿全。
+
+**请求预算**：每片 1 搜索 +（通过精确匹配关后）1 详情 + 1 演职员；12 片片单约 36 次，
+远低于 TMDB 限速，无需额外节流，但保持与其他请求相同的礼貌间隔习惯。
+
 ## 决策规则（强制）
 
 1. **候选排序键**（`--priority subs` 时）：`(年份匹配, 有中字, 分辨率档, 新旧, -大小)`；
@@ -152,6 +225,9 @@ python -X utf8 <skill>/scripts/hunt.py --list movies.json --outdir <输出目录
 | 6V 文章里只有百度盘链接 | 老帖（2015 年前后）的盘链基本都死 | 只作记录项写入报告，**永远**不作为首选交付 |
 | 重跑批量任务结果重复 | 追加写入没去重 | 以 `(片号, 磁力hash)` 去重（`hunt.py` 每片覆盖写 results/<no>.json，天然幂等） |
 | 网络瞬断/限流 | 三站都有间歇性抽风 | 单请求失败重试 1 次再记错；整站连续失败则该站降级为"不可用"，其余站继续 |
+| TMDB 401（含 "api_key deprecated" 字样） | token 过期 / 新式 key 被当 api_key 发送 | `tmdb_normalize.py` 内置三段认证回退（token Bearer → key 走 `?api_key=` → key 走 Bearer）；都失败 → 到 TMDB 后台重新生成凭证更新系统环境变量，该片降级手工规范化 |
+| 会话 shell 里 TMDB 环境变量不存在 | 进程启动早于变量写入（变量在 HKLM 系统环境变量） | 重开会话/终端或在当前 shell 导出；仍不行 → 该片降级手工规范化；**不要**把凭证硬编码进任何文件 |
+| TMDB 搜"中"了别的片（复仇(2018) → 果戈里·复仇） | TMDB 搜索是模糊匹配，+年份过滤后像唯一命中 | 脚本只接受标题精确相等（归一化后）的自动通过，其余一律 `ambiguous`；用原语言片名重查，或对照 top_cast 确认后用 `--list`+`tmdb_id` 补全 |
 
 ## 常见陷阱（踩过的，按优先级）
 
@@ -182,6 +258,11 @@ python -X utf8 <skill>/scripts/hunt.py --list movies.json --outdir <输出目录
    实测：闪烁的爱情 1080p 中字版只有"闪烁的爱情"能命中，"Strobe Edge" 只搜得到无中字/原字版——
    曾因此错误得出"不存在 1080p 中字"的结论。
    - 规避：fhl 关键词表英文/原语言名与中文片名**都放**；宣布"此片没有 XX 版本"之前，先把所有语言试全。
+10. **TMDB 模糊命中当唯一结果**：TMDB 搜索是模糊匹配——`复仇(2018)` 会命中 果戈里·复仇
+    （俄罗斯片）、`Vengeance (2018)` 会命中 Peppermint（营销名 *Vengeance: Let Them Burn*）。
+    - 规避：`tmdb_normalize.py` 只在用户输入与该片 zh/en/原名之一**精确相等**（归一化后）时
+      自动通过，其余返回 `ambiguous`；ambiguous 用原语言片名重查，或由 agent 对照
+      `top_cast` 确认后用 `--list` + `tmdb_id` 补全。自动通过的条目也照第 1 步第 4 条快核。
 
 ## 禁止事项
 
@@ -200,6 +281,7 @@ python -X utf8 <skill>/scripts/hunt.py --list movies.json --outdir <输出目录
 
 - [ ] 前置条件三条全过（真 Python / 站点连通 / 输出目录在工作区内）
 - [ ] 片单 JSON 每片都有 `year`、`country`、`names`（全部规范片名）、每站 ≥2 个关键词
+  （TMDB 出的条目应带 `tmdb_id`/`top_cast` 且已对照用户意图快核；ambiguous 的已重查或人工确认）
 - [ ] `hunt.py` 跑完，stdout 每片一行状态
 - [ ] 每片复核过：warnings 已处理、最终选择与用户要求一致或已书面说明降级
 - [ ] 所有磁力通过 `^magnet:\?xt=urn:btih:[0-9a-f]{40}` 校验
