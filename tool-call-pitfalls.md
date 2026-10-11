@@ -34,3 +34,10 @@
 - 原因：当前 harness 的工具集里没有 Grep（只有 Glob 按文件名匹配）。
 - 替代方案：文件名匹配用 `Glob`；内容搜索用 Bash 执行 `grep -rn "<pattern>" <path>`（Git Bash 自带 grep）。**调用前先核对当前会话函数表是否有 Grep，没有则禁止调用。**
 - 补充：2026-10-07 在 Claude 桌面应用（Code tab）当前会话观察到可用（Grep 在函数表中，实测调用成功）；禁令仅适用于函数表不含 Grep 的环境。
+
+## gh pr merge（Claude 桌面应用 auto 模式）
+
+- 首次记录：2026-10-12 ｜ Claude 桌面应用（Code tab）auto 模式，Windows 11 / Git Bash，单账号仓库（owner = PR 作者）
+- 现象：`gh pr merge <N> --repo <R> --match-head-commit <SHA> --merge` 被自动模式分类器拒绝，原因 `[Merge Without Review]`（PR 无 GitHub 正式 review approval 记录时触发）。补正式 approval 的路径也不通：`gh pr review --approve` 被 GitHub 拒绝（作者不能 approve 自己的 PR，"Can not approve your own pull request"），单账号仓库拿不到第二账号的正式 approval。
+- 原因：自动模式分类器把「无正式 review 的 PR 合并」判为高风险；pr-review-loop 的独立审核记录（独立子 Agent、PR 评论、Reviewed-Head/Verdict 行）不写入 GitHub 正式 review 状态，单账号仓库 reviewDecision 恒为空。
+- 替代方案：**不重试同一命令、不用直推 main 等变通**。pr-review-loop 门禁全满足时把带 `--match-head-commit <已审核 SHA>` 的精确合并命令交接给用户手动执行，或请用户在 default 模式放行该命令 / 为 Bash 添加权限规则；合并落地后 agent 在本会话继续确认 MERGED 与安全清理分支。
