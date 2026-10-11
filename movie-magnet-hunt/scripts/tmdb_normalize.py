@@ -110,6 +110,12 @@ def _api(path, params):
             last = 'TMDB %s -> %s %s: %s' % (path, e.code, e.reason, body)
             if e.code != 401:
                 raise RuntimeError(last)
+        except (OSError, json.JSONDecodeError) as e:
+            # network-layer failures (DNS/refused, ssl.SSLError, socket.timeout
+            # on all Python versions, corrupt body): surface as RuntimeError so
+            # callers' error paths apply; HTTPError (an OSError subclass) is
+            # handled above first
+            raise RuntimeError('TMDB %s request failed: %r' % (path, e))
     raise RuntimeError(last)
 
 
@@ -237,6 +243,13 @@ def _entry(no, query, work, d):
     return e
 
 
+def _parse_title_line(line):
+    """Strip a trailing (2018) / (2018年) year hint -> (title, year-or-None)."""
+    m = re.search(r'[\(（](19\d{2}|20\d{2})\s*年?[\)）]\s*$', line)
+    year = int(m.group(1)) if m else None
+    return (line[:m.start()].strip() if m else line), year
+
+
 def _norm_title(s):
     """Casefold; keep letters/digits/CJK only, for title identity checks."""
     return re.sub(r'[^0-9a-z一-鿿가-힣а-яА-Я]', '', (s or '').lower())
@@ -299,12 +312,17 @@ def fill_entry(movie):
     out = dict(movie)
     tmdb_id = movie.get('tmdb_id')
     if not tmdb_id:
+        # an entry that cannot be filled must not reach hunt.py as "ok"
+        out['tmdb_error'] = 'entry has no usable "tmdb_id" (got %r)' % (tmdb_id,)
         return out
     try:
         d = details({'type': movie.get('type', 'movie'), 'tmdb_id': tmdb_id})
     except RuntimeError as e:
         out['tmdb_error'] = str(e)
         return out
+    # a re-sent entry may carry a stale tmdb_error from an earlier failed
+    # fill; a successful fill must not be masked by it
+    out.pop('tmdb_error', None)
     cn = (out.get('cn') or d['cn'] or d['original']).strip()
     en = (movie.get('en') or '').strip() or d['original']
     out['names'] = _names(cn, d['original'], en)
@@ -339,7 +357,9 @@ def main():
             sys.exit('--list JSON must be an array of titles or entries')
         for i, m in enumerate(raw, 1):
             if isinstance(m, str):
-                items.append((i, m, None, None))
+                q, year = _parse_title_line(m.strip())
+                if q:
+                    items.append((i, q, year, None))
             else:
                 no = m.get('no', i)
                 try:
@@ -359,10 +379,7 @@ def main():
             line = line.strip()
             if not line or line.startswith('#'):
                 continue
-            m = re.search(r'[\(（](19\d{2}|20\d{2})\s*年?[\)）]\s*$', line)
-            year = int(m.group(1)) if m else None
-            if m:
-                line = line[:m.start()].strip()
+            line, year = _parse_title_line(line)
             if line:
                 items.append((len(items) + 1, line, year, None))
 
@@ -403,18 +420,27 @@ def main():
         # a draft file from an earlier run: merge by 'no' (same 'no' replaced,
         # other entries kept) so the ambiguous-fill second run does not wipe it
         if os.path.exists(a.out):
+            old, err = None, None
             try:
                 old = json.load(open(a.out, encoding='utf-8'))
-            except (OSError, json.JSONDecodeError):
-                old = None
-            if isinstance(old, list) and old:
+            except (OSError, json.JSONDecodeError) as ex:
+                err = ex
+            if err is not None:
+                print('WARNING: existing %s could not be read/parsed (%r); overwriting it'
+                      % (a.out, err), file=sys.stderr)
+            elif isinstance(old, list) and old:
                 drop = {e.get('no') for e in entries if isinstance(e, dict)}
                 kept = [e for e in old if isinstance(e, dict) and e.get('no') not in drop]
+                non_dict = [e for e in old if not isinstance(e, dict)]
+                if non_dict:
+                    print('WARNING: %d non-dict entr%s in existing %s dropped during merge'
+                          % (len(non_dict), 'y' if len(non_dict) == 1 else 'ies', a.out),
+                          file=sys.stderr)
                 entries = kept + entries
                 entries.sort(key=lambda e: (e.get('no') is None, e.get('no')))
                 print('merged: %d entr%s kept from existing %s' %
                       (len(kept), 'y' if len(kept) == 1 else 'ies', a.out), file=sys.stderr)
-            elif old:
+            elif not isinstance(old, list):
                 print('WARNING: existing %s is not a JSON array of entries; overwriting it'
                       % a.out, file=sys.stderr)
         open(a.out, 'w', encoding='utf-8').write(json.dumps(entries, ensure_ascii=False, indent=1))

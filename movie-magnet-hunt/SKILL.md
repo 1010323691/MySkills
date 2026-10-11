@@ -16,7 +16,7 @@ base64 磁力等）。**先跑通脚本，再谈手工兜底；手工操作时�
 - 用户点名 sidhub / 番号楼 / 6V / 6vdyy 等站点。
 - 不适用：用户要网盘直链分享页本身、要在线观看、或要 JAV 番号（用 JavBus-GetMagnet）。
 
-## 前置条件（先做一次，全部通过才开工）
+## 前置条件（先做一次，全部通过才开工；仅 TMDB 凭证为软门禁——缺失时降级手工规范化，不阻塞开工）
 
 1. **用真 Python，别用 `python3`**。Windows 上 `python3` 常是 WindowsApps 商店 stub，会静默失败
    （无输出、退出码 49）。验证：
@@ -149,7 +149,8 @@ python -X utf8 <skill>/scripts/hunt.py --list movies.json --outdir <输出目录
      必须按 `media_type` 过滤
    - 可用字段：`id`、`title`（英文名）、`original_title`（原名）、`release_date`/
      `first_air_date`（取 4 位年份）、`popularity`（候选排序用）
-   - **搜索结果里没有 `production_countries`**（实测全空）——产地不要从这一步取
+   - **`production_countries` 在搜索结果里不可靠**（实测多数候选为空，但个别片带值，
+     如果戈里·复仇带 RU）——产地不要依赖这一步，权威值取详情的 `origin_country`
    - 模糊匹配会"中"到别的片：`复仇(2018)` 命中 果戈里·复仇、`Vengeance (2018)` 命中
      Peppermint（经其营销名 *Vengeance: Let Them Burn*）——所以唯一候选也必须过
      "标题精确相等"关（归一化后与该片 zh/en/原名之一全等），不能只靠候选数=1
@@ -279,7 +280,7 @@ python -X utf8 <skill>/scripts/hunt.py --list movies.json --outdir <输出目录
 
 ## 完成检查清单
 
-- [ ] 前置条件三条全过（真 Python / 站点连通 / 输出目录在工作区内）
+- [ ] 前置条件四条全过（真 Python / 站点连通 / TMDB 凭证已检查——缺失或降级手工已注明 / 输出目录在工作区内）
 - [ ] 片单 JSON 每片都有 `year`、`country`、`names`（全部规范片名）、每站 ≥2 个关键词
   （TMDB 出的条目应带 `tmdb_id`/`top_cast` 且已对照用户意图快核；ambiguous 的已重查或人工确认）
 - [ ] `hunt.py` 跑完，stdout 每片一行状态
