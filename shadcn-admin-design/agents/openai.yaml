@@ -1,4 +1,4 @@
 interface:
   display_name: "Shadcn Admin 设计向导"
-  short_description: "后台界面设计、优化与重构：逐步澄清需求，预览效果图并确认后实现"
+  short_description: "后台设计、优化与重构：六组完整模板选风格，澄清需求并确认效果图后实现"
   default_prompt: "使用 $shadcn-admin-design，先引导我选择设计、优化或重构，了解需求、风格和主色调，给出效果图，等我确认后再动工。"
