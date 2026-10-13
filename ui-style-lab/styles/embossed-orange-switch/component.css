@@ -1,7 +1,9 @@
 .usl-embossed-switch {
   --usl-switch-width: 280px;
   --usl-switch-duration: 360ms;
-  --usl-switch-orange: #ff8500;
+  --usl-switch-off: #737373;
+  --usl-switch-green: #22c55e;
+  --usl-switch-unit: calc(var(--usl-switch-width) * .00357143);
   position: relative;
   display: inline-block;
   width: var(--usl-switch-width);
@@ -10,7 +12,7 @@
   border: 0;
   border-radius: 999px;
   background: linear-gradient(180deg, #979797 0%, #bcbcbc 48%, #f8f8f8 100%);
-  box-shadow: 0 1px 1px rgb(255 255 255 / 50%);
+  box-shadow: 0 calc(var(--usl-switch-unit) * 1) calc(var(--usl-switch-unit) * 1) rgb(255 255 255 / 50%);
   cursor: pointer;
   appearance: none;
   -webkit-tap-highlight-color: transparent;
@@ -22,16 +24,16 @@
   inset: calc(var(--usl-switch-width) * .0214286);
   overflow: hidden;
   border-radius: inherit;
-  background: #737373;
-  box-shadow: inset 0 13px 21px rgb(0 0 0 / 52%), inset 0 2px 4px rgb(0 0 0 / 24%);
+  background: var(--usl-switch-off);
+  box-shadow: inset 0 calc(var(--usl-switch-unit) * 13) calc(var(--usl-switch-unit) * 21) rgb(0 0 0 / 52%), inset 0 calc(var(--usl-switch-unit) * 2) calc(var(--usl-switch-unit) * 4) rgb(0 0 0 / 24%);
 }
 .usl-embossed-switch__well::before {
   content: "";
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: var(--usl-switch-orange);
-  box-shadow: inset 0 15px 23px rgb(74 37 0 / 68%), inset 0 2px 4px rgb(81 40 0 / 32%);
+  background: var(--usl-switch-green);
+  box-shadow: inset 0 calc(var(--usl-switch-unit) * 15) calc(var(--usl-switch-unit) * 23) rgb(0 60 25 / 55%), inset 0 calc(var(--usl-switch-unit) * 2) calc(var(--usl-switch-unit) * 4) rgb(0 60 25 / 24%);
   opacity: 0;
   transition: opacity var(--usl-switch-duration) ease;
 }
@@ -48,15 +50,15 @@
   height: calc(var(--usl-switch-width) * .1357143);
   border: calc(var(--usl-switch-width) * .0107143) solid #777;
   border-radius: 50%;
-  box-shadow: 0 1px 2px rgb(255 255 255 / 17%), inset 0 2px 3px rgb(0 0 0 / 18%), 0 -1px 2px rgb(0 0 0 / 18%);
+  box-shadow: 0 calc(var(--usl-switch-unit) * 1) calc(var(--usl-switch-unit) * 2) rgb(255 255 255 / 17%), inset 0 calc(var(--usl-switch-unit) * 2) calc(var(--usl-switch-unit) * 3) rgb(0 0 0 / 18%), 0 calc(var(--usl-switch-unit) * -1) calc(var(--usl-switch-unit) * 2) rgb(0 0 0 / 18%);
 }
 .usl-embossed-switch__mark--on {
   left: calc(var(--usl-switch-width) * .1321429);
   width: calc(var(--usl-switch-width) * .0285714);
   height: calc(var(--usl-switch-width) * .1357143);
   border-radius: 999px;
-  background: #f58200;
-  box-shadow: inset 0 1px 2px rgb(255 227 150 / 36%), 0 1px 2px rgb(105 55 0 / 24%);
+  background: #20b155;
+  box-shadow: inset 0 calc(var(--usl-switch-unit) * 1) calc(var(--usl-switch-unit) * 2) rgb(195 255 214 / 36%), 0 calc(var(--usl-switch-unit) * 1) calc(var(--usl-switch-unit) * 2) rgb(0 60 25 / 24%);
 }
 .usl-embossed-switch__thumb {
   position: absolute;
@@ -67,7 +69,7 @@
   height: calc(var(--usl-switch-width) * .4714286);
   border-radius: 50%;
   background: linear-gradient(145deg, #fafafa 4%, #e4e4e4 36%, #b9b9b9 100%);
-  box-shadow: 7px 9px 13px rgb(0 0 0 / 34%), inset 0 2px 2px rgb(255 255 255 / 90%), inset 0 -1px 2px rgb(118 118 118 / 26%);
+  box-shadow: calc(var(--usl-switch-unit) * 7) calc(var(--usl-switch-unit) * 9) calc(var(--usl-switch-unit) * 13) rgb(0 0 0 / 34%), inset 0 calc(var(--usl-switch-unit) * 2) calc(var(--usl-switch-unit) * 2) rgb(255 255 255 / 90%), inset 0 calc(var(--usl-switch-unit) * -1) calc(var(--usl-switch-unit) * 2) rgb(118 118 118 / 26%);
   transition: transform var(--usl-switch-duration) cubic-bezier(.22, .8, .25, 1);
 }
 .usl-embossed-switch__thumb::before {
@@ -79,22 +81,24 @@
   background-image:
     radial-gradient(ellipse at 45% 33%, rgb(247 247 247 / 88%) 0 19%, transparent 42%),
     radial-gradient(ellipse at 55% 72%, rgb(137 137 137 / 58%) 0 18%, transparent 46%);
-  background-size: calc(var(--usl-switch-width) * .0142857) calc(var(--usl-switch-width) * .0142857);
-  box-shadow: inset 0 2px 4px rgb(0 0 0 / 12%), inset 0 -1px 2px rgb(255 255 255 / 70%);
+  background-size: max(1px, calc(var(--usl-switch-width) * .0142857)) max(1px, calc(var(--usl-switch-width) * .0142857));
+  box-shadow: inset 0 calc(var(--usl-switch-unit) * 2) calc(var(--usl-switch-unit) * 4) rgb(0 0 0 / 12%), inset 0 calc(var(--usl-switch-unit) * -1) calc(var(--usl-switch-unit) * 2) rgb(255 255 255 / 70%);
 }
 .usl-embossed-switch[aria-checked="true"] .usl-embossed-switch__well::before { opacity: 1; }
 .usl-embossed-switch[aria-checked="true"] .usl-embossed-switch__thumb {
   transform: translateX(calc(var(--usl-switch-width) * .4571429));
 }
 .usl-embossed-switch:focus-visible {
-  outline: 3px solid #9d4e00;
-  outline-offset: 7px;
+  outline: 2px solid #15803d;
+  outline-offset: 3px;
 }
 .usl-embossed-switch:active:not(:disabled) .usl-embossed-switch__thumb {
-  box-shadow: 4px 6px 9px rgb(0 0 0 / 30%), inset 0 2px 2px rgb(255 255 255 / 90%);
+  box-shadow: calc(var(--usl-switch-unit) * 4) calc(var(--usl-switch-unit) * 6) calc(var(--usl-switch-unit) * 9) rgb(0 0 0 / 30%), inset 0 calc(var(--usl-switch-unit) * 2) calc(var(--usl-switch-unit) * 2) rgb(255 255 255 / 90%);
 }
 .usl-embossed-switch:disabled { cursor: not-allowed; opacity: .5; }
 @media (prefers-reduced-motion: reduce) {
   .usl-embossed-switch__well::before,
   .usl-embossed-switch__thumb { transition: none; }
 }
+.usl-embossed-switch__well, .usl-embossed-switch__thumb { pointer-events: none; }
+.usl-embossed-switch:hover:not(:disabled) { filter: brightness(1.04); }
