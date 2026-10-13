@@ -1,4 +1,4 @@
 interface:
   display_name: "界面样式实验室"
-  short_description: "根据参考图片设计按钮与界面组件，保存可复用代码并生成静态示例页"
-  default_prompt: "使用 $ui-style-lab 按我提供的样式图片生成按钮代码，保存到 skill 并同步到 MySkills 仓库，更新展示页，返回预览让我确认效果。"
+  short_description: "追加或复用界面样式组件，选择已有样式库或按参考图片设计并预览"
+  default_prompt: "使用 $ui-style-lab，先询问我想追加样式组件，还是使用已有的样式组件。"
