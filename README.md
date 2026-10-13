@@ -4,6 +4,7 @@
 
 | Skill | 用途 |
 |---|---|
+| [huashu-design](./huashu-design/) | 花叔 Design：用 HTML 制作高保真原型、幻灯片、动画与信息图，先提供三个设计方向供选择，支持设计评审与导出 |
 | [ui-style-lab](./ui-style-lab/) | 单独调用先选择追加或使用组件；复用时列出已有样式库，按图设计时保存到 skill 并同步仓库，更新[静态展示页](./ui-style-lab/gallery/index.html)后返回用户确认效果 |
 | [shadcn-admin-design](./shadcn-admin-design/) | 基于 shadcn-admin 的后台设计向导：选择设计 / 优化 / 重构 → 分轮澄清需求、风格与主色 → 效果图预览 → 明确确认后实现与验证 |
 | [start-context](./start-context/) | 接手开发上下文（读侧）：新 agent 开始工作、接手旧窗口时读取交接入口并核实可执行状态 |
@@ -100,6 +101,7 @@ Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 
 ## 备注
 
+- `huashu-design` 为上游 [alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design) 的完整副本（MIT，版本 2.0，来源提交 `3bd465d7ad29ffcb284113beb48910b469f00797`）；安装时须保留 `references/`、`assets/`、`scripts/`、`demos/`。导出功能按需使用 Node.js 依赖（见目录内 `package.json`），动画导出还需 FFmpeg。
 - `start-context` / `end-context` 实现 `context-protocol/v2` 交接协议，交接文档存放在目标项目的 `docs/agent-context/`，建议成对安装；`scripts/context_check.py` 为可选的只读结构检查脚本（Python 3.9+）。
 - `deep-research` 依赖 Exa MCP（可选，未安装时走 DuckDuckGo 兜底通道）与子 agent 工具。
 - `pr-review-loop` 依赖已登录且具备所需仓库权限的 `gh` CLI 与独立子 agent；适用 CI 必须通过，核实确无适用 CI 时记录不适用。
