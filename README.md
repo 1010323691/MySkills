@@ -5,6 +5,7 @@
 | Skill | 用途 |
 |---|---|
 | [ui-style-lab](./ui-style-lab/) | 单独调用先选择追加或使用组件；复用时列出已有样式库，按图设计时保存到 skill 并同步仓库，更新[静态展示页](./ui-style-lab/gallery/index.html)后返回用户确认效果 |
+| [shadcn-admin-design](./shadcn-admin-design/) | 基于 shadcn-admin 的后台设计向导：选择设计 / 优化 / 重构 → 分轮澄清需求、风格与主色 → 效果图预览 → 明确确认后实现与验证 |
 | [start-context](./start-context/) | 接手开发上下文（读侧）：新 agent 开始工作、接手旧窗口时读取交接入口并核实可执行状态 |
 | [end-context](./end-context/) | 保存开发交接（写侧）：结束工作、切换窗口前增量维护项目上下文文档 |
 | [deep-research](./deep-research/) | 结构化深度研究：outline → 并行 deep → report 三阶段流水线 |
