@@ -1,0 +1,358 @@
+{
+  "charts": [
+    {
+      "id": "ranking-arcs",
+      "name": "青蓝多层弧环",
+      "category": "仪表与环形",
+      "reference": "图 1 · 上方左侧 Customer Ranking",
+      "useCases": "门店 / 客户的目标达成对比",
+      "dataRequirements": "各对象独立的达成率，范围 0–100%；每条弧对应一个对象",
+      "limitations": "各环不是总量组成，不应相加。",
+      "palette": "cyan",
+      "preview": "charts/ranking-arcs.html"
+    },
+    {
+      "id": "stage-funnel",
+      "name": "横向圆角漏斗",
+      "category": "结构与转化",
+      "reference": "图 1 · 上方右侧 Customer Ranking",
+      "useCases": "访问→询价→确认→开票→交付的销售转化",
+      "dataRequirements": "按业务顺序提供递减的阶段人数及转化率",
+      "limitations": "适合顺序流失；非递减流程改用流程图。",
+      "palette": "cyan",
+      "preview": "charts/stage-funnel.html"
+    },
+    {
+      "id": "product-rings",
+      "name": "紫绿双层进度环",
+      "category": "仪表与环形",
+      "reference": "图 1 · 下方 Product Sales Statics",
+      "useCases": "两条产品线各自的销量目标完成率",
+      "dataRequirements": "两组当前值 / 目标值，分别映射 0–100%",
+      "limitations": "不是饼图；两个进度值无需相加到 100%。",
+      "palette": "mint",
+      "preview": "charts/product-rings.html"
+    },
+    {
+      "id": "sales-area",
+      "name": "紫绿柔光双面积",
+      "category": "趋势与折线",
+      "reference": "图 1 · 下方 Sales Summary",
+      "useCases": "产品收入、销售量等连续趋势对比",
+      "dataRequirements": "同一时间轴、同一单位的两条系列",
+      "limitations": "面积重叠不代表累计；不把插值曲线当作额外观测。",
+      "palette": "mint",
+      "preview": "charts/sales-area.html"
+    },
+    {
+      "id": "engagement-bars",
+      "name": "薄荷条纹目标柱",
+      "category": "柱状与比较",
+      "reference": "图 2 · 上方 Client Engagement Over Time",
+      "useCases": "月度活跃、客户参与率与容量目标比较",
+      "dataRequirements": "当前值 + 统一目标值；月份等时间标签",
+      "limitations": "背景条纹表示目标容量，需明确标注。",
+      "palette": "emerald",
+      "preview": "charts/engagement-bars.html"
+    },
+    {
+      "id": "distribution-ticks",
+      "name": "绿色分段径向仪表",
+      "category": "仪表与环形",
+      "reference": "图 2 · 上方 Client Distribution",
+      "useCases": "机会覆盖、任务完成、设备利用等单项比例",
+      "dataRequirements": "一个百分比值；亮色段为已完成，灰段为余量",
+      "limitations": "展示整体进度，不适合比较多个类别份额。",
+      "palette": "emerald",
+      "preview": "charts/distribution-ticks.html"
+    },
+    {
+      "id": "cashflow-stack",
+      "name": "深绿青柠现金流柱",
+      "category": "柱状与比较",
+      "reference": "图 2 · 下方 Cashflow",
+      "useCases": "已到账 / 待到账，已确认 / 待确认的每月组成",
+      "dataRequirements": "两段同单位非负值，柱高是合计",
+      "limitations": "本实现明确为堆叠组成；收入与支出对比应使用分组柱。",
+      "palette": "lime",
+      "preview": "charts/cashflow-stack.html"
+    },
+    {
+      "id": "expense-donut",
+      "name": "藏蓝财务占比环",
+      "category": "仪表与环形",
+      "reference": "图 2 · 下方 Statistic",
+      "useCases": "房租、投资、订阅等支出构成",
+      "dataRequirements": "分类金额；扇区角度按总金额占比分配",
+      "limitations": "少量类别清晰；很小的类别应合并。",
+      "palette": "navy",
+      "preview": "charts/expense-donut.html"
+    },
+    {
+      "id": "annual-bars",
+      "name": "珊瑚渐变年度柱",
+      "category": "柱状与比较",
+      "reference": "图 3 · 上方 Annual Performance",
+      "useCases": "月销售量、房源成交量、线索数量",
+      "dataRequirements": "每月非负计数，统一刻度；背景为目标容量",
+      "limitations": "柱宽一致，基线从零开始。",
+      "palette": "coral",
+      "preview": "charts/annual-bars.html"
+    },
+    {
+      "id": "listing-share",
+      "name": "多色横向构成条",
+      "category": "结构与转化",
+      "reference": "图 3 · 上方 Total Listings",
+      "useCases": "房源类型、订单渠道或商品类型的份额",
+      "dataRequirements": "多个非负分类数值；总和规范化为 100%",
+      "limitations": "长度表示份额；不用于顺序转化。",
+      "palette": "coral",
+      "preview": "charts/listing-share.html"
+    },
+    {
+      "id": "worktime-bars",
+      "name": "钴蓝重点周柱",
+      "category": "柱状与比较",
+      "reference": "图 3 · 下方 Progress",
+      "useCases": "工时、运动时长、产能的周内比较",
+      "dataRequirements": "七天时长；高亮当前或选中日",
+      "limitations": "突出选中日，不把颜色理解为额外类别。",
+      "palette": "blue",
+      "preview": "charts/worktime-bars.html"
+    },
+    {
+      "id": "meeting-timeline",
+      "name": "彩色泳道日程",
+      "category": "日程与运营",
+      "reference": "图 3 · 下方 Meeting Scheduling",
+      "useCases": "团队会议、成员排期、项目资源占用",
+      "dataRequirements": "每条泳道一类任务；提供开始与结束时间",
+      "limitations": "时间轴为示例，真实业务需处理重叠与跨日。",
+      "palette": "blue",
+      "preview": "charts/meeting-timeline.html"
+    },
+    {
+      "id": "work-progress-line",
+      "name": "淡紫柔角折线",
+      "category": "趋势与折线",
+      "reference": "图 4 · 上方 Work Progress Overview",
+      "useCases": "项目吞吐、工作进度、完成量与计划比较",
+      "dataRequirements": "同一月份的实际 / 计划数列",
+      "limitations": "采用折线柔化外观，数据点仍为离散观测。",
+      "palette": "lavender",
+      "preview": "charts/work-progress-line.html"
+    },
+    {
+      "id": "credit-gauge",
+      "name": "彩虹半环评分仪表",
+      "category": "仪表与环形",
+      "reference": "图 4 · 上方 Credit Score",
+      "useCases": "健康评分、服务质量、设备性能与信用分展示",
+      "dataRequirements": "一个有明确最小 / 最大边界的评分",
+      "limitations": "色带阈值为演示；业务评分阈值需另行定义。",
+      "palette": "lavender",
+      "preview": "charts/credit-gauge.html"
+    },
+    {
+      "id": "kpi-sparkline",
+      "name": "迷你趋势指标卡",
+      "category": "趋势与折线",
+      "reference": "图 4 · 上方 Projects / Clients / Revenue",
+      "useCases": "顶部 KPI 同时显示总值与近期方向",
+      "dataRequirements": "摘要值、变化率以及短时间序列",
+      "limitations": "迷你图用于方向提示；精确分析使用带刻度图。",
+      "palette": "lavender",
+      "preview": "charts/kpi-sparkline.html"
+    },
+    {
+      "id": "weekly-grouped",
+      "name": "荧光绿紫分组柱",
+      "category": "柱状与比较",
+      "reference": "图 4 · 下方 Weekly statistics",
+      "useCases": "每周收入 / 支出、当前 / 前期数值比较",
+      "dataRequirements": "同单位两组值；每类两个并列柱",
+      "limitations": "并列柱适合比较；不要用堆叠掩盖差值。",
+      "palette": "neon",
+      "preview": "charts/weekly-grouped.html"
+    },
+    {
+      "id": "goal-progress",
+      "name": "紫绿细线目标条",
+      "category": "结构与转化",
+      "reference": "图 4 · 下方 Financial goals；图 2 · 下方 Saving Plans",
+      "useCases": "预算目标、储蓄目标、项目交付进度",
+      "dataRequirements": "当前值 / 目标值，标注百分比和数值",
+      "limitations": "超过目标时应单独显示超额，不仅截断为 100%。",
+      "palette": "neon",
+      "preview": "charts/goal-progress.html"
+    },
+    {
+      "id": "delivery-lines",
+      "name": "绿色节点双折线",
+      "category": "趋势与折线",
+      "reference": "图 5 · 上方 Delivery performance",
+      "useCases": "物流配送：已交付 / 延误随小时变化的运营比较",
+      "dataRequirements": "两条同单位序列及小时标签",
+      "limitations": "节点代表真实观测；延误值与完成值应分别定义。",
+      "palette": "logistics",
+      "preview": "charts/delivery-lines.html"
+    },
+    {
+      "id": "fleet-map",
+      "name": "浅色地图状态点",
+      "category": "日程与运营",
+      "reference": "图 5 · 上方 Live Tracking Fleet",
+      "useCases": "车队位置、配送分布、资产运行状态",
+      "dataRequirements": "底图坐标 + 资产标签 + 状态分类",
+      "limitations": "当前是原创示意地图，没有真实地理坐标或地图服务。",
+      "palette": "logistics",
+      "preview": "charts/fleet-map.html"
+    },
+    {
+      "id": "loading-progress",
+      "name": "装载卡片进度条",
+      "category": "日程与运营",
+      "reference": "图 5 · 下方 Trucks currently in warehouse",
+      "useCases": "仓储装载、运输准备、批次处理完成率",
+      "dataRequirements": "每条资产的编号、进度、状态与目标",
+      "limitations": "装饰车辆为本地 SVG 近似，非原图车型。",
+      "palette": "logistics",
+      "preview": "charts/loading-progress.html"
+    }
+  ],
+  "dashboards": [
+    {
+      "id": "erp-cyan",
+      "name": "蓝青 ERP 销售总览",
+      "reference": "图 1 · 上方 Vantus",
+      "useCases": "ERP、财务经营、销售漏斗",
+      "layout": "固定侧栏 + 四项财务 KPI + 弧环排名 / 横向转化漏斗",
+      "palette": "cyan",
+      "charts": [
+        "ranking-arcs",
+        "stage-funnel"
+      ],
+      "preview": "dashboards/erp-cyan.html"
+    },
+    {
+      "id": "sales-mint",
+      "name": "薄荷销售分析台",
+      "reference": "图 1 · 下方 SalesSync",
+      "useCases": "电商、零售、产品销售分析",
+      "layout": "浅色侧栏 + 筛选工具栏 + 经营 KPI + 双进度环 / 双面积趋势",
+      "palette": "mint",
+      "charts": [
+        "product-rings",
+        "sales-area"
+      ],
+      "preview": "dashboards/sales-mint.html"
+    },
+    {
+      "id": "crm-green",
+      "name": "深绿客户经营台",
+      "reference": "图 2 · 上方 Auralis",
+      "useCases": "CRM、客户参与度、增长机会分析",
+      "layout": "顶部导航 + 主趋势柱 / 径向覆盖仪表 + 客户指标",
+      "palette": "emerald",
+      "charts": [
+        "engagement-bars",
+        "distribution-ticks"
+      ],
+      "preview": "dashboards/crm-green.html"
+    },
+    {
+      "id": "finance-lime",
+      "name": "青柠藏蓝财务台",
+      "reference": "图 2 · 下方 Fundify",
+      "useCases": "个人 / 企业资金管理、收入构成、储蓄计划",
+      "layout": "浅绿侧栏 + 深色账户摘要 + 现金流柱 / 支出环 / 储蓄进度",
+      "palette": "lime",
+      "charts": [
+        "cashflow-stack",
+        "expense-donut",
+        "goal-progress"
+      ],
+      "preview": "dashboards/finance-lime.html"
+    },
+    {
+      "id": "property-coral",
+      "name": "珊瑚房产运营台",
+      "reference": "图 3 · 上方 Homey",
+      "useCases": "房产 CRM、房源成交、代理人管理",
+      "layout": "浅珊瑚侧栏 + 线索 / 收入 KPI + 年度柱 / 房源分类条",
+      "palette": "coral",
+      "charts": [
+        "annual-bars",
+        "listing-share"
+      ],
+      "preview": "dashboards/property-coral.html"
+    },
+    {
+      "id": "hr-blue",
+      "name": "蓝柠人事工作台",
+      "reference": "图 3 · 下方 James Hey",
+      "useCases": "人事协作、会议排期、员工工时",
+      "layout": "顶部导航 + 青柠欢迎指标区 + 日程泳道 / 工时柱",
+      "palette": "blue",
+      "charts": [
+        "meeting-timeline",
+        "worktime-bars"
+      ],
+      "preview": "dashboards/hr-blue.html"
+    },
+    {
+      "id": "project-lavender",
+      "name": "淡紫项目工作台",
+      "reference": "图 4 · 上方 Welcome buddy",
+      "useCases": "项目交付、团队效率、质量评分",
+      "layout": "窄侧栏 + 柔光背景 + 迷你 KPI / 进度折线 / 半环评分",
+      "palette": "lavender",
+      "charts": [
+        "work-progress-line",
+        "credit-gauge",
+        "kpi-sparkline"
+      ],
+      "preview": "dashboards/project-lavender.html"
+    },
+    {
+      "id": "finance-neon",
+      "name": "黑柠财务管理台",
+      "reference": "图 4 · 下方 savest",
+      "useCases": "财务交易、收支比较、预算目标",
+      "layout": "深色侧栏 + 中性灰内容 + 荧光绿紫分组柱 / 细线目标条",
+      "palette": "neon",
+      "charts": [
+        "weekly-grouped",
+        "goal-progress"
+      ],
+      "preview": "dashboards/finance-neon.html"
+    },
+    {
+      "id": "fleet-green",
+      "name": "绿色物流监控台",
+      "reference": "图 5 · 上方 Horizon",
+      "useCases": "物流调度、实时车队分布、交付绩效",
+      "layout": "紧凑侧栏 + 运营 KPI + 节点双折线 / 状态地图",
+      "palette": "logistics",
+      "charts": [
+        "delivery-lines",
+        "fleet-map"
+      ],
+      "preview": "dashboards/fleet-green.html"
+    },
+    {
+      "id": "warehouse-green",
+      "name": "绿色仓储作业台",
+      "reference": "图 5 · 下方 Horizon",
+      "useCases": "仓库作业、装载进度、发运准备",
+      "layout": "紧凑侧栏 + 资源 KPI + 装载资产卡片网格",
+      "palette": "logistics",
+      "charts": [
+        "loading-progress",
+        "goal-progress"
+      ],
+      "preview": "dashboards/warehouse-green.html"
+    }
+  ]
+}
