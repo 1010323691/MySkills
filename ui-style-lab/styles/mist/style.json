@@ -1,0 +1,61 @@
+{
+  "id": "mist",
+  "name": "雾灰",
+  "englishName": "Mist",
+  "version": "1.0.0",
+  "type": "component-library",
+  "description": "浅灰同色表面、左上高光和右下柔和阴影组成的新拟态组件库。",
+  "namespace": {
+    "rootClass": "mist",
+    "classPrefix": "mist-",
+    "tokenPrefix": "--mist-",
+    "eventPrefix": "mist-"
+  },
+  "entrypoints": {
+    "showcase": "demo.html",
+    "examples": "examples.html",
+    "documentation": "notes.md",
+    "tokens": "tokens.css",
+    "styles": "component.css",
+    "interactions": "component.js"
+  },
+  "files": {
+    "library": [
+      "tokens.css",
+      "component.css",
+      "component.js"
+    ],
+    "showcase": [
+      "demo.html",
+      "demo.css",
+      "demo.js",
+      "examples.html"
+    ],
+    "reference": [
+      "reference.jpg"
+    ],
+    "documentation": [
+      "notes.md"
+    ]
+  },
+  "components": [
+    "card",
+    "button",
+    "icon-button",
+    "switch",
+    "temperature-dial",
+    "scene-card",
+    "device-row",
+    "avatar",
+    "chip",
+    "input",
+    "search",
+    "segmented-control",
+    "checkbox",
+    "radio",
+    "range",
+    "progress",
+    "menu",
+    "dialog"
+  ]
+}

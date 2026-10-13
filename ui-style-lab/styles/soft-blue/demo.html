@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>柔光蓝 · 按钮预览</title>
+  <link rel="stylesheet" href="button.css">
+  <style>
+    :root { color-scheme: light; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #334664; background: #f0f5ff; }
+    * { box-sizing: border-box; }
+    body { margin: 0; }
+    .demo { max-width: 920px; margin: auto; padding: 30px 24px; }
+    .hero { display: flex; flex-direction: column; align-items: center; gap: 18px; padding: 8px 0 30px; }
+    .hint { margin: 0; color: #576b8d; font-size: 12px; line-height: 1.7; text-align: center; }
+    .states { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; padding-top: 24px; border-top: 1px solid #d7e2f4; }
+    .state { display: flex; flex-direction: column; align-items: center; gap: 16px; }
+    .state-label { font-size: 11px; color: #576b8d; }
+    .state .usl-soft-blue-button { padding: 0 14px; font-size: 13px; min-height: 42px; }
+    .caption { margin: 24px 0 0; color: #576b8d; font-size: 11px; line-height: 1.7; text-align: center; }
+    @media (max-width: 450px) {
+      .demo { padding: 28px 20px; }
+      .states { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px 14px; }
+    }
+  </style>
+</head>
+<body>
+  <main class="demo" aria-label="柔光蓝按钮交互示例">
+    <div class="hero">
+      <button class="usl-soft-blue-button" type="button">
+        开始创作
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg>
+      </button>
+      <p class="hint">将鼠标移到按钮上、按住，或用 Tab 键查看焦点。</p>
+    </div>
+    <div class="states" aria-label="固定状态对照">
+      <div class="state"><span class="state-label">默认</span><button class="usl-soft-blue-button" type="button">按钮</button></div>
+      <div class="state"><span class="state-label">悬停</span><button class="usl-soft-blue-button" type="button" data-preview-state="hover">按钮</button></div>
+      <div class="state"><span class="state-label">按下</span><button class="usl-soft-blue-button" type="button" data-preview-state="active">按钮</button></div>
+      <div class="state"><span class="state-label">焦点</span><button class="usl-soft-blue-button" type="button" data-preview-state="focus">按钮</button></div>
+      <div class="state"><span class="state-label">禁用</span><button class="usl-soft-blue-button" type="button" disabled>按钮</button></div>
+    </div>
+    <p class="caption">下方为固定状态预览；上方按钮展示真实交互。初始原创示例，未使用参考图片。</p>
+  </main>
+</body>
+</html>

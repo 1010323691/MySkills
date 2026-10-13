@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>浮雕灰 · 按钮与搜索栏</title>
+  <link rel="stylesheet" href="component.css">
+  <script src="component.js" defer></script>
+  <script src="demo.js" defer></script>
+  <style>
+    :root { color-scheme: light; font-family: Arial, "Microsoft YaHei", sans-serif; color: #626262; background: #dedede; }
+    * { box-sizing: border-box; }
+    body { margin: 0; min-height: 100vh; background: linear-gradient(155deg, #f1f1f1, #d5d5d5); }
+    .showcase { min-height: 420px; max-width: 680px; margin: auto; padding: 36px 30px 26px; display: flex; flex-direction: column; justify-content: center; gap: 28px; }
+    .showcase-heading { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 10px; }
+    .eyebrow { font-size: 10px; letter-spacing: .13em; color: #717171; }
+    .edition { font-size: 10px; color: #818181; }
+    .button-row { display: flex; justify-content: center; align-items: center; gap: 20px; flex-wrap: wrap; }
+    .search-area { width: 100%; max-width: 500px; align-self: center; }
+    .feedback { min-height: 18px; margin: 14px 0 0; text-align: center; font-size: 11px; line-height: 1.65; color: #6c6c6c; }
+    .detail { max-width: 1000px; margin: 0 auto; padding: 38px 32px 48px; border-top: 1px solid #c1c1c1; }
+    h1 { font-size: 27px; font-weight: 400; color: #505050; margin: 0 0 14px; }
+    .intro { font-size: 14px; line-height: 1.85; margin: 0 0 34px; max-width: 700px; }
+    .section-label { font-weight: 400; font-size: 12px; color: #777; margin: 0 0 22px; }
+    .state-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 18px; }
+    .state { display: flex; align-items: center; flex-direction: column; gap: 16px; padding: 20px 8px; }
+    .state span { font-size: 11px; }
+    .state .usl-metal-button { min-height: 48px; padding: 0 22px; font-size: 13px; }
+    .search-examples { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; margin-top: 34px; }
+    .search-examples .usl-metal-search { min-height: 64px; padding: 6px 6px 6px 18px; }
+    .search-examples .usl-metal-search__submit { width: 48px; min-height: 48px; }
+    .search-examples .usl-metal-search__input { font-size: 13px; }
+    .results { margin: 34px 0 0; padding: 24px; border-radius: 16px; background: rgb(255 255 255 / 28%); border: 1px solid #c2c2c2; }
+    .results[hidden] { display: none; }
+    .results h2 { font-size: 15px; font-weight: 400; margin: 0 0 12px; }
+    .results ul { display: grid; gap: 12px; list-style: none; margin: 0; padding: 0; font-size: 13px; line-height: 1.7; }
+    .results p { margin: 0; font-size: 13px; }
+    .links { display: flex; flex-wrap: wrap; gap: 22px; margin-top: 38px; font-size: 12px; }
+    a { color: #75430e; text-underline-offset: 4px; }
+    a:focus-visible { outline: 2px solid #92500c; outline-offset: 4px; }
+    @media (max-width: 600px) {
+      .showcase { padding: 30px 22px; gap: 30px; }
+      .button-row { gap: 14px; }
+      .button-row > .usl-metal-button:not(.usl-metal-button--round) { padding: 0 22px; }
+      .detail { padding: 32px 22px; }
+      .state-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .search-examples { grid-template-columns: 1fr; }
+      .usl-metal-search { padding-left: 18px; gap: 9px; }
+    }
+    @media (max-width: 360px) {
+      .button-row { gap: 10px; }
+      .button-row > .usl-metal-button:not(.usl-metal-button--round) { padding: 0 18px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="showcase" aria-label="立体按钮和搜索栏交互预览">
+      <header class="showcase-heading"><span class="eyebrow">TACTILE / 浮雕灰</span><span class="edition">按钮 + 搜索栏</span></header>
+      <div class="button-row">
+        <button type="button" class="usl-metal-button usl-metal-button--textured" data-demo-action="收藏">收藏</button>
+        <button type="button" class="usl-metal-button usl-metal-button--orange" data-demo-action="继续">继续 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+        <button type="button" class="usl-metal-button usl-metal-button--round usl-metal-button--textured" aria-label="电源" aria-pressed="false" data-usl-toggle><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M12 3v9m-5-6a8 8 0 1 0 10 0"/></svg></button>
+      </div>
+      <div class="search-area">
+        <form class="usl-metal-search" role="search" aria-label="样式库搜索">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg>
+          <input class="usl-metal-search__input" type="search" name="q" aria-label="搜索样式" placeholder="搜索灵感、组件…" autocomplete="off">
+          <button class="usl-metal-search__clear" type="button" aria-label="清空搜索" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
+          <button class="usl-metal-button usl-metal-button--round usl-metal-button--textured usl-metal-search__submit" type="submit" aria-label="提交搜索"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14m-6-6 6 6-6 6"/></svg></button>
+        </form>
+        <p class="feedback" id="feedback" role="status">点击感受按压；输入“按钮”或“开关”，按 Enter 搜索示例。</p>
+      </div>
+    </section>
+    <section class="detail" aria-labelledby="detail-title">
+      <h1 id="detail-title">简约的形，清晰的触感。</h1>
+      <p class="intro">从立体滑块延展的组件：银灰圆边、细密纹理、柔和投影与内凹搜索槽。<br>灰色按钮用于常规操作，少量橙色强调主操作；圆形按钮与滑块共享同一种材质。</p>
+      <h2 class="section-label">按钮状态 / 固定预览</h2>
+      <div class="state-grid">
+        <div class="state"><span>默认</span><button type="button" class="usl-metal-button">按钮</button></div>
+        <div class="state"><span>悬停</span><button type="button" class="usl-metal-button" data-preview-state="hover">按钮</button></div>
+        <div class="state"><span>按下</span><button type="button" class="usl-metal-button" data-preview-state="active">按钮</button></div>
+        <div class="state"><span>焦点</span><button type="button" class="usl-metal-button" data-preview-state="focus">按钮</button></div>
+        <div class="state"><span>禁用</span><button type="button" class="usl-metal-button" disabled>按钮</button></div>
+      </div>
+      <div class="search-examples">
+        <div>
+          <h2 class="section-label">搜索栏 / 橙色操作按钮</h2>
+          <form class="usl-metal-search" role="search" aria-label="橙色按钮搜索示例">
+            <input class="usl-metal-search__input" type="search" name="q" aria-label="搜索组件" placeholder="搜索组件…">
+            <button type="submit" class="usl-metal-button usl-metal-button--orange usl-metal-button--round usl-metal-search__submit" aria-label="搜索组件提交"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg></button>
+          </form>
+        </div>
+        <div>
+          <h2 class="section-label">搜索栏 / 禁用</h2>
+          <form class="usl-metal-search usl-metal-search--disabled" role="search" aria-label="禁用搜索示例">
+            <input class="usl-metal-search__input" type="search" name="q" aria-label="禁用搜索输入" placeholder="暂不可用" disabled>
+            <button type="submit" class="usl-metal-button usl-metal-button--round usl-metal-search__submit" aria-label="禁用搜索提交" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4 4"/></svg></button>
+          </form>
+        </div>
+      </div>
+      <section class="results" id="results" aria-labelledby="results-title" hidden>
+        <h2 id="results-title">本地示例搜索结果</h2><ul id="results-list"></ul><p id="empty-result" hidden>没有找到匹配组件。</p>
+      </section>
+      <nav class="links" aria-label="组件资源"><a href="component.css">CSS 代码</a><a href="component.js">交互代码</a><a href="notes.md">使用说明</a><a href="../embossed-orange-switch/demo.html">原始滑块</a><a href="../../gallery/index.html">返回样式库</a></nav>
+    </section>
+  </main>
+</body>
+</html>

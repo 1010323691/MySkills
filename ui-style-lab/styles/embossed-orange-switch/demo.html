@@ -1,0 +1,101 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>浮雕橙 · 立体开关</title>
+  <link rel="stylesheet" href="component.css">
+  <script src="component.js" defer></script>
+  <style>
+    :root { color-scheme: light; font-family: Arial, "Microsoft YaHei", sans-serif; color: #777; background: #dedede; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: linear-gradient(#f4f4f4, #d1d1d1); min-height: 100vh; }
+    .stage { min-height: 420px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 34px; padding: 38px 20px; }
+    .switch-row { display: flex; align-items: center; justify-content: center; gap: 27px; }
+    .label { font-size: 20px; font-weight: 400; }
+    .hint { margin: 0; text-align: center; font-size: 12px; line-height: 1.8; color: #6b6b6b; }
+    .detail { max-width: 1050px; margin: 0 auto; padding: 36px 28px 48px; border-top: 1px solid #bdbdbd; }
+    h1 { font-size: 25px; font-weight: 500; color: #555; margin: 0 0 12px; }
+    .intro { font-size: 14px; line-height: 1.9; margin: 0 0 30px; }
+    .comparison { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+    .sample { display: flex; flex-direction: column; align-items: center; gap: 22px; padding: 30px 14px; border: 1px solid #bcbcbc; border-radius: 18px; background: rgb(255 255 255 / 15%); }
+    h2 { font-size: 13px; font-weight: 400; margin: 0; }
+    .sample .usl-embossed-switch { --usl-switch-width: 224px; }
+    .sample .hint { font-size: 11px; }
+    .reference-heading { margin: 38px 0 18px; font-size: 17px; color: #555; }
+    .reference { margin: 0; }
+    .reference img { display: block; width: 100%; border-radius: 8px; }
+    .reference figcaption { font-size: 12px; text-align: center; margin-top: 12px; }
+    .links { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 28px; font-size: 13px; }
+    a { color: #75430e; text-underline-offset: 4px; }
+    a:focus-visible { outline: 2px solid #75430e; outline-offset: 4px; }
+    @media (max-width: 470px) {
+      .switch-row { gap: 15px; }
+      .switch-row .usl-embossed-switch { --usl-switch-width: 224px; }
+      .label { font-size: 15px; }
+      .stage { min-height: 420px; padding: 36px 12px; }
+      .comparison { grid-template-columns: 1fr; }
+      .detail { padding-left: 20px; padding-right: 20px; }
+    }
+    @media (max-width: 350px) {
+      .switch-row { gap: 12px; }
+      .switch-row .usl-embossed-switch { --usl-switch-width: 196px; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <section class="stage" aria-label="可交互立体开关预览">
+      <div class="switch-row">
+        <span class="label" aria-hidden="true">OFF</span>
+        <button class="usl-embossed-switch" type="button" role="switch" aria-checked="false" aria-label="立体电源开关">
+          <span class="usl-embossed-switch__well" aria-hidden="true"><span class="usl-embossed-switch__mark usl-embossed-switch__mark--on"></span><span class="usl-embossed-switch__mark usl-embossed-switch__mark--off"></span></span>
+          <span class="usl-embossed-switch__thumb" aria-hidden="true"></span>
+        </button>
+        <span class="label" aria-hidden="true">ON</span>
+      </div>
+      <p class="hint">点击切换 OFF / ON<br>支持 Tab 聚焦，空格或 Enter 切换</p>
+    </section>
+    <section class="detail" aria-labelledby="detail-title">
+      <h1 id="detail-title">浮雕橙 · 立体开关</h1>
+      <p class="intro">根据两张参考图还原：深灰与橙色凹槽、金属感边缘、细密纹理滑块和浮雕电源标记。<br>主体由 HTML / CSS 绘制，少量 JavaScript 控制切换。</p>
+      <div class="comparison">
+        <div class="sample">
+          <h2>关闭 · 图片 1 对应状态（固定展示）</h2>
+          <button class="usl-embossed-switch" type="button" role="switch" aria-checked="false" aria-label="关闭状态固定预览" data-static>
+            <span class="usl-embossed-switch__well" aria-hidden="true"><span class="usl-embossed-switch__mark usl-embossed-switch__mark--on"></span><span class="usl-embossed-switch__mark usl-embossed-switch__mark--off"></span></span><span class="usl-embossed-switch__thumb" aria-hidden="true"></span>
+          </button>
+          <p class="hint">灰色凹槽 / 滑块在左</p>
+        </div>
+        <div class="sample">
+          <h2>开启 · 图片 2 对应状态（固定展示）</h2>
+          <button class="usl-embossed-switch" type="button" role="switch" aria-checked="true" aria-label="开启状态固定预览" data-static>
+            <span class="usl-embossed-switch__well" aria-hidden="true"><span class="usl-embossed-switch__mark usl-embossed-switch__mark--on"></span><span class="usl-embossed-switch__mark usl-embossed-switch__mark--off"></span></span><span class="usl-embossed-switch__thumb" aria-hidden="true"></span>
+          </button>
+          <p class="hint">橙色凹槽 / 滑块在右</p>
+        </div>
+        <div class="sample">
+          <h2>键盘与按压 · 可交互补充状态</h2>
+          <button class="usl-embossed-switch" type="button" role="switch" aria-checked="false" aria-label="键盘交互示例开关">
+            <span class="usl-embossed-switch__well" aria-hidden="true"><span class="usl-embossed-switch__mark usl-embossed-switch__mark--on"></span><span class="usl-embossed-switch__mark usl-embossed-switch__mark--off"></span></span><span class="usl-embossed-switch__thumb" aria-hidden="true"></span>
+          </button>
+          <p class="hint">Tab 显示焦点环 / 按住显示按压阴影</p>
+        </div>
+        <div class="sample">
+          <h2>禁用 · 补充状态</h2>
+          <button class="usl-embossed-switch" type="button" role="switch" aria-checked="false" aria-label="禁用开关" disabled>
+            <span class="usl-embossed-switch__well" aria-hidden="true"><span class="usl-embossed-switch__mark usl-embossed-switch__mark--on"></span><span class="usl-embossed-switch__mark usl-embossed-switch__mark--off"></span></span><span class="usl-embossed-switch__thumb" aria-hidden="true"></span>
+          </button>
+          <p class="hint">不可操作 / 降低不透明度</p>
+        </div>
+      </div>
+      <h2 class="reference-heading">原始参考图片</h2>
+      <div class="comparison">
+        <figure class="reference"><img src="reference-off.jpg" alt="用户提供的关闭状态参考截图" loading="lazy"><figcaption>照片 1 · OFF</figcaption></figure>
+        <figure class="reference"><img src="reference-on.jpg" alt="用户提供的开启状态参考截图" loading="lazy"><figcaption>照片 2 · ON</figcaption></figure>
+      </div>
+      <nav class="links" aria-label="代码与说明"><a href="component.css">CSS 代码</a><a href="component.js">交互代码</a><a href="notes.md">使用说明</a><a href="../../gallery/index.html">返回样式库</a></nav>
+    </section>
+  </main>
+</body>
+</html>

@@ -1,0 +1,55 @@
+.usl-soft-blue-button {
+  --usl-button-top: #518cf7;
+  --usl-button-bottom: #3166da;
+  --usl-button-radius: 13px;
+  --usl-button-height: 48px;
+  --usl-button-shadow: 0 6px 14px rgb(49 102 218 / 22%), inset 0 1px 0 rgb(255 255 255 / 26%);
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: var(--usl-button-height);
+  padding: 0 24px;
+  border: 1px solid rgb(36 84 184 / 30%);
+  border-radius: var(--usl-button-radius);
+  background: linear-gradient(180deg, var(--usl-button-top), var(--usl-button-bottom));
+  box-shadow: var(--usl-button-shadow);
+  color: #fff;
+  font: 600 15px/1.4 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: .02em;
+  text-decoration: none;
+  cursor: pointer;
+  transition: transform 150ms ease, box-shadow 150ms ease, filter 150ms ease;
+}
+.usl-soft-blue-button:hover:not(:disabled),
+.usl-soft-blue-button[data-preview-state="hover"]:not(:disabled) {
+  filter: brightness(1.07);
+  transform: translateY(-2px);
+  box-shadow: 0 9px 18px rgb(49 102 218 / 28%), inset 0 1px 0 rgb(255 255 255 / 30%);
+}
+.usl-soft-blue-button:active:not(:disabled),
+.usl-soft-blue-button[data-preview-state="active"]:not(:disabled) {
+  filter: brightness(.95);
+  transform: translateY(1px);
+  box-shadow: 0 2px 5px rgb(49 102 218 / 20%), inset 0 2px 4px rgb(22 58 133 / 18%);
+}
+.usl-soft-blue-button:focus-visible,
+.usl-soft-blue-button[data-preview-state="focus"] {
+  outline: 3px solid #244da3;
+  outline-offset: 4px;
+}
+.usl-soft-blue-button:disabled {
+  background: #dde4ef;
+  border-color: #d0d9e8;
+  box-shadow: none;
+  color: #6a778b;
+  cursor: not-allowed;
+}
+.usl-soft-blue-button > svg { width: 18px; height: 18px; flex: none; }
+@media (prefers-reduced-motion: reduce) {
+  .usl-soft-blue-button { transition: none; }
+  .usl-soft-blue-button:hover:not(:disabled),
+  .usl-soft-blue-button:active:not(:disabled),
+  .usl-soft-blue-button[data-preview-state] { transform: none; }
+}

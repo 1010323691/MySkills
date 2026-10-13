@@ -1,0 +1,11 @@
+.mist {
+  --mist-surface: #d9d9dc;
+  --mist-ink: #303033;
+  --mist-muted: #65656a;
+  --mist-shadow: 10px 10px 22px #b9b9bd, -10px -10px 22px #f8f8fa;
+  --mist-small-shadow: 5px 5px 10px #b8b8bd, -5px -5px 10px #f7f7fa;
+  --mist-inset: inset 5px 5px 10px #bdbdc2, inset -5px -5px 10px #f4f4f7;
+  --mist-radius: 42px;
+  font-family: Arial, "Microsoft YaHei", sans-serif;
+  color: var(--mist-ink);
+}

@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>界面样式实验室 · 样式库</title>
+  <link rel="stylesheet" href="gallery.css">
+</head>
+<body>
+  <main class="gallery">
+    <header class="gallery-header">
+      <span class="eyebrow">UI STYLE LAB / 界面样式实验室</span>
+      <h1>把灵感，变成可用的界面。</h1>
+      <p>从参考图片到组件代码。每一种样式独立保存，在这里预览、比较与复用。</p>
+    </header>
+    <section class="collection" aria-labelledby="collection-title">
+      <div class="section-heading">
+        <h2 id="collection-title">样式收藏</h2>
+        <span class="collection-note">本地静态预览 · HTML + CSS</span>
+      </div>
+      <div class="style-grid">
+        <!-- 新样式在此添加卡片，保留已有样式。 -->
+        <article class="style-card style-card--wide">
+          <div class="card-heading">
+            <div><span class="style-kind">COMPONENT LIBRARY / 新拟态组件库</span><h3>雾灰 · Mist 组件库</h3></div>
+            <span class="badge">独立套件 · v1.0.0</span>
+          </div>
+          <p class="card-description">统一浅灰表面与柔和双向阴影。包含温控旋钮、场景卡片、设备列表、按钮、搜索栏、选择控件、滑杆和弹窗。</p>
+          <iframe src="../styles/mist/demo.html" title="雾灰 Mist 完整组件库展示" loading="lazy"></iframe>
+          <footer class="card-links">
+            <a class="preview-link" href="../styles/mist/demo.html" target="_blank" rel="noopener">打开完整组件库 <span aria-hidden="true">↗</span></a>
+            <div><a href="../styles/mist/component.css">组件 CSS</a><a href="../styles/mist/notes.md">组件清单与用法</a></div>
+          </footer>
+        </article>
+        <article class="style-card">
+          <div class="card-heading">
+            <div><span class="style-kind">BUTTON + SEARCH / 按钮与搜索栏</span><h3>浮雕灰 · 简约立体组件</h3></div>
+            <span class="badge">风格延展</span>
+          </div>
+          <p class="card-description">延续滑块的金属圆边与细密纹理，包含灰色按钮、橙色主按钮、圆形图标按钮和内凹搜索栏。</p>
+          <iframe src="../styles/embossed-controls/demo.html" title="浮雕灰按钮和搜索栏交互预览" loading="lazy"></iframe>
+          <footer class="card-links">
+            <a class="preview-link" href="../styles/embossed-controls/demo.html" target="_blank" rel="noopener">打开独立预览 <span aria-hidden="true">↗</span></a>
+            <div><a href="../styles/embossed-controls/component.css">CSS 代码</a><a href="../styles/embossed-controls/notes.md">使用说明</a></div>
+          </footer>
+        </article>
+        <article class="style-card">
+          <div class="card-heading">
+            <div><span class="style-kind">SWITCH / 开关</span><h3>浮雕橙 · 立体开关</h3></div>
+            <span class="badge">图片还原</span>
+          </div>
+          <p class="card-description">灰色 / 橙色凹槽，金属感圆环与细密纹理滑块。点击预览切换，独立页面可对照两张原图。</p>
+          <iframe src="../styles/embossed-orange-switch/demo.html" title="浮雕橙立体开关交互预览" loading="lazy"></iframe>
+          <footer class="card-links">
+            <a class="preview-link" href="../styles/embossed-orange-switch/demo.html" target="_blank" rel="noopener">打开独立预览 <span aria-hidden="true">↗</span></a>
+            <div><a href="../styles/embossed-orange-switch/component.css">CSS 代码</a><a href="../styles/embossed-orange-switch/notes.md">使用说明</a></div>
+          </footer>
+        </article>
+        <article class="style-card">
+          <div class="card-heading">
+            <div><span class="style-kind">BUTTON / 按钮</span><h3>柔光蓝 · Soft Blue</h3></div>
+            <span class="badge">初始示例</span>
+          </div>
+          <p class="card-description">柔和渐变、细腻高光与轻盈投影。包含交互状态，后续参考图样式会收录在这里。</p>
+          <iframe src="../styles/soft-blue/demo.html" title="柔光蓝按钮及状态预览" loading="lazy"></iframe>
+          <footer class="card-links">
+            <a class="preview-link" href="../styles/soft-blue/demo.html" target="_blank" rel="noopener">打开独立预览 <span aria-hidden="true">↗</span></a>
+            <div><a href="../styles/soft-blue/button.css">CSS 代码</a><a href="../styles/soft-blue/notes.md">设计说明</a></div>
+          </footer>
+        </article>
+      </div>
+    </section>
+    <footer class="gallery-footer">提供一张参考图片，即可新增一种样式。代码和预览始终一起保存。</footer>
+  </main>
+</body>
+</html>
