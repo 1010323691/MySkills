@@ -35,7 +35,7 @@ description: "在用户明确要求执行 PR 审核闭环时使用（如「对�
 
 | 能力 | 做法 | 兜底 |
 |---|---|---|
-| 启动审核者 | Claude Code：`Agent` 工具（后台运行，完成自动通知，不要轮询），固定传 `model: "opus"`（Opus 5.5）、`effort: "low"`，不随风险分级调整。Codex：子 Agent，用宿主可选模型，强度低风险 `medium`、高风险或拿不准 `high` | 无独立子 Agent 能力时停止并报告缺项，**不以主 Agent 自审代替**。实际配置与上述不符时在最终报告注明 |
+| 启动审核者 | Claude Code：`Agent` 工具（后台运行，完成自动通知，不要轮询），固定传 `model: "sonnet"`（Sonnet 5.5）、`effort: "medium"`，不随风险分级调整。Codex：子 Agent，用宿主可选模型，强度低风险 `medium`、高风险或拿不准 `high` | 无独立子 Agent 能力时停止并报告缺项，**不以主 Agent 自审代替**。实际配置与上述不符时在最终报告注明 |
 | 续用上轮审核者 | Claude Code：同一主会话内用 `SendMessage` 发送续用消息 | 不可用、会话已中断或不满足 2.2 续用条件 → 新起 |
 | 合并 | `gh pr merge`（5.3） | 被宿主权限或自动模式分类器拒绝（如 `[Merge Without Review]`）：不重试同一命令，不变通——不直推 base、不 `--admin`、不去掉 SHA 约束、**不用 `gh pr merge --auto` 或宿主 `set_auto_merge` 之类的自动合并替代**。把精确命令交给用户，给两个选项：用户自己执行；或用户在宿主放行该命令后由 Agent 重新执行。完成后本会话继续 5.4 |
 | PR 关联 / CI 监控 | Claude Code 桌面版：`mcp__ccd_pr__bind_pr`、`get_status`、`set_monitor`（延迟加载，先用 ToolSearch 加载）；Codex：`attach_artifact` | `python3 <S> --wait-ci`（5.2）；不要假定专用工具存在 |

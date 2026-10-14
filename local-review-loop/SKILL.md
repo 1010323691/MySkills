@@ -34,7 +34,7 @@ description: "本地审核闭环（无 PR 介质）：用户明确要求「走�
 
 | 能力 | 做法 | 兜底 |
 |---|---|---|
-| 启动审核者 | Claude Code：`Agent` 工具（后台运行，完成自动通知，不要轮询），固定传 `model: "opus"`（Opus 5.5）、`effort: "low"`，不随风险分级调整。Codex：子 Agent，用宿主可选模型，强度低风险 `medium`、高风险或拿不准 `high` | 无独立子 Agent 能力时停止并报告缺项，**不以主 Agent 自审代替** |
+| 启动审核者 | Claude Code：`Agent` 工具（后台运行，完成自动通知，不要轮询），固定传 `model: "sonnet"`（Sonnet 5.5）、`effort: "medium"`，不随风险分级调整。Codex：子 Agent，用宿主可选模型，强度低风险 `medium`、高风险或拿不准 `high` | 无独立子 Agent 能力时停止并报告缺项，**不以主 Agent 自审代替** |
 | 续用上轮审核者 | Claude Code：同一主会话内用 `SendMessage` | 不可用、会话已中断或不满足 2.2 条件 → 新起 |
 | 审核者写不了 REVIEW.md | 审核者回信给出完整报告文件路径与 sha256；主 Agent 校验后**原样**追加，首行加 `> 代发：审核者 <标识> 原始报告，sha256 <值>，未改动` | 主 Agent 改动任何内容都使该报告无效 |
 
