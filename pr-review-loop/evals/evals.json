@@ -233,7 +233,7 @@
     {
       "id": 21,
       "name": "resume-trusted-clear",
-      "prompt": "会话中断后接手 PR #9。最新评论是第 2 轮审核 Verdict: CLEAR，Reviewed-Head 等于当前 HEAD，评论首部写明审核者标识与「Sonnet 5.5 / medium / 新起」，pr_state.py 未报告编辑或格式异常，前后处理报告轮次与 SHA 连贯。CI 不适用已记录。下一步？",
+      "prompt": "会话中断后接手 PR #9。最新评论是第 2 轮审核 Verdict: CLEAR，Reviewed-Head 等于当前 HEAD，评论首部写明审核者标识与「Opus 5.5 / low / 新起」，pr_state.py 未报告编辑或格式异常，前后处理报告轮次与 SHA 连贯。CI 不适用已记录。下一步？",
       "expectations": [
         "按结论可信条件核对后沿用该 CLEAR，不必再起一轮审核",
         "直接进入第 5 节门禁与合并"

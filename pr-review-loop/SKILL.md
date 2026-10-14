@@ -35,7 +35,7 @@ description: "在用户明确要求执行 PR 审核闭环时使用（如「对�
 
 | 能力 | 做法 | 兜底 |
 |---|---|---|
-| 启动审核者 | Claude Code：`Agent` 工具（后台运行，完成自动通知，不要轮询），传 `model: "sonnet"`（Sonnet 5.5）；`effort` 低风险 `medium`、高风险或拿不准 `high`。Codex：子 Agent，无法指定 Sonnet 时用宿主可选模型并按同样规则选强度 | 无独立子 Agent 能力时停止并报告缺项，**不以主 Agent 自审代替**。实际配置与上述不符时在最终报告注明 |
+| 启动审核者 | Claude Code：`Agent` 工具（后台运行，完成自动通知，不要轮询），固定传 `model: "opus"`（Opus 5.5）、`effort: "low"`，不随风险分级调整。Codex：子 Agent，用宿主可选模型，强度低风险 `medium`、高风险或拿不准 `high` | 无独立子 Agent 能力时停止并报告缺项，**不以主 Agent 自审代替**。实际配置与上述不符时在最终报告注明 |
 | 续用上轮审核者 | Claude Code：同一主会话内用 `SendMessage` 发送续用消息 | 不可用、会话已中断或不满足 2.2 续用条件 → 新起 |
 | 合并 | `gh pr merge`（5.3） | 被宿主权限或自动模式分类器拒绝（如 `[Merge Without Review]`）：不重试同一命令，不变通——不直推 base、不 `--admin`、不去掉 SHA 约束、**不用 `gh pr merge --auto` 或宿主 `set_auto_merge` 之类的自动合并替代**。把精确命令交给用户，给两个选项：用户自己执行；或用户在宿主放行该命令后由 Agent 重新执行。完成后本会话继续 5.4 |
 | PR 关联 / CI 监控 | Claude Code 桌面版：`mcp__ccd_pr__bind_pr`、`get_status`、`set_monitor`（延迟加载，先用 ToolSearch 加载）；Codex：`attach_artifact` | `python3 <S> --wait-ci`（5.2）；不要假定专用工具存在 |
@@ -48,7 +48,7 @@ description: "在用户明确要求执行 PR 审核闭环时使用（如「对�
 1. 确认在 Git 仓库；读取适用的 `AGENTS.md`/`CLAUDE.md` 与项目验证约定；确认 GitHub 仓库/host、`gh auth status` 权限、子 Agent 能力。缺条件就说明缺项并保留进度。
 2. 记录：目标仓库、remote 名、base/head、改动范围、是否已有 PR、完整 HEAD SHA、分支是否本轮创建、**启动时所在分支**（5.4 收尾时回到这里）、用户限制。多 remote 或多个候选 PR 时先核实，不把修改发到猜测的仓库。
 3. 检查工作区与 staged diff。只暂存本次范围文件（不用 `git add .`）；用户无关改动原样保留。需切到已有 PR 而工作区不干净时，用独立 worktree（`git worktree add <目录> <分支>`），不自动 stash、丢弃或重置。
-4. 风险分级：迁移、认证/额度、并发、路径/子进程、任务分发、CI/权限配置等为高风险，拿不准按高风险。分级决定自检强度与审核者 effort。低风险**只是**可能一轮收敛，逐项处置、CI、合并与合并后确认一项不少。
+4. 风险分级：迁移、认证/额度、并发、路径/子进程、任务分发、CI/权限配置等为高风险，拿不准按高风险。分级决定自检强度（Codex 下还决定审核者强度）。低风险**只是**可能一轮收敛，逐项处置、CI、合并与合并后确认一项不少。
 5. **提交前自检（先于验证与建 PR）**：用 `code-review` 技能审自己的改动并修复，把明显缺陷在进入 PR 前消化掉。
    - 范围：待提交的本地改动相对 base 的完整 diff（含未暂存/未提交内容）；接手的已有 PR 则审本轮将新增的提交。
    - 强度：低风险 `medium`，高风险或拿不准 `high`。
