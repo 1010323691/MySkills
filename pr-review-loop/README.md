@@ -1,35 +1,29 @@
 # pr-review-loop — PR 审核闭环
 
-在用户明确要求执行闭环时，完成创建或接手 PR、独立审核、逐项修复/反驳、复审、合并和安全清理。主 Agent 修改，审核子 Agent 只审核与评论；全部发现都要处理，`Verdict: CLEAR` 绑定完整 HEAD SHA。
+在用户明确要求执行闭环时，完成创建或接手 PR、提交前自检、独立审核、逐项修复/反驳、复审、合并和安全清理。主 Agent 修改，审核子 Agent 只审核与评论；`Verdict: CLEAR` 绑定完整 HEAD SHA。规则以 [SKILL.md](SKILL.md) 为准，本文件只说明用途与依赖。
 
 ## 使用
 
-例如：「对这个 PR 走审核闭环」，或「用 `$pr-review-loop` 完成当前改动的 PR 闭环」。仅询问、评审或优化技能本身，不启动此流程。用户指定只审核、不推送或不合并时遵守限定范围。
+例如：「对这个 PR 走审核闭环」，或「用 `$pr-review-loop` 完成当前改动的 PR 闭环」。仅询问、评审或优化技能本身，不启动此流程。一经启动直接进入流程，不反问用户；用户限定只审核、不推送或不合并时遵守限定范围。
 
-完整闭环授权范围内的提交、推送、PR 评论、合并及本轮分支安全清理，均由主 Agent 自动执行，无需逐步确认，也不交给用户手动合并或删分支。低风险可以一轮收敛，仍须完成全部合并门禁与实际合并确认。
-
-## 提交前自检
-
-闭环的第一步不是建 PR，而是先用 `code-review` 技能审自己的改动并修复（低风险 `medium`，高风险 `high`+，只跑一轮、修完不复跑），再验证、建 PR；第 3 节的修复提交推送前同样自检。自检只是减少无谓往返，不产生 `Verdict`，不替代独立审核，也不满足任何合并门禁。
-
-## 依赖与门禁
+## 依赖
 
 - Git 仓库、明确的 GitHub 远端，已登录且具备所需权限的 `gh`。
-- 宿主支持独立子 Agent；验证使用项目 `AGENTS.md` / `CLAUDE.md` 等约定。
+- 宿主支持独立子 Agent（Claude Code 的 `Agent` / `SendMessage`，或 Codex 子 Agent）。
 - Python 3（运行 `scripts/pr_state.py`；Windows 用 `python`）。
-- 所有审核子 Agent 一律使用 Sonnet 5.5 + effort `medium`（每轮、每种风险级别均如此）。
-- 审核子 Agent 无权发布评论时，由主 Agent 校验 sha256 后原样代发并标注来源。
-- 当前 HEAD 的独立 CLEAR、所有发现独立核销/裁决、适用 CI 通过和仓库保护满足后才合并。确实无适用 CI 时记录不适用；空检查或未知状态不算通过。
-- 合并使用 `--match-head-commit` 防止审核后提交竞态。入队不等于已合并；实际合并后才安全清理本轮专用分支，已有共享分支默认保留。
+- 可选：`code-review` 技能（提交前自检；不可用时退化为人工通读 diff）。
+- 宿主拒绝合并命令时（如 Claude Code 自动模式对无正式 review 的 PR），由用户执行交接的精确合并命令（或在宿主放行后由 Agent 重新执行），其余步骤仍在会话内完成。
 
 ## 文件
 
 ```text
 pr-review-loop/
-├── SKILL.md                         流程总览、授权、审核、逐项处理、合并门禁与清理
-├── scripts/pr_state.py              只读汇总门禁事实：完整 HEAD、全部 Verdict 及绑定 SHA、CI 分桶、可机械判定的阻塞项
-├── references/reviewer-brief.md     每轮启动审核子 Agent 的任务书模板（只给事实，不给结论）
-├── references/report-templates.md   审核/处理报告模板、代发格式与 CLI 依据
+├── SKILL.md                         主 Agent 流程：授权、宿主适配、准备与自检、复审方式、逐项处理、合并门禁与清理
+├── scripts/pr_state.py              只读门禁事实：结论（含格式/编辑校验）、CI 与适用性、base 保护/rulesets/合并队列、可合并性；--repo-facts 仓库事实；--wait-ci 有界等待（绑定 HEAD、容忍瞬时错误）
+├── scripts/test_pr_state.py         pr_state.py 纯函数测试（不联网）
+├── references/reviewer-guide.md     审核子 Agent 规程：读取范围、取证、定级、复审、审核报告模板、发布
+├── references/reviewer-brief.md     新起 / 续用审核者的任务书模板（只给事实，不给结论）
+├── references/report-templates.md   主 Agent 评论模板：处理报告、仅供参考处置记录、闭环状态、代发
 ├── references/merge-queue.md        合并队列与自动合并的异步风险处理
 ├── agents/openai.yaml               Codex：仅显式调用
 └── evals/evals.json                 隔离决策模拟回归场景
