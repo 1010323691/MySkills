@@ -17,6 +17,7 @@
 - Git 仓库、明确的 GitHub 远端，已登录且具备所需权限的 `gh`。
 - 宿主支持独立子 Agent；验证使用项目 `AGENTS.md` / `CLAUDE.md` 等约定。
 - Python 3（运行 `scripts/pr_state.py`；Windows 用 `python`）。
+- 所有审核子 Agent 一律使用 Sonnet 5.5 + effort `medium`（每轮、每种风险级别均如此）。
 - 审核子 Agent 无权发布评论时，由主 Agent 校验 sha256 后原样代发并标注来源。
 - 当前 HEAD 的独立 CLEAR、所有发现独立核销/裁决、适用 CI 通过和仓库保护满足后才合并。确实无适用 CI 时记录不适用；空检查或未知状态不算通过。
 - 合并使用 `--match-head-commit` 防止审核后提交竞态。入队不等于已合并；实际合并后才安全清理本轮专用分支，已有共享分支默认保留。

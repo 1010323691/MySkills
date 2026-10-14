@@ -32,7 +32,7 @@ description: "在用户明确要求执行 PR 审核闭环时使用（如「对�
 
 | 能力 | 有专用工具时 | 兜底 |
 |---|---|---|
-| 启动审核者 | Claude Code：`Agent` 工具（可后台运行，完成自动通知，不要轮询）；Codex：子 Agent | 无独立子 Agent 能力时停止并报告缺项，**不以主 Agent 自审代替** |
+| 启动审核者 | Claude Code：`Agent` 工具（可后台运行，完成自动通知，不要轮询），**必须传 `model: "sonnet"`（Sonnet 5.5）和 `effort: "medium"`**；Codex：子 Agent，同样指定 Sonnet 5.5 + medium | 无独立子 Agent 能力时停止并报告缺项，**不以主 Agent 自审代替** |
 | PR 关联 / CI 监控 | Claude Code 桌面版的 PR 状态/绑定工具；Codex 的 `attach_artifact` | 第 5.2 节有界等待；不要假定专用工具存在 |
 | 分支前缀 | 宿主设置或用户/项目约定（Codex 惯例 `codex/`） | `review-loop/<kebab-case>` |
 
@@ -64,7 +64,7 @@ gh pr create --repo <OWNER/REPO> --base <base> --head <head> --title "<中文标
 
 **已有 PR**：复用其仓库、base、head、URL，核实提交属于任务范围；不另建重复 PR，不擅自改 base 或强推 head。已合并/关闭或 head 不可写时，先报告状态与可行下一步。已有/共享分支不列入自动删除对象。PR 上已有审核历史时，先按第 4 节「恢复」重建状态。
 
-报告 PR URL，按「宿主适配」关联 PR。然后用 [references/reviewer-brief.md](references/reviewer-brief.md) 的任务书启动本轮审核者。任务书只给事实（PR、SHA、范围、轮次、上轮链接、限制、技能路径），**不附主 Agent 对代码质量的判断**——审核者的独立性正来自不被预设结论引导。审核者运行期间，主 Agent 不修改、不推送该分支。
+报告 PR URL，按「宿主适配」关联 PR。然后用 [references/reviewer-brief.md](references/reviewer-brief.md) 的任务书启动本轮审核者。任务书只给事实（PR、SHA、范围、轮次、上轮链接、限制、技能路径），**不附主 Agent 对代码质量的判断**——审核者的独立性正来自不被预设结论引导。**所有轮次的审核者（首轮、复审、对同一 HEAD 的裁决）一律使用 Sonnet 5.5 + effort `medium`**，不随主会话模型或风险级别升降；宿主不支持指定模型/强度时，在最终报告中如实注明实际使用的配置。审核者运行期间，主 Agent 不修改、不推送该分支。
 
 ## 2. 独立审核（审核子 Agent 执行）
 
