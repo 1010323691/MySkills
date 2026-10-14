@@ -1,6 +1,5 @@
 /* Mist application adapter. Layout, row heights and semantic chart colours stay
    in admin.css; this file owns material and component interaction states. */
-@import './tokens.css';
 
 .mist.admin-shell {
   /* Material tokens inherit from Mist, including its current cream palette. */
