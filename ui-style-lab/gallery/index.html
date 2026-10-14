@@ -13,30 +13,43 @@
       <h1>把灵感，变成可用的界面。</h1>
       <p>从参考图片到组件代码。每一种样式独立保存，在这里预览、比较与复用。</p>
     </header>
-    <section class="collection" aria-labelledby="collection-title">
+    <nav class="category-nav" aria-label="样式分类">
+      <a href="#data-visualization">后台管理 · 数据可视化 <span>20 种图表 / 10 种仪表盘</span></a>
+      <a href="#interface-components">界面组件 <span>组件套件 / 按钮 / 开关</span></a>
+    </nav>
+    <section class="collection" id="data-visualization" aria-labelledby="data-visualization-title">
       <div class="section-heading">
-        <h2 id="collection-title">样式收藏</h2>
-        <span class="collection-note">本地静态预览 · HTML + CSS</span>
+        <h2 id="data-visualization-title">后台管理 · 数据可视化</h2>
+        <span class="collection-note">图表样式 · 仪表盘布局 · 适用场景</span>
       </div>
       <div class="style-grid">
-        <!-- 新样式在此添加卡片，保留已有样式。 -->
         <article class="style-card style-card--wide">
           <div class="card-heading"><div><span class="style-kind">CHART ATLAS / 图表与仪表盘样式库</span><h3>后台图表与仪表盘 · Admin Atlas</h3></div><span class="badge">独立套件 · v2.0.0</span></div>
           <p class="card-description">从五张参考逐项提取 20 种图表与数据组件、10 种仪表盘布局。分别保留折线、面积、条纹柱、渐变柱、环形、仪表、漏斗、地图与日程的视觉特点，定义来源、适用场景和数据要求。支持分类与场景搜索。</p>
           <iframe src="../styles/admin-light/demo.html" title="后台图表与仪表盘分类及适用场景" loading="lazy" style="height:1450px"></iframe>
           <footer class="card-links"><a class="preview-link" href="../styles/admin-light/demo.html" target="_blank" rel="noopener">打开图表 / 仪表盘目录 ↗</a><div><a href="../styles/admin-light/charts.css">图表 CSS</a><a href="../styles/admin-light/notes.md">适用场景与复用说明</a></div></footer>
         </article>
+      </div>
+    </section>
+    <section class="collection" id="interface-components" aria-labelledby="collection-title">
+      <div class="section-heading">
+        <h2 id="collection-title">界面组件</h2>
+        <span class="collection-note">本地静态预览 · HTML + CSS</span>
+      </div>
+      <div class="style-grid">
+        <!-- 新样式在此添加卡片，保留已有样式。 -->
+
 
         <article class="style-card style-card--wide">
           <div class="card-heading">
             <div><span class="style-kind">COMPONENT LIBRARY / 新拟态组件库</span><h3>雾灰 · Mist 组件库</h3></div>
-            <span class="badge">独立套件 · v1.0.0</span>
+            <span class="badge">独立套件 · v1.3.0</span>
           </div>
-          <p class="card-description">统一浅灰表面与柔和双向阴影。包含温控旋钮、场景卡片、设备列表、按钮、搜索栏、选择控件、滑杆和弹窗。</p>
-          <iframe src="../styles/mist/demo.html" title="雾灰 Mist 完整组件库展示" loading="lazy"></iframe>
+          <p class="card-description">新版米白浮雕材质：同色画布与表面、暖白高光及更明显的双向阴影。包含温控旋钮、场景卡片、设备列表、按钮、搜索栏、选择控件、滑杆和弹窗。</p>
+          <iframe src="../styles/mist/demo.html?v=1.3.0" title="雾灰 Mist 完整组件库展示" loading="lazy"></iframe>
           <footer class="card-links">
-            <a class="preview-link" href="../styles/mist/demo.html" target="_blank" rel="noopener">打开完整组件库 <span aria-hidden="true">↗</span></a>
-            <div><a href="../styles/mist/component.css">组件 CSS</a><a href="../styles/mist/notes.md">组件清单与用法</a></div>
+            <a class="preview-link" href="../styles/mist/demo.html?v=1.3.0" target="_blank" rel="noopener">打开完整组件库 <span aria-hidden="true">↗</span></a>
+            <div><a href="../styles/mist/narrify-admin.html">Narrify 后台预览</a><a href="../styles/mist/component.css">组件 CSS</a><a href="../styles/mist/white-material.html">白色悬浮对照</a><a href="../styles/mist/notes.md">组件清单与用法</a></div>
           </footer>
         </article>
         <article class="style-card">
