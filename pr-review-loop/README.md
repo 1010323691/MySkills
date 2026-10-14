@@ -12,17 +12,18 @@
 - 宿主支持独立子 Agent（Claude Code 的 `Agent` / `SendMessage`，或 Codex 子 Agent）。
 - Python 3（运行 `scripts/pr_state.py`；Windows 用 `python`）。
 - 可选：`code-review` 技能（提交前自检；不可用时退化为人工通读 diff）。
-- 宿主拒绝合并命令时（如 Claude Code 自动模式对无正式 review 的 PR），由用户执行交接的精确合并命令，其余步骤仍在会话内完成。
+- 宿主拒绝合并命令时（如 Claude Code 自动模式对无正式 review 的 PR），由用户执行交接的精确合并命令（或在宿主放行后由 Agent 重新执行），其余步骤仍在会话内完成。
 
 ## 文件
 
 ```text
 pr-review-loop/
 ├── SKILL.md                         主 Agent 流程：授权、宿主适配、准备与自检、复审方式、逐项处理、合并门禁与清理
-├── scripts/pr_state.py              只读汇总门禁事实：完整 HEAD、全部 Verdict（含格式/编辑校验）、CLEAR 后改动、CI 与适用性、可合并性
-├── references/reviewer-guide.md     审核子 Agent 规程：取证、定级、结论格式、发布与复审
+├── scripts/pr_state.py              只读门禁事实：结论（含格式/编辑校验）、文案豁免候选、CI 与适用性、base 保护/rulesets/合并队列、可合并性；--repo-facts 仓库事实；--wait-ci 有界等待
+├── scripts/test_pr_state.py         pr_state.py 纯函数测试（不联网）
+├── references/reviewer-guide.md     审核子 Agent 规程：读取范围、取证、定级、复审、审核报告模板、发布
 ├── references/reviewer-brief.md     新起 / 续用审核者的任务书模板（只给事实，不给结论）
-├── references/report-templates.md   审核报告、处理报告、仅供参考处置记录与代发格式
+├── references/report-templates.md   主 Agent 评论模板：处理报告、仅供参考处置记录、闭环状态、代发
 ├── references/merge-queue.md        合并队列与自动合并的异步风险处理
 ├── agents/openai.yaml               Codex：仅显式调用
 └── evals/evals.json                 隔离决策模拟回归场景

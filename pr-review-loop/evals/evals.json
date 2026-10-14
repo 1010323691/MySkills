@@ -11,7 +11,7 @@
         "确认实际 MERGED 后才清理分支",
         "主 Agent 自行执行合并与本轮分支删除，不交给用户手动操作、不再询问是否合并"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "主 Agent 直接合并（绑定 SHA）、确认 MERGED、按 5.4 清理本轮分支并给出最终报告，全程不询问用户。",
       "files": []
     },
     {
@@ -23,18 +23,19 @@
         "保护无关改动并用干净独立 checkout/worktree",
         "不把已有共享分支作为自动删除对象"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "复用 PR #42 与 release/2.x，在独立 worktree 中工作，不动用户改动，不把同事分支列为删除对象。",
       "files": []
     },
     {
       "id": 3,
       "name": "ci-no-checks",
-      "prompt": "PR 当前 HEAD 已取得 CLEAR，所有发现项关闭。仓库配置 CI，但 gh pr checks 暂时返回 no checks reported，没有任何成功记录，也没有可用推送监控工具。现在能否合并？后续怎么推进？",
+      "prompt": "PR 当前 HEAD 已取得 CLEAR，所有发现项关闭。仓库配置了 CI（有 .github/workflows），刚推送不久，gh pr checks 返回 no checks reported，没有任何成功记录，也没有可用的宿主 CI 监控工具。现在能否合并？后续怎么推进？",
       "expectations": [
         "空检查不等于通过或未配置 CI，禁止合并",
-        "给出可恢复等待/核查路径，不因禁止轮询永久放弃"
+        "用 pr_state.py --wait-ci 先等检查注册再等结果，不把刚推送时的 no checks reported 当作失败，也不因禁止轮询永久放弃",
+        "宽限期后仍无检查（退出码 3）用 gh run list 与 workflow 触发条件核实"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "判定不可合并，给出 --wait-ci 等待与核实路径及各退出码的后续动作。",
       "files": []
     },
     {
@@ -45,7 +46,7 @@
         "合并命令绑定审核 SHA，防止检查后竞态",
         "新 HEAD 重新审核且禁止绕过保护强制合并"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "给出带 --match-head-commit aaaa… 的合并命令；失败后对新 HEAD 重新审核，不强合、不去掉 SHA 约束。",
       "files": []
     },
     {
@@ -56,7 +57,7 @@
         "建议修不能单方跳过，反驳被驳回后的分歧升级用户裁定",
         "保留稳定编号、修复证据和再裁决记录，用户裁定前禁止合并"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "判定建议修不能单方跳过，升级用户裁定，裁定前不合并，并列出应保留的记录。",
       "files": []
     },
     {
@@ -67,7 +68,7 @@
         "按语义判定逻辑/安全影响并补当前变更验证",
         "skipped 不能直接当全部 CI 通过，需核实适用性及仓库要求"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "按语义把安全配置判为行为改动，要求对当前 SHA 补验证，并核实 skipped 的 required 检查。",
       "files": []
     },
     {
@@ -77,7 +78,7 @@
       "expectations": [
         "评审技能文件不等于启动 PR 闭环，无默认提交推送或外部发布权限"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "判定只评审技能、不启动闭环，不提交、不推送、不发布、不合并。",
       "files": []
     },
     {
@@ -88,7 +89,7 @@
         "加入队列不等于已合并，等待核实实际 MERGED",
         "保留共享/其他 worktree 分支，不强删，不谎称清理完成"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "判定尚未合并，持续跟踪到 MERGED；共享分支与被其他 worktree 使用的分支保留，并如实报告清理未完成。",
       "files": []
     },
     {
@@ -99,7 +100,7 @@
         "校验哈希后原样代发并标注代发来源，不改动报告内容",
         "未发布到 PR 前不把草稿当作有效结论推进"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "校验 sha256 后原样代发并加代发标注；发布前不据草稿结论推进。",
       "files": []
     },
     {
@@ -110,7 +111,7 @@
         "仅供参考不阻塞合并，主 Agent 可不采纳，但须写明理由留痕",
         "不需要新审核者裁决；合并前在 PR 发布仅供参考处置记录，再走第 5 节门禁合并"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "可不采纳并写理由，发布仅供参考处置记录后直接走第 5 节合并，不起新审核者。",
       "files": []
     },
     {
@@ -121,7 +122,7 @@
         "识别旧 CLEAR 不绑定当前 HEAD 而失效，不能直接合并",
         "先读全部评论重建编号项状态，再起新审核者对当前 HEAD 复审"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "识别旧 CLEAR 不绑定当前 HEAD；读评论重建状态，按豁免候选与可信条件判断，最终起新审核者复审。",
       "files": []
     },
     {
@@ -134,7 +135,7 @@
         "PR 正文如实记录自检情况",
         "不把自检当作 Verdict/CLEAR，仍启动独立审核子 Agent，且任务书不附自检结论"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "先 code-review（high）自检一轮并核对 --fix 改动，再验证、提交、建 PR，PR 正文记录自检，之后启动独立审核者。",
       "files": []
     },
     {
@@ -145,7 +146,7 @@
         "不反问用户，直接进入第 0 节准备与自检",
         "分支名、base、合并策略按默认/项目约定自行决定并在 PR 中注明"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "不反问，直接进入第 0 节；按取值顺序确定分支、base、合并策略并在 PR 中注明。",
       "files": []
     },
     {
@@ -158,7 +159,7 @@
         "注释错别字提交须满足文案豁免全部条件（只改点名文件、仅注释文字、非行为载体、线性追加、无其他未关闭项），用 pr_state.py 列出的 CLEAR 后改动文件核对",
         "满足则发布仅供参考处置记录后用 --match-head-commit 绑定当前 HEAD 合并；任一条件不满足则按常规复审"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "PR 正文用 gh pr edit 改；注释提交须核对文案豁免五项条件，满足则发处置记录后绑定当前 HEAD 合并，否则复审。",
       "files": []
     },
     {
@@ -170,7 +171,7 @@
         "把带 --match-head-commit 的精确合并命令交给用户执行",
         "用户回复已合并后，本会话继续确认 MERGED 并按 5.4 安全清理分支"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "不重试、不变通、不用自动合并替代，交出精确命令并给出两种执行选项，合并后本会话继续确认与清理。",
       "files": []
     },
     {
@@ -181,7 +182,7 @@
         "不能沿用：改动了未点名文件、行为载体文件（配置、技能文件），文案豁免作废",
         "对当前 HEAD 按常规复审，SKILL.md 等提示词文件的文字改动按行为改动对待"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "判定文案豁免作废（未点名文件与行为载体），对当前 HEAD 常规复审。",
       "files": []
     },
     {
@@ -192,7 +193,7 @@
         "格式不符的新结论与被编辑过的结论都是阻塞项，不能据此合并",
         "不由主 Agent 修改或认定结论；起新审核者对当前 HEAD 复核并发布格式合规、未编辑的完整报告"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "判定两者均为阻塞项，起新审核者对当前 HEAD 发布合规、未编辑的完整报告。",
       "files": []
     },
     {
@@ -203,31 +204,119 @@
         "遵守用户限定，不起复审，但新 HEAD 没有独立 CLEAR，门禁不满足，不合并",
         "发布处理报告标明 P1 为「已修复，待核销」，最终报告列出缺失门禁与恢复动作（合并前需复审）"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "遵守限定不复审，不合并；发布处理报告与闭环状态评论，写明缺失门禁与恢复动作。",
       "files": []
     },
     {
       "id": 19,
       "name": "no-ci-repo",
-      "prompt": "仓库没有 .github/workflows，base 分支无保护。第 0 节该如何处理 CI？后续每轮还要重新核实吗？合并门禁怎么判断 CI？",
+      "prompt": "仓库没有 .github/workflows，base 分支无保护（接口返回 Branch not protected），rulesets 为空。第 0 节该如何处理 CI？后续每轮还要重新核实吗？合并门禁怎么判断 CI？",
       "expectations": [
-        "第 0 节一次性核实 base/head 无 workflows、无 required checks，在 PR 正文记录 CI 不适用及依据",
-        "后续轮次引用该记录，不重复核实、不跑 gh pr checks --watch 等待",
-        "合并前以 pr_state.py 的适用性=no_workflows 复核无矛盾即可；新增 workflow 时重新判断"
+        "第 0 节用 pr_state.py --repo-facts 一次性核实，在 PR 正文记录 CI 不适用及依据",
+        "后续轮次与审核者引用该记录，不重复核实、不跑 CI 等待",
+        "合并前以 pr_state.py 的适用性=no_workflows 复核无矛盾；新增 workflow 时重新判断"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "第 0 节一次性记录 CI 不适用，后续引用，门禁阶段用脚本复核。",
       "files": []
     },
     {
       "id": 20,
       "name": "reviewer-continue-or-fresh",
-      "prompt": "第 1 轮 BLOCKED：[P1] 必须修、[P2] 建议修。主 Agent 修复了 P1（改动 8 行，只涉及 P1 所在文件），书面反驳了 P2，没改 base。同一主会话仍在。第 2 轮复审续用上轮审核者还是新起？",
+      "prompt": "第 1 轮审核 BLOCKED：[P1] 必须修、[P2] 建议修。主 Agent 修复了 P1（改动 8 行，只涉及 P1 所在文件），书面反驳了 P2，没改 base。同一主会话仍在。第 2 轮审核续用上轮审核者还是新起？",
       "expectations": [
         "有待裁决的反驳，不满足续用条件，必须新起审核者",
-        "若只有已修复待核销项、增量小且只改涉事文件、无 base 变化、非第 3 轮，才可用 SendMessage 续用上轮审核者",
         "处理报告注明复审方式及依据"
       ],
-      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "expected_output": "判定必须新起审核者，并在处理报告注明依据。",
+      "files": []
+    },
+    {
+      "id": 21,
+      "name": "resume-trusted-clear",
+      "prompt": "会话中断后接手 PR #9。最新评论是第 2 轮审核 Verdict: CLEAR，Reviewed-Head 等于当前 HEAD，评论首部写明审核者标识与「Sonnet 5.5 / medium / 新起」，pr_state.py 未报告编辑或格式异常，前后处理报告轮次与 SHA 连贯。CI 不适用已记录。下一步？",
+      "expectations": [
+        "按结论可信条件核对后沿用该 CLEAR，不必再起一轮审核",
+        "直接进入第 5 节门禁与合并"
+      ],
+      "expected_output": "核对可信条件后直接进入第 5 节合并，不额外起审核者。",
+      "files": []
+    },
+    {
+      "id": 22,
+      "name": "reviewer-continue-positive",
+      "prompt": "第 1 轮审核 BLOCKED：仅 [P1] 必须修。主 Agent 修复 P1，改动 12 行，只涉及 P1 所在文件及其测试文件，无反驳、无 base 变化，同一主会话中第 1 轮审核者仍可续用。第 2 轮审核怎么启动？",
+      "expectations": [
+        "满足全部续用条件，用 SendMessage 续用上轮审核者并发送续用消息",
+        "续用审核者仍发布绑定新 HEAD 的完整报告，处理报告注明复审方式"
+      ],
+      "expected_output": "用 SendMessage 续用上轮审核者，按续用模板发送事实，要求完整报告。",
+      "files": []
+    },
+    {
+      "id": 23,
+      "name": "ci-not-registered-after-push",
+      "prompt": "新 PR 刚推送，主 Agent 启动审核者的同时后台运行 timeout 600 gh pr checks <N> --watch，命令立即以退出码 1 结束并输出 no checks reported。仓库有 .github/workflows。这算 CI 失败吗？怎么做？",
+      "expectations": [
+        "不算失败：检查尚未注册",
+        "改用 pr_state.py --wait-ci 先等检查注册再等结果"
+      ],
+      "expected_output": "判定为检查尚未注册而非失败，改用 --wait-ci 等待。",
+      "files": []
+    },
+    {
+      "id": 24,
+      "name": "protection-unknown",
+      "prompt": "--repo-facts 显示分支保护为 unknown（接口返回 Not Found，HTTP 404），rulesets 读取成功含 required_status_checks，PR 未报告任何检查。能记录 CI 不适用吗？",
+      "expectations": [
+        "Not Found 的 404 可能是无权限，不能当作无保护",
+        "rulesets 要求 required checks，CI 不能记为不适用；无检查时阻塞并核实"
+      ],
+      "expected_output": "判定保护状态未知、rulesets 有 required checks，CI 不适用不成立，不合并。",
+      "files": []
+    },
+    {
+      "id": 25,
+      "name": "merge-queue-before-enqueue",
+      "prompt": "第 0 节 --repo-facts 显示 base 启用了合并队列（rulesets 含 merge_queue）。门禁已满足，准备合并。调用 gh pr merge 之前要做什么？",
+      "expectations": [
+        "调用 gh pr merge 之前先读 merge-queue.md，确认 HEAD/base 变化后的出队/失效保护",
+        "无法确认保护时不新增异步合并安排，报告缺少的证据交用户决定",
+        "入队后持续跟踪到 MERGED，入队不等于合并"
+      ],
+      "expected_output": "在入队前读 merge-queue.md 并核实出队保护，否则不入队；入队后跟踪到 MERGED。",
+      "files": []
+    },
+    {
+      "id": 26,
+      "name": "merge-strategy-choice",
+      "prompt": "用户和项目文件都没指定合并策略，仓库最近几次 PR 的合并方式不一致，--repo-facts 显示允许 squash、merge、rebase。合并命令用什么策略？要问用户吗？",
+      "expectations": [
+        "不问用户，按取值顺序：用户指定 → 项目约定/合并历史 → 允许方式按 squash > merge > rebase",
+        "历史不一致视为无约定，取 --squash，并在 PR 与最终报告注明"
+      ],
+      "expected_output": "不反问，按取值顺序选 --squash 并注明依据。",
+      "files": []
+    },
+    {
+      "id": 27,
+      "name": "start-from-feature-branch",
+      "prompt": "用户在分支 feat/x 上（比 main 多 2 个与本次任务无关的已推送提交），工作区有本次任务的未提交改动，要求走完整闭环。怎样建分支与 PR？收尾时回到哪里？",
+      "expectations": [
+        "先看 git log <remote>/main..HEAD，无关提交不带进 PR，从 <remote>/main 切出新分支只带本次改动",
+        "记录启动分支 feat/x，清理后若当前在已删分支上则切回 feat/x"
+      ],
+      "expected_output": "从 base 切新分支只带本次改动；收尾回到启动分支 feat/x。",
+      "files": []
+    },
+    {
+      "id": 28,
+      "name": "user-ruled-close",
+      "prompt": "第 2 轮审核 BLOCKED（建议修 1 项）：[P3]。主 Agent 认为 P3 超出本 PR 范围，用户在对话中明确说「P3 不修，以后另开 PR」。没有其他未关闭项、HEAD 未变。怎么关闭 P3？",
+      "expectations": [
+        "记录用户原话为「用户裁定：不修」，主 Agent 不能自行关闭",
+        "由审核者（满足条件时可续用）记录裁定并给出新结论，之后才能合并"
+      ],
+      "expected_output": "处理报告记录用户裁定，审核者记录后给出 CLEAR，再合并。",
       "files": []
     }
   ]
