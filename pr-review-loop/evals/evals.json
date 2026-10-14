@@ -136,6 +136,30 @@
       ],
       "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
       "files": []
+    },
+    {
+      "id": 13,
+      "name": "no-ask-on-invoke",
+      "prompt": "用户说：用 $pr-review-loop 处理当前改动。仓库有唯一 origin，默认分支 main，未指定分支名与合并策略。主 Agent 第一步做什么？要先问用户确认吗？",
+      "expectations": [
+        "不反问用户，直接进入第 0 节准备与自检",
+        "分支名、base、合并策略按默认/项目约定自行决定并在 PR 中注明"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
+    },
+    {
+      "id": 14,
+      "name": "wording-only-finding-no-rereview",
+      "prompt": "首轮审核 Verdict: CLEAR，Reviewed-Head 等于当前 HEAD，CI 全绿，唯一发现是 [P1] PR 正文把「影响范围」写得含糊、另有一处注释错别字。怎么处理？要再送审吗？",
+      "expectations": [
+        "这两条属文案类，归仅供参考，不阻塞",
+        "PR 正文用 gh pr edit 修改，注释错别字可提交纯文字修复，或不采纳并留痕",
+        "无须再次送审，核对 diff 仅含纯文字后用 --match-head-commit 绑定当前 HEAD 直接合并",
+        "若修复提交含非纯文字改动则豁免作废，按常规复审"
+      ],
+      "expected_output": "在隔离环境中给出符合技能门禁和用户授权的行动计划、拟用命令、结束与恢复条件。",
+      "files": []
     }
   ]
 }
