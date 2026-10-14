@@ -1,0 +1,137 @@
+{
+  "skill_name": "local-review-loop",
+  "mode": "isolated decision simulation; no real file mutations outside a temp workspace",
+  "evals": [
+    {
+      "id": 1,
+      "name": "explicit-only",
+      "prompt": "用户只说「帮我把这个函数改一下」。主 Agent 改完且本地测试通过，要不要自动走本地审核闭环？",
+      "expectations": [
+        "不自动进入：只有用户明确要求执行才启动"
+      ],
+      "expected_output": "判定不启动本流程。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "no-ask-on-invoke",
+      "prompt": "用户说「这些改动不上 git，走本地审核闭环」。主 Agent 第一步做什么？要先问用户审哪些文件吗？",
+      "expectations": [
+        "不反问，直接进入第 0 节：风险分级、自检、验证",
+        "自行按本次改动确定 scope.txt（覆盖全部被改文件），写进 REVIEW.md"
+      ],
+      "expected_output": "不反问，直接准备并自行圈定清单。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "baseline-by-script",
+      "prompt": "主 Agent 准备手工用 sha256sum 拼接各文件哈希算基线指纹，写进 REVIEW.md 后启动审核者。这样做对吗？",
+      "expectations": [
+        "不对：用 review_state.py snapshot 计算指纹并生成快照，不手算",
+        "快照是下一轮增量 diff 的前提"
+      ],
+      "expected_output": "改用 snapshot 生成指纹与快照。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "clear-with-info-only",
+      "prompt": "首轮 Verdict: CLEAR，Reviewed-Baseline 等于当前指纹，唯一发现是 [P1] 仅供参考（建议把魔法数字提成常量）。主 Agent 不打算改。现在能收尾吗？",
+      "expectations": [
+        "可以不采纳，写一句理由，追加仅供参考处置记录",
+        "无须新审核者裁决；status --strict 无阻塞即收尾"
+      ],
+      "expected_output": "留痕后直接收尾，不起新审核者。",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "comment-fix-invalidates",
+      "prompt": "CLEAR 之后主 Agent 改了一处注释错别字（被审文件内），想直接收尾。可以吗？",
+      "expectations": [
+        "不可以：任何被审文件改动都使旧结论失效，status 会报基线不一致",
+        "重新 snapshot，追加处理报告，按 2.2 续用上轮审核者复审"
+      ],
+      "expected_output": "判定旧 CLEAR 失效，续用审核者复审。",
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "continue-or-fresh",
+      "prompt": "第 1 轮 BLOCKED：[P1] 必须修、[P2] 建议修。主 Agent 修了 P1（diff 显示 10 行，只涉及 P1 所在文件），书面反驳 P2，清单未变。第 2 轮续用还是新起？",
+      "expectations": [
+        "有待裁决的反驳，必须新起审核者",
+        "新起原因为只因反驳待裁决：读全表、处理报告、增量 diff 与争议项相关代码，不必审完整清单"
+      ],
+      "expected_output": "新起审核者，读取范围限于增量与争议项。",
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "scope-expansion",
+      "prompt": "修 P3 需要改动清单外的 utils.py。主 Agent 怎么做？",
+      "expectations": [
+        "把 utils.py 加入 scope.txt 并在处理报告注明",
+        "清单变化改变指纹，下一轮新起审核者审完整清单"
+      ],
+      "expected_output": "扩充清单并新起审核者审完整清单。",
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "rebuttal-rejected",
+      "prompt": "R2 新审核者驳回了主 Agent 对 [P2] 建议修的反驳，主 Agent 仍不同意，准备标为非阻塞后收尾。怎么处理？",
+      "expectations": [
+        "主 Agent 不能单方关闭建议修，提交用户裁定",
+        "裁定前不收尾；用户裁定后由审核者记录并给结论"
+      ],
+      "expected_output": "升级用户裁定，裁定前不收尾。",
+      "files": []
+    },
+    {
+      "id": 9,
+      "name": "reviewer-cannot-write",
+      "prompt": "后台审核者追加 REVIEW.md 时写入权限被拒，它把报告写到临时文件并回信给出路径与 sha256。主 Agent 下一步？",
+      "expectations": [
+        "校验 sha256 后原样追加，首行加代发标注",
+        "未追加前不把草稿结论当作有效结论推进"
+      ],
+      "expected_output": "校验后原样代发追加。",
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "resume-after-interrupt",
+      "prompt": "会话中断后接手。status 显示最新结论为第 2 轮 CLEAR，但绑定的指纹与当前不一致；其后有第 2 轮处理报告说改了一个仅供参考项。怎样恢复？",
+      "expectations": [
+        "旧 CLEAR 不绑定当前指纹而失效，不能收尾",
+        "读最新报告全表加其后处理报告重建状态，新起审核者复审（中断后无法续用）"
+      ],
+      "expected_output": "判定 CLEAR 失效，重建状态后新起审核者复审。",
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "reviewer-grades-skill-wording",
+      "prompt": "你是审核子 Agent，被审文件里有一份 SKILL.md，其中一句「可以不跑测试」容易让 Agent 跳过全部验证。定什么级别？",
+      "expectations": [
+        "SKILL.md 是行为载体，不属于文案类，不能定为仅供参考",
+        "按实际影响定为必须修或建议修"
+      ],
+      "expected_output": "按行为载体定为必须修或建议修。",
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "escalate-round-4",
+      "prompt": "第 4 轮审核仍为 BLOCKED。主 Agent 下一步？",
+      "expectations": [
+        "暂停循环，向用户提交问题、证据、已尝试方案与待裁定事项",
+        "得到裁定前不继续循环、不收尾"
+      ],
+      "expected_output": "升级用户，裁定前暂停。",
+      "files": []
+    }
+  ]
+}
