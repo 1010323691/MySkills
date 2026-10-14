@@ -19,7 +19,7 @@
 ```text
 pr-review-loop/
 ├── SKILL.md                         主 Agent 流程：授权、宿主适配、准备与自检、复审方式、逐项处理、合并门禁与清理
-├── scripts/pr_state.py              只读门禁事实：结论（含格式/编辑校验）、文案豁免候选、CI 与适用性、base 保护/rulesets/合并队列、可合并性；--repo-facts 仓库事实；--wait-ci 有界等待
+├── scripts/pr_state.py              只读门禁事实：结论（含格式/编辑校验）、CI 与适用性、base 保护/rulesets/合并队列、可合并性；--repo-facts 仓库事实；--wait-ci 有界等待（绑定 HEAD、容忍瞬时错误）
 ├── scripts/test_pr_state.py         pr_state.py 纯函数测试（不联网）
 ├── references/reviewer-guide.md     审核子 Agent 规程：读取范围、取证、定级、复审、审核报告模板、发布
 ├── references/reviewer-brief.md     新起 / 续用审核者的任务书模板（只给事实，不给结论）

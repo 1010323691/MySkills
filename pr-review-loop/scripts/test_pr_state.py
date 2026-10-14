@@ -26,8 +26,8 @@ RULES_NONE = {"protection": "none", "required_checks": [], "rulesets": [], "merg
 NO_WF = {"head": False, "base": False}
 
 
-def run(comments, pr=None, compare=None, all_checks=NO_CI, req=NO_CI, rules=RULES_NONE, wf=NO_WF):
-    return m.assess(pr or OPEN_PR, comments, all_checks, req, rules, wf, compare or (lambda x, y: None))
+def run(comments, pr=None, all_checks=NO_CI, req=NO_CI, rules=RULES_NONE, wf=NO_WF):
+    return m.assess(pr or OPEN_PR, comments, all_checks, req, rules, wf)
 
 
 class ParseVerdict(unittest.TestCase):
@@ -51,14 +51,7 @@ class ParseVerdict(unittest.TestCase):
         self.assertFalse(m.looks_like_verdict("普通评论"))
 
 
-class Carrier(unittest.TestCase):
-    def test_carriers(self):
-        for p in ("pr-review-loop/SKILL.md", "AGENTS.md", "x/references/a.md", "conf/app.yaml",
-                  ".github/workflows/ci.yml", "src/locales/zh.po"):
-            self.assertTrue(m.is_behavior_carrier(p), p)
-        for p in ("README.md", "src/app.py", "docs/guide.md"):
-            self.assertFalse(m.is_behavior_carrier(p), p)
-
+class Protection(unittest.TestCase):
     def test_protection(self):
         self.assertEqual(m.classify_protection(True, ""), "protected")
         self.assertEqual(m.classify_protection(False, "gh: Branch not protected (HTTP 404)"), "none")
@@ -79,6 +72,9 @@ class Assess(unittest.TestCase):
     def test_newer_malformed_blocks_older_does_not(self):
         newer = run([comment(report(SHA_A, "CLEAR"), 1), comment("x\nVerdict: CLEAR（附注）", 2)])
         self.assertTrue(any("格式不符" in b for b in newer["mechanical_blockers"]))
+        blocked_like = run([comment(report(SHA_A, "CLEAR"), 1), comment("x\nVerdict: BLOCKED (必须修 1 项)", 2)])
+        self.assertFalse(any("格式不符" in b for b in blocked_like["mechanical_blockers"]))
+        self.assertTrue(any("疑似 BLOCKED" in x for x in blocked_like["needs_manual_check"]))
         older = run([comment("x\nVerdict: CLEAR（附注）", 1), comment(report(SHA_A, "CLEAR"), 2)])
         self.assertEqual(older["mechanical_blockers"], [])
 
@@ -90,25 +86,8 @@ class Assess(unittest.TestCase):
         out = run([comment(report(SHA_A, "CLEAR"), 1, updated="2026-01-02T00:00:00Z")])
         self.assertTrue(any("被编辑" in b for b in out["mechanical_blockers"]))
 
-    def test_exemption_candidate(self):
-        cmp = lambda x, y: {"status": "ahead", "ahead_by": 1, "files": [{"filename": "src/app.py"}]}
-        out = run([comment(report(SHA_B, "CLEAR"), 1)], compare=cmp)
-        self.assertEqual(out["mechanical_blockers"], [])
-        self.assertEqual(out["exemption_candidate"]["files"], ["src/app.py"])
-
-    def test_exemption_rejected_for_carrier_or_diverged(self):
-        cmp = lambda x, y: {"status": "ahead", "ahead_by": 1, "files": [{"filename": "a/SKILL.md"}]}
-        out = run([comment(report(SHA_B, "CLEAR"), 1)], compare=cmp)
-        self.assertIsNone(out["exemption_candidate"])
-        self.assertTrue(any("行为载体" in b for b in out["mechanical_blockers"]))
-        cmp = lambda x, y: {"status": "diverged", "files": [{"filename": "src/app.py"}]}
-        out = run([comment(report(SHA_B, "CLEAR"), 1)], compare=cmp)
-        self.assertTrue(any("非线性" in b for b in out["mechanical_blockers"]))
-
-    def test_blocked_not_exempt(self):
-        out = run([comment(report(SHA_B, "BLOCKED（必须修 1 项）"), 1)],
-                  compare=lambda x, y: {"status": "ahead", "files": [{"filename": "src/app.py"}]})
-        self.assertIsNone(out["exemption_candidate"])
+    def test_unbound_clear_blocks(self):
+        out = run([comment(report(SHA_B, "CLEAR"), 1)])
         self.assertTrue(any("重新审核" in b for b in out["mechanical_blockers"]))
 
     def test_mergeability(self):
@@ -125,9 +104,48 @@ class Assess(unittest.TestCase):
         self.assertTrue(any("合并队列" in x for x in out["needs_manual_check"]))
 
     def test_skip_ci(self):
-        out = m.assess(OPEN_PR, [comment(report(SHA_A, "CLEAR"), 1)], None, None, None, {}, lambda x, y: None)
+        out = m.assess(OPEN_PR, [comment(report(SHA_A, "CLEAR"), 1)], None, None, None, {})
         self.assertEqual(out["mechanical_blockers"], [])
         self.assertEqual(out["checks"]["applicability"], "skipped")
+
+
+def checks(*pairs):
+    return {"status": "ok", "checks": [{"name": n, "bucket": b} for n, b in pairs]}
+
+
+class WaitLoop(unittest.TestCase):
+    def simulate(self, reads, heads=None, limit=600):
+        """reads / heads 为每次轮询的返回序列（末项重复）；时间每次轮询前进 30 秒。"""
+        t = [0]
+        it_r, it_h = iter(reads), iter(heads or [SHA_A])
+        last = {}
+
+        def nxt(it, key):
+            last[key] = next(it, last.get(key))
+            return last[key]
+        return m.wait_loop(lambda: nxt(it_r, "r"), lambda: nxt(it_h, "h"), SHA_A, limit,
+                           sleep=lambda s: t.__setitem__(0, t[0] + s), now=lambda: t[0])[0]
+
+    def test_late_registered_check_not_missed(self):
+        # 快速 labeler 先结束，主测试在宽限期内（第 120 秒）才注册并失败；更晚注册的由门禁 --strict 兜底
+        reads = [checks(("labeler", "pass"))] * 4 + [checks(("labeler", "pass"), ("test", "pending")),
+                                                     checks(("labeler", "pass"), ("test", "fail"))]
+        self.assertEqual(self.simulate(reads), 1)
+
+    def test_pass_requires_grace_and_stable_list(self):
+        self.assertEqual(self.simulate([checks(("t", "pass"))]), 0)
+
+    def test_transient_error_tolerated(self):
+        err = {"status": "error", "checks": [], "detail": "HTTP 502"}
+        self.assertEqual(self.simulate([err, err, checks(("t", "pass"))]), 0)
+        self.assertEqual(self.simulate([err]), 2)
+
+    def test_head_change(self):
+        self.assertEqual(self.simulate([checks(("t", "pending"))], heads=[SHA_A, SHA_B]), 5)
+
+    def test_none_registered_and_timeout(self):
+        self.assertEqual(self.simulate([NO_CI]), 3)
+        self.assertEqual(self.simulate([checks(("t", "pending"))], limit=300), 8)
 
 
 if __name__ == "__main__":

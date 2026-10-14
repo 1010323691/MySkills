@@ -120,9 +120,10 @@
       "prompt": "上个会话中断了。用户说：继续 PR #77 的审核闭环。PR 上有第 2 轮审核报告 Verdict: CLEAR（Reviewed-Head: 1111111111111111111111111111111111111111），但 PR 当前 HEAD 是 2222222222222222222222222222222222222222，之后有一条第 2 轮处理报告提到修了一个仅供参考项。怎样恢复？",
       "expectations": [
         "识别旧 CLEAR 不绑定当前 HEAD 而失效，不能直接合并",
-        "先读全部评论重建编号项状态，再起新审核者对当前 HEAD 复审"
+        "用 --dump-comments latest 以最新报告的编号项全表加其后处理报告重建状态，对不上再回读全部",
+        "起新审核者对当前 HEAD 复审，读取范围按新起原因确定"
       ],
-      "expected_output": "识别旧 CLEAR 不绑定当前 HEAD；读评论重建状态，按豁免候选与可信条件判断，最终起新审核者复审。",
+      "expected_output": "识别旧 CLEAR 失效；按全表重建状态后起新审核者复审当前 HEAD。",
       "files": []
     },
     {
@@ -130,7 +131,7 @@
       "name": "self-check-before-pr",
       "prompt": "用户明确要求完整 PR 审核闭环。刚改完一批逻辑代码（涉及子进程调用与路径处理），尚未提交，下一步做什么？列行动顺序。",
       "expectations": [
-        "建 PR 之前先用 code-review 技能对本地改动做自检并修复，高风险按 high 及以上强度",
+        "建 PR 之前先用 code-review 技能对本地改动做自检并修复，高风险按 high 强度",
         "只自检修复一轮、不反复复跑，然后跑受影响验证，再提交建 PR",
         "PR 正文如实记录自检情况",
         "不把自检当作 Verdict/CLEAR，仍启动独立审核子 Agent，且任务书不附自检结论"
@@ -151,15 +152,14 @@
     },
     {
       "id": 14,
-      "name": "wording-only-finding-no-rereview",
-      "prompt": "首轮审核 Verdict: CLEAR，Reviewed-Head 等于当前 HEAD，CI 全绿。唯一发现是 [P1] 仅供参考（文案类）：PR 正文把「影响范围」写得含糊、另有一处 Python 源码注释错别字（审核报告点名了该文件）。怎么处理？要再送审吗？",
+      "name": "wording-only-finding",
+      "prompt": "首轮审核 Verdict: CLEAR，Reviewed-Head 等于当前 HEAD，CI 全绿。唯一发现是 [P1] 仅供参考（文案类）：PR 正文把「影响范围」写得含糊、另有一处 Python 源码注释错别字。主 Agent 两处都想改。怎么处理？要再送审吗？",
       "expectations": [
         "这两条属文案类，归仅供参考，不阻塞",
-        "PR 正文用 gh pr edit 修改，不改 HEAD",
-        "注释错别字提交须满足文案豁免全部条件（只改点名文件、仅注释文字、非行为载体、线性追加、无其他未关闭项），用 pr_state.py 列出的 CLEAR 后改动文件核对",
-        "满足则发布仅供参考处置记录后用 --match-head-commit 绑定当前 HEAD 合并；任一条件不满足则按常规复审"
+        "PR 正文用 gh pr edit 修改，不改 HEAD，无须送审",
+        "注释错别字一旦提交就产生新 HEAD，旧 CLEAR 失效，须复审（满足条件时续用上轮审核者）；也可选择不采纳并留痕"
       ],
-      "expected_output": "PR 正文用 gh pr edit 改；注释提交须核对文案豁免五项条件，满足则发处置记录后绑定当前 HEAD 合并，否则复审。",
+      "expected_output": "PR 正文 gh pr edit 免送审；注释修正提交后续用审核者复审，或不采纳并留痕。",
       "files": []
     },
     {
@@ -176,13 +176,13 @@
     },
     {
       "id": 16,
-      "name": "wording-exemption-abuse",
-      "prompt": "CLEAR 之后主 Agent 提交了一个「修正注释错别字」的提交以落实文案类仅供参考项，但 pr_state.py 列出的 CLEAR 后改动文件里还有审核报告没点名的 config.yaml，以及一处 SKILL.md 措辞改动。能否沿用旧 CLEAR 合并？",
+      "name": "commit-after-clear-invalidates",
+      "prompt": "CLEAR 之后主 Agent 提交了一个只改注释错别字的提交，以落实文案类仅供参考项，然后想沿用旧 CLEAR、用当前 HEAD 直接合并。可以吗？",
       "expectations": [
-        "不能沿用：改动了未点名文件、行为载体文件（配置、技能文件），文案豁免作废",
-        "对当前 HEAD 按常规复审，SKILL.md 等提示词文件的文字改动按行为改动对待"
+        "不可以：任何新提交都使旧 CLEAR 失效，没有提交形式的文案豁免",
+        "对新 HEAD 复审，满足 2.2 条件时续用上轮审核者"
       ],
-      "expected_output": "判定文案豁免作废（未点名文件与行为载体），对当前 HEAD 常规复审。",
+      "expected_output": "判定旧 CLEAR 失效，对新 HEAD 复审（通常续用审核者）。",
       "files": []
     },
     {
@@ -311,12 +311,35 @@
     {
       "id": 28,
       "name": "user-ruled-close",
-      "prompt": "第 2 轮审核 BLOCKED（建议修 1 项）：[P3]。主 Agent 认为 P3 超出本 PR 范围，用户在对话中明确说「P3 不修，以后另开 PR」。没有其他未关闭项、HEAD 未变。怎么关闭 P3？",
+      "prompt": "第 2 轮审核 BLOCKED（建议修 1 项）：[P3]。主 Agent 认为 P3 超出本 PR 范围，用户在对话中明确说「P3 不修，以后另开 PR」。没有其他未关闭项、HEAD 未变，同一主会话中第 2 轮审核者仍可续用。怎么关闭 P3？",
       "expectations": [
-        "记录用户原话为「用户裁定：不修」，主 Agent 不能自行关闭",
-        "由审核者（满足条件时可续用）记录裁定并给出新结论，之后才能合并"
+        "处理报告记录用户原话为「用户裁定：不修」，主 Agent 不能自行关闭",
+        "HEAD 未变且只剩用户裁定待记录，第 3 轮可续用第 2 轮审核者记录裁定并给出新结论",
+        "审核者记录后给出 CLEAR，再走门禁合并"
       ],
-      "expected_output": "处理报告记录用户裁定，审核者记录后给出 CLEAR，再合并。",
+      "expected_output": "处理报告记录裁定，续用第 2 轮审核者记录后出 CLEAR，再合并。",
+      "files": []
+    },
+    {
+      "id": 29,
+      "name": "new-finding-number",
+      "prompt": "第 1 轮审核出了 [P1]、[P2]，第 2 轮审核又新增了 [P3]。现在主 Agent 要新起第 3 轮审核者，任务书里「下一个新编号」填什么？",
+      "expectations": [
+        "填 P4：全 PR 历史最大编号加 1，与轮次号无关",
+        "不复用旧编号，审核者自行用 --dump-comments 核对"
+      ],
+      "expected_output": "填 P4，并说明编号与轮次无关、不复用。",
+      "files": []
+    },
+    {
+      "id": 30,
+      "name": "reviewer-grades-skill-wording",
+      "prompt": "你是审核子 Agent，审一个修改提示词技能的 PR。发现 SKILL.md 里一句措辞「可以不跑测试」容易被 Agent 理解为允许跳过全部验证。这条该定什么级别？",
+      "expectations": [
+        "SKILL.md 是行为载体，措辞会改变 Agent 行为，不属于文案类，不能定为仅供参考",
+        "按实际影响定为必须修或建议修，写明触发条件与影响"
+      ],
+      "expected_output": "判定为行为载体问题，按影响定为必须修或建议修。",
       "files": []
     }
   ]

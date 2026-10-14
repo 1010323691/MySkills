@@ -13,12 +13,12 @@
 
 门禁模式输出：
 - PR 状态、完整 HEAD SHA、可合并性（mergeable / mergeStateStatus）、自动合并安排
-- 全部审核结论（评论末两行 Reviewed-Head + Verdict）；格式不符的疑似结论、发布后被编辑的最新结论列为阻塞项
-- 最新 CLEAR 未绑定当前 HEAD 但线性追加时，列为「文案豁免候选」并给出改动文件与疑似行为载体
+- 全部审核结论（评论末两行 Reviewed-Head + Verdict）；发布后被编辑的最新结论、晚于它的格式不符疑似 CLEAR 列为阻塞项
 - CI 检查按 bucket 汇总与适用性；base 保护 / rulesets / 合并队列
 - 可机械判定的阻塞项与需人工核对项
---strict 退出码：0 无阻塞；1 有阻塞项；4 无阻塞项但有待人工核对的文案豁免候选。
---wait-ci 退出码：0 检查全部结束且无失败；1 有 fail/cancel；3 宽限期内一直没有检查注册；8 到时仍 pending；2 读取出错。
+--strict 退出码：0 无阻塞；1 有阻塞项。
+--wait-ci 退出码：0 检查列表稳定且全部结束、无失败；1 有 fail/cancel；3 宽限期内一直没有检查注册；
+  5 等待期间 HEAD 变化；8 到时仍 pending；2 连续 3 次读取出错。
 
 本脚本只做 gh 读取，不发布、不合并、不改分支。它不能判断审核者是否独立、
 发现项是否全部关闭、skipped 检查是否适用——这些仍需人工核对。
@@ -39,10 +39,6 @@ VERDICT_RE = re.compile(
 LOOSE_RE = re.compile(r"^[\s>*_`#-]*(Verdict|Reviewed-Head)\s*[:：]", re.IGNORECASE)
 # 主 Agent 发布的非结论评论（处理报告、处置记录、状态评论）：其中引用的结论行不算疑似结论
 NON_VERDICT_HEAD_RE = re.compile(r"^##\s*(第\s*\d+\s*轮处理报告|仅供参考处置记录|闭环状态)")
-# 疑似行为载体：文案豁免不适用（见 SKILL.md 2.1 / 第 3 节）
-CARRIER_NAMES = {"SKILL.md", "AGENTS.md", "CLAUDE.md"}
-CARRIER_EXTS = (".json", ".yaml", ".yml", ".toml", ".ini", ".cfg", ".env", ".lock", ".po", ".properties")
-CARRIER_DIRS = ("references/", "prompts/", "locales/", "locale/", "i18n/", ".github/")
 
 
 def gh(args, hostname=None, check=True):
@@ -90,12 +86,6 @@ def looks_like_verdict(body):
     return any(LOOSE_RE.match(l) for l in lines)
 
 
-def is_behavior_carrier(path):
-    name = path.rsplit("/", 1)[-1]
-    return (name in CARRIER_NAMES or name.lower().endswith(CARRIER_EXTS)
-            or any(d in "/" + path for d in ("/" + x for x in CARRIER_DIRS)))
-
-
 def summarize(checks):
     s = {}
     for c in checks:
@@ -110,8 +100,8 @@ def classify_protection(ok, stderr):
     return "none" if "Branch not protected" in (stderr or "") else "unknown"
 
 
-def assess(pr, comments, all_checks, req_checks, rules, workflows, compare_fn):
-    """由已取得的事实计算结论、阻塞项与人工核对项。compare_fn(base_sha, head_sha) -> dict|None。"""
+def assess(pr, comments, all_checks, req_checks, rules, workflows):
+    """由已取得的事实计算结论、阻塞项与人工核对项。"""
     head = (pr.get("headRefOid") or "").lower()
     verdicts, malformed = [], []
     for c in comments:
@@ -120,7 +110,8 @@ def assess(pr, comments, all_checks, req_checks, rules, workflows, compare_fn):
             verdicts.append({"url": c["url"], "author": c.get("author"), "created_at": c["created_at"],
                              "edited": bool(c.get("updated_at")) and c.get("updated_at") != c["created_at"], **v})
         elif looks_like_verdict(c.get("body")):
-            malformed.append({"url": c["url"], "created_at": c["created_at"]})
+            clear_like = any(LOOSE_RE.match(l) and "clear" in l.lower() for l in _lines(c.get("body")))
+            malformed.append({"url": c["url"], "created_at": c["created_at"], "clear_like": clear_like})
     latest = verdicts[-1] if verdicts else None
     blockers, manual = [], []
 
@@ -141,14 +132,17 @@ def assess(pr, comments, all_checks, req_checks, rules, workflows, compare_fn):
     if pr.get("autoMergeRequest"):
         blockers.append("PR 上存在自动合并安排：须确认它不会绕过本轮版本门禁（见 references/merge-queue.md）")
 
-    # 只有晚于最新有效结论的格式错误评论会影响门禁；更早的已被取代
+    # 晚于最新有效结论的格式不符疑似 CLEAR 才阻塞（须重发合规报告）；疑似 BLOCKED 本来就不放行，
+    # 下一轮合规报告会取代它；更早的已被取代
     for m in malformed:
-        if not latest or m["created_at"] > latest["created_at"]:
-            blockers.append(f"疑似审核结论但末两行格式不符（会被忽略）：{m['url']}；由审核者发新的完整报告")
+        newer = not latest or m["created_at"] > latest["created_at"]
+        if newer and m["clear_like"]:
+            blockers.append(f"疑似 CLEAR 结论但末两行格式不符（会被忽略）：{m['url']}；由审核者发新的合规报告")
+        elif newer:
+            manual.append(f"格式不符的疑似 BLOCKED 结论：{m['url']}；按 BLOCKED 处理，下一轮合规报告取代它")
         else:
             manual.append(f"早于最新结论的格式不符疑似结论（已被取代）：{m['url']}")
 
-    exemption = None
     if not latest:
         blockers.append("没有任何审核结论评论")
     else:
@@ -157,19 +151,7 @@ def assess(pr, comments, all_checks, req_checks, rules, workflows, compare_fn):
         if latest["verdict"] != "CLEAR":
             blockers.append(f"最新结论为 {latest['verdict']}")
         if latest["reviewed_head"] != head:
-            unbound = f"最新结论绑定 {latest['reviewed_head'][:12]}，当前 HEAD 为 {head[:12]}：须对当前 HEAD 重新审核"
-            cmp = compare_fn(latest["reviewed_head"], head) if latest["verdict"] == "CLEAR" and head else None
-            files = [f["filename"] for f in (cmp or {}).get("files") or []]
-            carriers = [f for f in files if is_behavior_carrier(f)]
-            if cmp and cmp.get("status") == "ahead" and files and not carriers:
-                exemption = {"reviewed_head": latest["reviewed_head"], "head": head,
-                             "ahead_by": cmp.get("ahead_by"), "files": files}
-            else:
-                if cmp and cmp.get("status") != "ahead":
-                    unbound += f"（CLEAR 后非线性追加：{cmp.get('status')}，文案豁免不适用）"
-                elif carriers:
-                    unbound += f"（CLEAR 后改动含疑似行为载体：{', '.join(carriers)}，文案豁免不适用）"
-                blockers.append(unbound)
+            blockers.append(f"最新结论绑定 {latest['reviewed_head'][:12]}，当前 HEAD 为 {head[:12]}：须对当前 HEAD 重新审核")
 
     ci = {"all": all_checks, "required": req_checks, "by_bucket": {}, "applicability": "skipped"}
     if all_checks is not None:
@@ -203,10 +185,6 @@ def assess(pr, comments, all_checks, req_checks, rules, workflows, compare_fn):
         if rules.get("protection") == "unknown" or rules.get("rulesets") is None:
             manual.append("无法读取 base 分支保护或 rulesets（可能无权限）：required checks / reviews 须人工核实")
 
-    if exemption:
-        manual.append(f"文案豁免候选：CLEAR 后线性追加 {exemption['ahead_by']} 个提交，改动文件 "
-                      f"{', '.join(exemption['files'])}；逐项核对 SKILL.md 第 3 节五项条件（git diff "
-                      f"{exemption['reviewed_head'][:12]}..{exemption['head'][:12]}），不满足则对当前 HEAD 重新审核")
     manual += [
         "最新结论评论是否确由独立审核子 Agent 发布、满足 SKILL.md 2.1 可信条件（同账号时不能只看作者）",
         "必须修 / 建议修是否已独立核销 / 接受反驳 / 有用户裁定；仅供参考是否逐项留痕",
@@ -215,7 +193,7 @@ def assess(pr, comments, all_checks, req_checks, rules, workflows, compare_fn):
     ]
     return {"pr": pr, "verdicts": verdicts, "malformed_verdict_comments": malformed, "latest_verdict": latest,
             "latest_binds_current_head": bool(latest and latest["reviewed_head"] == head),
-            "exemption_candidate": exemption, "checks": ci, "base_rules": rules,
+            "checks": ci, "base_rules": rules,
             "mechanical_blockers": blockers, "needs_manual_check": manual}
 
 
@@ -267,13 +245,6 @@ def read_rules(repo, base, hostname):
             "merge_queue": (None if rulesets is None else "merge_queue" in rulesets)}
 
 
-def compare(repo, base_sha, head_sha, hostname):
-    ok, data, _ = gh_json(["api", f"repos/{repo}/compare/{base_sha}...{head_sha}", "--jq",
-                           "{status: .status, ahead_by: .ahead_by, behind_by: .behind_by, "
-                           "files: [.files[]? | {filename, status, additions, deletions}]}"], hostname)
-    return data if ok else None
-
-
 def read_comments(repo, pr, hostname):
     raw = gh(["api", "--paginate", f"repos/{repo}/issues/{pr}/comments",
               "--jq", ".[] | {url: .html_url, author: .user.login, created_at: .created_at, "
@@ -310,30 +281,51 @@ def repo_facts(a):
     return 0
 
 
-def wait_ci(a):
-    start, grace, limit = time.time(), 120, a.wait_ci * 60
+def wait_loop(read_fn, head_fn, start_head, limit, grace=120, interval=30,
+              sleep=time.sleep, now=time.time, max_errors=3):
+    """有界等待 CI，返回 (退出码, 说明)。read_fn() -> read_checks 结果；head_fn() -> 当前 HEAD 或 None。
+
+    只有「检查全部结束、已过注册宽限期、且与上一次读取的检查名单相同」才返回 0，
+    避免先结束的快速检查掩盖稍后才注册的检查。"""
+    start, errors, prev_names = now(), 0, None
     while True:
-        r = read_checks(a.repo, a.pr, a.hostname, required=False)
-        elapsed = time.time() - start
-        if r["status"] == "ok" and r["checks"]:
-            b = summarize(r["checks"])
-            if b.get("fail") or b.get("cancel"):
-                print(f"检查失败：{json.dumps(b, ensure_ascii=False)}")
-                return 1
-            if not b.get("pending"):
-                print(f"检查全部结束：{json.dumps(b, ensure_ascii=False)}（skipped 仍须核实适用性）")
-                return 0
-        elif r["status"] == "none_reported":
-            if elapsed > min(grace, limit):
-                print(f"{int(elapsed)} 秒内没有检查注册：按 SKILL.md 5.2 核实 CI 适用性")
-                return 3
+        r, cur_head = read_fn(), head_fn()
+        elapsed = now() - start
+        if r["status"] == "error" or cur_head is None:
+            errors += 1
+            if errors >= max_errors:
+                return 2, f"连续 {errors} 次读取出错：{r.get('detail') or '无法读取 HEAD'}"
         else:
-            print(f"读取检查出错：{r.get('detail')}")
-            return 2
+            errors = 0
+            if cur_head != start_head:
+                return 5, f"HEAD 已从 {start_head[:12]} 变为 {cur_head[:12]}：对新 HEAD 重新等待"
+            if r["status"] == "ok" and r["checks"]:
+                b = summarize(r["checks"])
+                if b.get("fail") or b.get("cancel"):
+                    return 1, f"检查失败：{json.dumps(b, ensure_ascii=False)}"
+                names = sorted(c.get("name") or "" for c in r["checks"])
+                if not b.get("pending") and elapsed >= min(grace, limit) and names == prev_names:
+                    return 0, f"检查全部结束：{json.dumps(b, ensure_ascii=False)}（skipped 仍须核实适用性）"
+                prev_names = names if not b.get("pending") else None
+            elif elapsed > min(grace, limit):
+                return 3, f"{int(elapsed)} 秒内没有检查注册：按 SKILL.md 5.2 核实 CI 适用性"
         if elapsed > limit:
-            print(f"等待 {a.wait_ci} 分钟仍 pending：{json.dumps(summarize(r['checks']), ensure_ascii=False)}")
-            return 8
-        time.sleep(30)
+            return 8, f"等待 {int(limit // 60)} 分钟仍未结束：{json.dumps(summarize(r['checks']), ensure_ascii=False)}"
+        sleep(interval)
+
+
+def wait_ci(a):
+    def head():
+        ok, data, _ = gh_json(["pr", "view", str(a.pr), "--repo", a.repo, "--json", "headRefOid"], a.hostname)
+        return (data.get("headRefOid") or "").lower() or None if ok and data else None
+    start_head = head()
+    if not start_head:
+        print("无法读取 PR HEAD")
+        return 2
+    code, msg = wait_loop(lambda: read_checks(a.repo, a.pr, a.hostname, required=False), head,
+                          start_head, a.wait_ci * 60)
+    print(f"HEAD {start_head}：{msg}")
+    return code
 
 
 def main():
@@ -342,7 +334,7 @@ def main():
     ap.add_argument("--pr", type=int)
     ap.add_argument("--hostname", help="GitHub Enterprise 主机名（默认 github.com）")
     ap.add_argument("--json", action="store_true", help="输出 JSON")
-    ap.add_argument("--strict", action="store_true", help="有阻塞项时退出码 1，仅有文案豁免候选时 4")
+    ap.add_argument("--strict", action="store_true", help="有阻塞项时退出码 1")
     ap.add_argument("--skip-ci", action="store_true", help="不读取 CI、workflows 与分支规则（审核者用）")
     ap.add_argument("--dump-comments", choices=("latest", "all"),
                     help="附带评论正文：latest = 最新有效结论及其后的评论；all = 全部")
@@ -374,8 +366,7 @@ def main():
         if all_checks["status"] == "none_reported":
             workflows = {"head": has_workflows(a.repo, head, a.hostname),
                          "base": has_workflows(a.repo, pr.get("baseRefName"), a.hostname)}
-    out = assess(pr, comments, all_checks, req_checks, rules, workflows,
-                 lambda x, y: compare(a.repo, x, y, a.hostname))
+    out = assess(pr, comments, all_checks, req_checks, rules, workflows)
 
     dump = []
     if a.dump_comments:
@@ -387,7 +378,7 @@ def main():
 
     code = 0
     if a.strict:
-        code = 1 if out["mechanical_blockers"] else (4 if out["exemption_candidate"] else 0)
+        code = 1 if out["mechanical_blockers"] else 0
     if a.json:
         json.dump(out, sys.stdout, ensure_ascii=False, indent=2)
         print()
