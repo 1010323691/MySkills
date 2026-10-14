@@ -44,7 +44,7 @@ class Pure(unittest.TestCase):
         self.assertEqual([r["verdict"] for r in reviews], ["BLOCKED（建议修 1 项）", "CLEAR"])
         self.assertEqual(malformed, [])
         _, malformed = m.parse_reviews(report(3, fp, "CLEAR（附注）"))
-        self.assertTrue(malformed[0]["clear_like"])
+        self.assertEqual(len(malformed), 1)
 
     def test_assess(self):
         fp = "a" * 64
@@ -52,12 +52,13 @@ class Pure(unittest.TestCase):
         self.assertEqual(ok["blockers"], [])
         stale = m.assess("b" * 64, [], [{"round": 1, "title": "t", "baseline": fp, "verdict": "CLEAR"}], [], True)
         self.assertTrue(any("复审" in b for b in stale["blockers"]))
-        bad = m.assess(fp, [], [{"round": 1, "title": "t", "baseline": fp, "verdict": "CLEAR"}],
-                       [{"round": 2, "title": "第 2 轮", "clear_like": True}], True)
-        self.assertTrue(any("格式不符" in b for b in bad["blockers"]))
-        soft = m.assess(fp, [], [{"round": 1, "title": "t", "baseline": fp, "verdict": "CLEAR"}],
-                        [{"round": 2, "title": "第 2 轮", "clear_like": False}], True)
-        self.assertEqual(soft["blockers"], [])
+        # 同一指纹上较新的格式不符报告（可能是 BLOCKED）必须盖过旧 CLEAR
+        newer = m.assess(fp, [], [{"round": 1, "title": "t", "baseline": fp, "verdict": "CLEAR"}],
+                         [{"round": 2, "title": "第 2 轮"}], True)
+        self.assertTrue(any("格式不符" in b for b in newer["blockers"]))
+        older = m.assess(fp, [], [{"round": 2, "title": "t", "baseline": fp, "verdict": "CLEAR"}],
+                         [{"round": 1, "title": "第 1 轮"}], True)
+        self.assertEqual(older["blockers"], [])
 
 
 class Cycle(unittest.TestCase):

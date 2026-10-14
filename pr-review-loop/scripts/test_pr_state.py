@@ -73,8 +73,7 @@ class Assess(unittest.TestCase):
         newer = run([comment(report(SHA_A, "CLEAR"), 1), comment("x\nVerdict: CLEAR（附注）", 2)])
         self.assertTrue(any("格式不符" in b for b in newer["mechanical_blockers"]))
         blocked_like = run([comment(report(SHA_A, "CLEAR"), 1), comment("x\nVerdict: BLOCKED (必须修 1 项)", 2)])
-        self.assertFalse(any("格式不符" in b for b in blocked_like["mechanical_blockers"]))
-        self.assertTrue(any("疑似 BLOCKED" in x for x in blocked_like["needs_manual_check"]))
+        self.assertTrue(any("格式不符" in b for b in blocked_like["mechanical_blockers"]))
         older = run([comment("x\nVerdict: CLEAR（附注）", 1), comment(report(SHA_A, "CLEAR"), 2)])
         self.assertEqual(older["mechanical_blockers"], [])
 

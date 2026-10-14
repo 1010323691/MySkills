@@ -72,8 +72,7 @@ def parse_reviews(text):
             reviews.append({"round": int(m.group(1)), "title": s["title"],
                             "baseline": mb.group(1).lower(), "verdict": mv.group(1)})
         else:
-            clear_like = any(l.lower().startswith("verdict") and "clear" in l.lower() for l in lines[-3:])
-            malformed.append({"round": int(m.group(1)), "title": s["title"], "clear_like": clear_like})
+            malformed.append({"round": int(m.group(1)), "title": s["title"]})
     return reviews, malformed
 
 
@@ -82,12 +81,10 @@ def assess(current_fp, missing, reviews, malformed, has_snapshot):
     latest = reviews[-1] if reviews else None
     if missing:
         notes.append(f"清单内文件不存在（按 MISSING 计入指纹）：{', '.join(missing)}")
+    # 不早于最新有效结论的格式不符报告一律阻塞，否则较新的 BLOCKED 会被旧 CLEAR 盖过
     for m in malformed:
         if latest is None or m["round"] >= latest["round"]:
-            if m["clear_like"]:
-                blockers.append(f"{m['title']}：疑似 CLEAR 但末两行格式不符，须由审核者追加合规报告")
-            else:
-                notes.append(f"{m['title']}：末两行格式不符的疑似 BLOCKED，按 BLOCKED 处理，下一轮合规报告取代它")
+            blockers.append(f"{m['title']}：末两行格式不符，须由审核者追加合规报告")
     if not latest:
         blockers.append("REVIEW.md 中没有任何合规的审核结论")
     else:

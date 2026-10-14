@@ -110,8 +110,7 @@ def assess(pr, comments, all_checks, req_checks, rules, workflows):
             verdicts.append({"url": c["url"], "author": c.get("author"), "created_at": c["created_at"],
                              "edited": bool(c.get("updated_at")) and c.get("updated_at") != c["created_at"], **v})
         elif looks_like_verdict(c.get("body")):
-            clear_like = any(LOOSE_RE.match(l) and "clear" in l.lower() for l in _lines(c.get("body")))
-            malformed.append({"url": c["url"], "created_at": c["created_at"], "clear_like": clear_like})
+            malformed.append({"url": c["url"], "created_at": c["created_at"]})
     latest = verdicts[-1] if verdicts else None
     blockers, manual = [], []
 
@@ -132,14 +131,10 @@ def assess(pr, comments, all_checks, req_checks, rules, workflows):
     if pr.get("autoMergeRequest"):
         blockers.append("PR 上存在自动合并安排：须确认它不会绕过本轮版本门禁（见 references/merge-queue.md）")
 
-    # 晚于最新有效结论的格式不符疑似 CLEAR 才阻塞（须重发合规报告）；疑似 BLOCKED 本来就不放行，
-    # 下一轮合规报告会取代它；更早的已被取代
+    # 晚于最新有效结论的格式不符疑似结论一律阻塞（否则较新的 BLOCKED 会被旧 CLEAR 盖过）；更早的已被取代
     for m in malformed:
-        newer = not latest or m["created_at"] > latest["created_at"]
-        if newer and m["clear_like"]:
-            blockers.append(f"疑似 CLEAR 结论但末两行格式不符（会被忽略）：{m['url']}；由审核者发新的合规报告")
-        elif newer:
-            manual.append(f"格式不符的疑似 BLOCKED 结论：{m['url']}；按 BLOCKED 处理，下一轮合规报告取代它")
+        if not latest or m["created_at"] > latest["created_at"]:
+            blockers.append(f"晚于最新有效结论的疑似结论格式不符（会被忽略）：{m['url']}；由审核者发新的合规报告")
         else:
             manual.append(f"早于最新结论的格式不符疑似结论（已被取代）：{m['url']}")
 
