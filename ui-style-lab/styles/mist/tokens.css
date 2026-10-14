@@ -1,10 +1,15 @@
 .mist {
-  --mist-surface: #d9d9dc;
-  --mist-ink: #303033;
-  --mist-muted: #65656a;
-  --mist-shadow: 10px 10px 22px #b9b9bd, -10px -10px 22px #f8f8fa;
-  --mist-small-shadow: 5px 5px 10px #b8b8bd, -5px -5px 10px #f7f7fa;
-  --mist-inset: inset 5px 5px 10px #bdbdc2, inset -5px -5px 10px #f4f4f7;
+  --mist-canvas: #e9e4da;
+  --mist-surface: #e9e4da;
+  --mist-raised-fill: var(--mist-surface);
+  --mist-ink: #39362f;
+  --mist-muted: #787166;
+  --mist-shadow: 10px 10px 22px #c8c2b6, -10px -10px 22px #fffdf7;
+  --mist-small-shadow: 5px 5px 10px #cbc5b9, -5px -5px 10px #fffdf7;
+  --mist-inset: inset 5px 5px 10px #c8c2b6, inset -5px -5px 10px #fffdf7;
+  --mist-knob: 3px 3px 6px #c8c2b6, -3px -3px 6px #fffdf7;
+  --mist-icon-surface: #e1dbcf;
+  --mist-icon-inset: inset 2px 2px 4px #ccc5b9, inset -2px -2px 4px #f8f3e8;
   --mist-radius: 42px;
   font-family: Arial, "Microsoft YaHei", sans-serif;
   color: var(--mist-ink);

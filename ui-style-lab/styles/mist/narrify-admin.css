@@ -1,0 +1,186 @@
+/* Mist application adapter. Layout, row heights and semantic chart colours stay
+   in admin.css; this file owns material and component interaction states. */
+
+.mist.admin-shell {
+  /* Material tokens inherit from Mist, including its current cream palette. */
+  --background: 40 25.424% 88.431%; --card: 40 25.424% 88.431%; --foreground: 42 10% 20%;
+  --primary: 240 5% 25%; --primary-foreground: 240 20% 98%;
+  --secondary: 220 20% 98%; --secondary-foreground: 240 3% 19%;
+  --muted: 220 20% 97%; --muted-foreground: 240 2% 39%;
+  --accent: 220 20% 97%; --accent-foreground: 240 3% 19%;
+  --border: 220 14% 90%; --input: 220 12% 78%; --ring: 240 5% 35%;
+  --destructive: 0 58% 40%; --destructive-foreground: 0 0% 100%;
+  --radius: 24px; --radius-sm: 12px; --radius-md: 16px; --radius-lg: 28px;
+  --admin-shadow: var(--mist-shadow);
+  --admin-row-hover: #e1dbcf;
+  --mist-line: rgb(48 48 51 / .12);
+  --glass-tint: var(--mist-surface); --glass-tint-strong: var(--mist-surface);
+  --glass-border: var(--mist-line); --glass-shadow: var(--mist-shadow);
+  background: hsl(var(--background)); color: var(--mist-ink); color-scheme: light;
+}
+/* Same-colour cream surfaces retain the original raised material in light mode. */
+.dark .mist.admin-shell {
+  --mist-surface: #303034; --mist-ink: #ededf0; --mist-muted: #b2b2ba;
+  --mist-raised-fill: var(--mist-surface);
+  --mist-shadow: 10px 10px 22px #242427, -10px -10px 22px #3c3c41;
+  --mist-small-shadow: 5px 5px 10px #242427, -5px -5px 10px #3c3c41;
+  --mist-inset: inset 5px 5px 10px #242427, inset -5px -5px 10px #3c3c41;
+  --mist-knob: 3px 3px 6px #242427, -3px -3px 6px #45454a;
+  --mist-line: rgb(237 237 240 / .12);
+  --background: 240 4% 20%; --card: 240 4% 20%; --foreground: 240 9% 94%;
+  --primary: 240 9% 94%; --primary-foreground: 240 4% 20%;
+  --secondary: 240 4% 20%; --secondary-foreground: 240 9% 94%;
+  --muted: 240 5% 16%; --muted-foreground: 240 6% 71%;
+  --accent: 240 5% 16%; --accent-foreground: 240 9% 94%;
+  --border: 240 4% 28%; --input: 240 4% 42%; --ring: 240 8% 75%;
+  --destructive: 0 65% 67%; --destructive-foreground: 240 4% 12%;
+  --admin-row-hover: #39393e; color-scheme: dark;
+}
+
+/* Navigation and account surfaces. */
+.mist.admin-shell.app-shell .app-sidebar { background: hsl(var(--background)); border-color: var(--mist-line); box-shadow: 6px 0 18px rgb(0 0 0 / .05); }
+.mist.admin-shell .app-brand__mark { background: var(--mist-surface); color: var(--mist-ink); border-radius: 50%; box-shadow: var(--mist-small-shadow); }
+.mist.admin-shell .app-nav { padding: 12px 18px; }
+.mist.admin-shell .app-nav__item { height: 40px; margin-block: 5px; border-radius: 999px; color: var(--mist-muted); }
+.mist.admin-shell .app-nav__item:hover { background: var(--mist-surface); box-shadow: var(--mist-small-shadow); color: var(--mist-ink); }
+.mist.admin-shell .app-nav__item.is-active { background: var(--mist-surface); color: var(--mist-ink); box-shadow: var(--mist-inset); }
+.mist.admin-shell :is(.app-account__trigger, .app-account__menu, .app-account__theme-button) { background: var(--mist-surface); border: 0; box-shadow: var(--mist-small-shadow); backdrop-filter: none; }
+.mist.admin-shell .app-account__trigger { border-radius: 999px; }
+.mist.admin-shell .app-account__menu { border-radius: 24px; box-shadow: var(--mist-shadow); }
+.mist.admin-shell :is(.app-account__avatar, .avatar) { background: var(--mist-surface); color: var(--mist-ink); box-shadow: var(--mist-inset); }
+.mist.admin-shell .app-account__theme-button { border-radius: 50%; color: var(--mist-muted); }
+.mist.admin-shell :is(.app-account__theme-button.is-active, .app-account__menu-item:hover) { background: var(--mist-surface); color: var(--mist-ink); box-shadow: var(--mist-inset); }
+.mist.admin-shell .app-account__menu-item { border-radius: 14px; }
+.mist.admin-shell .app-account__theme-divider { background: var(--mist-line); }
+.mist.admin-shell .app-status { border-color: var(--mist-line); }
+
+/* Large surfaces use rounded corners; dense tables keep their existing geometry. */
+.mist.admin-shell :is(.kpi-card, .chart-card, .table-panel, .glass-panel, .cleanup-card, .health-banner, .host-details, .pq-help, .pq-empty, .admin-loading-table) {
+  background: var(--mist-raised-fill); border-color: transparent; box-shadow: var(--mist-shadow); backdrop-filter: none;
+}
+.mist.admin-shell .kpi-card { padding-top: 20px; }
+.mist.admin-shell :is(.kpi-grid, .chart-grid) { gap: 24px; }
+.mist.admin-shell .admin-section { gap: 24px; padding-top: 20px; }
+.mist.admin-shell .admin-page-header { border-color: var(--mist-line); padding-bottom: 20px; }
+.mist.admin-shell .admin-page-header h1 { font-size: 26px; }
+.mist.admin-shell .health-banner { border-left-color: var(--status-good); }
+.mist.admin-shell .health-banner.is-warning { border-left-color: var(--status-warning); }
+.mist.admin-shell .health-banner.is-negative { border-left-color: var(--status-critical); }
+.mist.admin-shell .kpi-card.is-danger { border-color: var(--status-critical); }
+.mist.admin-shell .kpi-card.is-warning { border-color: var(--status-serious); }
+.mist.admin-shell :is(.kpi-card__icon, .cleanup-card__icon) { background: var(--mist-surface); box-shadow: var(--mist-inset); border-radius: 50%; }
+.mist.admin-shell :is(.detail-grid, .quota-summary, .code-block, .admin-tag-selection, .pq-samples li, .pq-gap-summary > div) { background: var(--mist-surface); border-color: transparent; box-shadow: var(--mist-inset); }
+.mist.admin-shell .pq-gap-summary > .is-alert { border-color: var(--status-critical); }
+.mist.admin-shell :is(.meter__track, .stacked-meter, .pq-bar, .pq-progress, .pq-corr__track) { background: var(--mist-surface); box-shadow: var(--mist-inset); }
+.mist.admin-shell :is(.health-banner__services li, .pq-chip, .admin-tag-chip, [role=status].rounded-full) { border-radius: 999px; box-shadow: var(--mist-inset); }
+.mist.admin-shell .admin-notice { background: var(--mist-surface); box-shadow: var(--mist-inset); border-radius: 16px; }
+.mist.admin-shell :is(th, td, .table-toolbar, .pager, .chart-card__footer, .event-list li, .kv-list p, .admin-setting-row) { border-color: var(--mist-line); }
+.mist.admin-shell th { background: var(--mist-surface); }
+.mist.admin-shell tbody tr { background: var(--mist-surface); }
+.mist.admin-shell tbody tr:is(:hover, :focus-within), .mist.admin-shell tbody tr[aria-selected=true] { background: var(--admin-row-hover); }
+.mist.admin-shell th.user-actions { background: var(--mist-surface); }
+.mist.admin-shell .pq-cell { border-radius: 14px; box-shadow: var(--mist-small-shadow); }
+.mist.admin-shell .pq-cell.is-selected { box-shadow: var(--mist-inset); }
+.mist.admin-shell .pq-grade { border-radius: 14px; }
+.mist.admin-shell .vc-tip { background: var(--mist-surface); border-color: var(--mist-line); border-radius: 14px; box-shadow: var(--mist-small-shadow); backdrop-filter: none; }
+
+/* Buttons retain their existing variants and events. */
+.mist.admin-shell :is(button[data-ui-button], button.h-11, .admin-link-button, .admin-icon-button, .admin-tag-chip, .app-account__theme-button) {
+  border: 0; border-radius: 999px; background: var(--mist-surface); color: var(--mist-ink);
+  box-shadow: var(--mist-small-shadow); backdrop-filter: none;
+  transition: box-shadow 150ms ease, background-color 150ms ease, color 150ms ease;
+}
+.mist.admin-shell button.bg-primary { background: var(--mist-surface); color: var(--mist-ink); font-weight: 700; }
+.mist.admin-shell button.bg-destructive { background: hsl(var(--destructive)); color: hsl(var(--destructive-foreground)); }
+.mist.admin-shell :is(button[data-ui-button], button.h-11, .admin-link-button, .admin-icon-button, .admin-tag-chip):hover:not(:disabled):not([aria-pressed=true]) { box-shadow: var(--mist-shadow); }
+.mist.admin-shell :is(button[data-ui-button], button.h-11, .admin-link-button, .admin-icon-button, .admin-tag-chip):active:not(:disabled),
+.mist.admin-shell :is(button[data-ui-button], button.h-11, .admin-link-button, .admin-icon-button, .admin-tag-chip)[aria-pressed=true] { box-shadow: var(--mist-inset); }
+.mist.admin-shell .admin-icon-button { width: 32px; height: 32px; padding: 6px; }
+.mist.admin-shell button:disabled { opacity: .43; box-shadow: none; }
+.mist.admin-shell :is(.admin-segmented, .settings-nav) { background: var(--mist-surface); border: 0; border-radius: 999px; box-shadow: var(--mist-inset); padding: 5px; gap: 5px; }
+.mist.admin-shell :is(.admin-segmented button, .settings-nav button) { background: transparent; border: 0; border-radius: 999px; padding: 6px 14px; height: auto; min-height: 30px; color: var(--mist-muted); }
+.mist.admin-shell :is(.admin-segmented button.is-active, .settings-nav button.active) { background: var(--mist-surface); color: var(--mist-ink); box-shadow: var(--mist-small-shadow); }
+
+/* Inset form controls and a raised switch thumb. */
+.mist.admin-shell :is(input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea) {
+  background: var(--mist-surface); color: var(--mist-ink); border: 1px solid transparent;
+  border-radius: 16px; box-shadow: var(--mist-inset); padding-inline: 14px;
+}
+.mist.admin-shell :is(input, textarea)::placeholder { color: var(--mist-muted); opacity: 1; }
+.mist.admin-shell .search-field input { padding-left: 34px; }
+.mist.admin-shell .admin-select-inline select { border-radius: 999px; }
+.mist.admin-shell :is(input, select, textarea):disabled { opacity: .5; cursor: not-allowed; }
+.mist.admin-shell :is(input[type=checkbox], input[type=radio]) { appearance: none; flex: none; width: 18px; height: 18px; border: 0; border-radius: 6px; background: var(--mist-surface); box-shadow: var(--mist-inset); vertical-align: middle; cursor: pointer; }
+.mist.admin-shell input[type=radio] { border-radius: 50%; }
+.mist.admin-shell input[type=checkbox]:checked { background: hsl(var(--primary)); box-shadow: var(--mist-small-shadow); }
+.mist.admin-shell input[type=checkbox]:checked::after { content: ''; display: block; width: 5px; height: 9px; margin: 3px 0 0 6px; border: solid hsl(var(--primary-foreground)); border-width: 0 2px 2px 0; transform: rotate(45deg); }
+.mist.admin-shell input[type=checkbox]:indeterminate { background: hsl(var(--primary)); }
+.mist.admin-shell input[type=checkbox]:indeterminate::after { content: ''; display: block; width: 10px; height: 2px; margin: 8px 4px; background: hsl(var(--primary-foreground)); }
+.mist.admin-shell input[type=radio]:checked { border: 5px solid var(--mist-surface); background: var(--mist-ink); box-shadow: var(--mist-small-shadow); }
+.mist.admin-shell input[type=range] { accent-color: var(--mist-ink); }
+.mist.admin-shell .ui-switch { background: var(--mist-surface); box-shadow: var(--mist-inset); }
+.mist.admin-shell .ui-switch[aria-checked=true] { background: hsl(var(--primary)); }
+.mist.admin-shell .ui-switch:not(:disabled):hover { box-shadow: var(--mist-inset); }
+.mist.admin-shell .ui-switch-thumb { background: var(--mist-surface); box-shadow: var(--mist-knob); }
+.mist.admin-shell :is(button, a, input, select, textarea, summary, tr[tabindex]):focus-visible { outline: 2px solid hsl(var(--ring)); outline-offset: 3px; }
+
+/* Drawer, confirmation dialog and toast all share the same theme boundary. */
+.mist.admin-shell .admin-drawer { background: var(--mist-surface); border: 0; border-radius: 28px 0 0 28px; }
+.mist.admin-shell .admin-drawer header { border-color: var(--mist-line); }
+.mist.admin-feedback { background: transparent; }
+.mist.admin-feedback.fixed.inset-0 { background: rgb(24 24 28 / .4); }
+.mist.admin-feedback :is(.glass-strong, .shadow-lg) { background: var(--mist-surface); border-color: transparent; border-radius: 24px; box-shadow: var(--mist-shadow); backdrop-filter: none; }
+.mist.admin-shell :is(.admin-loading-metrics > div, .admin-loading-table > div, .pq-drawer-loading > div) { background: var(--mist-surface); box-shadow: var(--mist-inset); }
+
+@media (max-width: 880px) {
+  .mist.admin-shell .app-sidebar { box-shadow: none; }
+  .mist.admin-shell .app-nav { padding: 8px 14px; }
+  .mist.admin-shell .app-nav__item { margin-block: 0; }
+}
+@media (max-width: 600px) {
+  .mist.admin-shell { --radius-lg: 22px; --mist-shadow: 6px 6px 14px #c8c2b6, -6px -6px 14px #fffdf7; }
+  .dark .mist.admin-shell { --mist-shadow: 6px 6px 14px #242427, -6px -6px 14px #3c3c41; }
+  .mist.admin-shell :is(.kpi-grid, .chart-grid) { gap: 16px; }
+  .mist.admin-shell .admin-page-header h1 { font-size: 22px; }
+  .mist.admin-shell .admin-drawer { border-radius: 0; }
+  .mist.admin-shell .settings-nav { border-radius: 18px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mist.admin-shell *, .mist.admin-shell *::before { transition: none !important; animation: none !important; }
+}
+/* Leave room inside the scrolling region for both sides of the soft shadow. */
+.mist.admin-shell .app-content > .admin-console.viewport-page > .page-region { padding: 16px 18px 24px; }
+@media (max-width: 600px) {
+  .mist.admin-shell .app-content > .admin-console.viewport-page > .page-region { padding: 12px 10px 20px; }
+}
+
+/* Pagination and music-library controls are native controls outside Button.vue. */
+.mist.admin-shell .mobile-pager nav { gap: 6px; }
+.mist.admin-shell .mobile-pager button { border-radius: 50%; background: var(--mist-surface); color: var(--mist-muted); }
+.mist.admin-shell .mobile-pager button:is(:hover, [aria-current=page]):not(:disabled) { color: var(--mist-ink); box-shadow: var(--mist-inset); }
+.mist.admin-shell .mobile-pager button[aria-current=page] { font-weight: 600; }
+.mist.admin-shell .library-view-item { border-radius: 14px; }
+.mist.admin-shell .library-view-item:is(:hover, .library-view-item-active) { background: var(--mist-surface); color: var(--mist-ink); box-shadow: var(--mist-inset); }
+.mist.admin-shell .admin-library :is(.rounded-xl.border, .rounded-md.border.p-3) { background: var(--mist-surface); border-color: transparent; box-shadow: var(--mist-inset); }
+.mist.admin-shell .admin-library .relative input.pl-8 { padding-left: 32px; }
+.mist.admin-shell .admin-library > .page-region { padding: 16px 18px 24px; }
+
+/* Audit additions: native media controls and inline statuses. */
+.mist.admin-shell .ui-mini-audio > button {
+  border: 0; background: var(--mist-surface); color: var(--mist-ink);
+  border-radius: 50%; box-shadow: var(--mist-small-shadow);
+}
+.mist.admin-shell .ui-mini-audio > button:hover { box-shadow: var(--mist-shadow); }
+.mist.admin-shell .ui-mini-audio > button:active { box-shadow: var(--mist-inset); }
+.mist.admin-shell .ui-mini-audio > button[title*="失败"] { color: hsl(var(--destructive)); }
+.mist.admin-shell .ui-mini-audio__track { background: var(--mist-surface); box-shadow: var(--mist-inset); }
+.mist.admin-shell [data-ui-status] { padding: 3px 9px; border-radius: 999px; background: var(--mist-surface); box-shadow: var(--mist-inset); }
+.mist.admin-shell [data-ui-alert], .mist.admin-shell .admin-error { border-radius: 16px; box-shadow: var(--mist-inset); }
+.mist.admin-shell .vc-legend button { border-radius: 999px; padding: 3px 7px; }
+.mist.admin-shell .vc-legend button:hover { background: var(--mist-surface); box-shadow: var(--mist-small-shadow); }
+.mist.admin-shell .vc-legend button.is-off { box-shadow: var(--mist-inset); }
+.mist.admin-feedback .ui-toast-host button, .mist.admin-feedback.ui-toast-host button { border-radius: 999px; background: var(--mist-surface); color: inherit; box-shadow: var(--mist-small-shadow); }
+.mist.admin-shell.admin-login { background: hsl(var(--background)); }
+.mist.admin-shell.admin-login .glass-panel { border-radius: 32px; }
+
+.mist.admin-shell.admin-login #auth-title { font-size: 24px; line-height: 1.3; }

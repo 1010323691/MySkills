@@ -49,5 +49,10 @@
     "reference-3.jpg",
     "reference-4.jpg",
     "reference-5.jpg"
-  ]
+  ],
+  "category": {
+    "id": "data-visualization",
+    "name": "后台管理 · 数据可视化",
+    "gallery": "../../gallery/index.html#data-visualization"
+  }
 }
