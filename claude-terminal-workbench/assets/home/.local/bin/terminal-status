@@ -1,0 +1,15 @@
+#!/usr/bin/python3
+"""Format the project and branch for the active tmux window."""
+import sys
+from pathlib import Path
+sys.path.insert(0, str(Path.home()/'.local/lib/terminal-workbench'))
+from workbench_context import resolve, git_info, clean
+try:
+    context = resolve(sys.argv[1], follow_source=False)
+    info = git_info(context['cwd'], with_changes=False)
+    project = Path(info['root'] if info else context['cwd']).name or '/'
+    text = project + (' › ' + info['branch'] if info else '')
+    # Hashes in filenames must not become tmux style/format directives.
+    print(clean(text).replace('#', '##'))
+except (RuntimeError, IndexError, OSError):
+    print('workspace')

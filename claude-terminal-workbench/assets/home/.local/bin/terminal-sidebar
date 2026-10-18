@@ -1,86 +1,120 @@
 #!/usr/bin/python3
-"""Read-only live files and Git context, following the main pane's directory."""
-import os,sys,time,subprocess,shutil,unicodedata,signal,tomllib
+"""Read-only files and Git summary, following the main Agent workspace."""
+import os, sys, time, shutil, unicodedata, signal, tomllib
 from pathlib import Path
-window=sys.argv[1];home=Path.home()
-p=tomllib.loads((home/'.config/terminal-workbench/palette.toml').read_text())
-def color(key):
- value=p[key].lstrip('#');return '\033[38;2;'+ ';'.join(str(int(value[i:i+2],16)) for i in (0,2,4))+'m'
-reset='\033[0m';accent=color('accent');muted=color('muted');ink=color('foreground')
-def clean(s):return ''.join(c if ord(c)>=32 and ord(c)!=127 else ' ' for c in str(s))
-def fit(s,n):
- out='';width=0
- for c in clean(s):
-  cw=0 if unicodedata.combining(c) else (2 if unicodedata.east_asian_width(c) in 'WF' else 1)
-  if width+cw>n:return out[:-1]+'…' if out else ''
-  out+=c;width+=cw
- return out
+sys.path.insert(0, str(Path.home()/'.local/lib/terminal-workbench'))
+from workbench_context import resolve, git_info, files, clean, tm
 
-def run(args):
- try:return subprocess.check_output(args,text=True,stderr=subprocess.DEVNULL,timeout=1).strip()
- except (subprocess.SubprocessError,OSError):return ''
-def draw():
- global accent,muted,ink
- try:p.update(tomllib.loads((home/'.config/terminal-workbench/palette.toml').read_text()))
- except (OSError,tomllib.TOMLDecodeError):pass
- accent=color('accent');muted=color('muted');ink=color('foreground')
- width,height=shutil.get_terminal_size((50,44));usable=max(8,width-4)
- main=run(['tmux','show-options','-wv','-t',window,'@work-main'])
- cwd=run(['tmux','display-message','-p','-t',main,'#{pane_current_path}']) if main else str(home)
- branch=run(['git','-C',cwd,'branch','--show-current'])
- changes=run(['git','-C',cwd,'status','--porcelain','--untracked-files=no']).splitlines() if branch else []
- # Build context first so directory size cannot consume its rows.
- context=['','  '+muted+'─'*usable+reset,'','  '+muted+'CONTEXT'+reset,'',
-          '  '+accent+fit(' '+branch if branch else 'Local workspace',usable)+reset]
- if branch:context.append('  '+muted+f'{len(changes)} tracked changes'+reset)
- context+=['  '+muted+fit('Host  '+os.uname().nodename,usable)+reset,'',
-           '  '+muted+'Ctrl+b f  Files'+reset,'  '+muted+'Ctrl+b p  Projects'+reset,
-           '  '+muted+'Ctrl+b g  Git'+reset,'  '+muted+'Ctrl+b m  Monitor'+reset]
- available=max(1,height-1)  # Reserve the last row to avoid terminal scrolling.
- if available < 4+len(context)+2:
-  context=[row for row in context if row and '─' not in row]
- header_size=4
- if available < header_size+len(context):
-  header_size=2
- if available < header_size+len(context):
-  context=[row for row in context if 'Host  ' not in row and 'tracked changes' not in row]
- file_budget=max(0,available-header_size-len(context))
- file_rows=[]
- try:
-  entries=sorted((e for e in os.scandir(cwd) if not e.name.startswith('.')),key=lambda e:(not e.is_dir(follow_symlinks=False),e.name.casefold()))
-  # The overflow indicator is part of the file budget, not an extra row.
-  count=max(0,file_budget-1) if len(entries)>file_budget else len(entries)
-  for entry in entries[:count]:
-   isdir=entry.is_dir(follow_symlinks=False)
-   file_rows.append('  '+(accent+' ' if isdir else muted+' ')+ink+fit(entry.name+('/' if isdir else ''),usable-3)+reset)
-  if len(entries)>count and file_budget:
-   file_rows.append('  '+muted+f'… {len(entries)-count} more'+reset)
- except OSError:
-  if file_budget:file_rows=['  '+muted+'Directory unavailable'+reset]
- short=cwd.replace(str(home),'~',1)
- if fit(short,usable)!=short:
-  parts=Path(cwd).parts
-  for count in range(min(3,len(parts)),0,-1):
-   candidate='…/'+'/'.join(parts[-count:])
-   if fit(candidate,usable)==candidate:
-    short=candidate;break
-  else:short='…/'+fit(Path(cwd).name,usable-2)
- header=['', '  '+muted+'FILES'+reset,'  '+accent+fit(short,usable)+reset,'']
- if header_size==2:header=header[1:3]
- rows=header+file_rows+context
- if len(rows)>available:
-  # Extremely short panes prioritize context and controls over the file list.
-  rows=context[:available]
- return '\033[?2026h\033[H'+''.join('\033[2K'+line+'\r\n' for line in rows)+'\033[J\033[?2026l'
-stop=False
-def ending(*_):
- global stop
- stop=True
-signal.signal(signal.SIGTERM,ending)
-signal.signal(signal.SIGINT,ending)
-try:
- sys.stdout.write('\033[?25l\033[2J');sys.stdout.flush()
- while not stop:
-  sys.stdout.write(draw());sys.stdout.flush();time.sleep(2)
-finally:
- sys.stdout.write('\033[0m\033[?25h\033[?2026l');sys.stdout.flush()
+home = Path.home()
+reset = '\033[0m'
+
+
+def fit(text, width):
+    result = ''
+    used = 0
+    for char in clean(text):
+        size = 0 if unicodedata.combining(char) else (2 if unicodedata.east_asian_width(char) in 'WF' else 1)
+        if used + size > width:
+            return fit(result, max(0, width-1)) + '…' if width else ''
+        result += char
+        used += size
+    return result
+
+
+def draw(window):
+    palette = tomllib.loads((home/'.config/terminal-workbench/palette.toml').read_text())
+    def color(key):
+        value = palette[key].lstrip('#')
+        return '\033[38;2;' + ';'.join(str(int(value[i:i+2], 16)) for i in (0, 2, 4)) + 'm'
+    accent, muted, ink = color('accent'), color('muted'), color('foreground')
+    width, height = shutil.get_terminal_size((50, 44))
+    usable = max(1, width-4)
+    available = max(1, height-1)
+    def line(text, style=ink):
+        return '  ' + style + fit(text, usable) + reset
+    main = tm('show-options', '-wv', '-t', window, '@work-main')
+    try:
+        cwd = resolve(main or window)['cwd']
+    except RuntimeError:
+        cwd = str(home)
+    info = git_info(cwd)
+    # Label the primary window by the actual foreground program, without renaming it.
+    command = tm('display-message', '-p', '-t', main or window, '#{pane_current_command}')
+    role = 'shell' if command in {'bash', 'zsh', 'fish', 'sh', 'dash'} else ('agent' if command in {'command-code', 'cmd', 'codex', 'claude', 'opencode', 'aider', 'gemini'} else command or 'shell')
+    if tm('show-options', '-wv', '-t', window, '@work-role') != role:
+        tm('set-option', '-w', '-t', window, '@work-role', role)
+    branch = line(' ' + info['branch'], accent) if info else line('Local workspace', accent)
+    stats = []
+    changes = []
+    if info:
+        if info['error']:
+            stats = [line('Git status unavailable', muted)]
+        else:
+            stats = [line(f"Staged {info['staged']} · Modified {info['modified']}", muted),
+                     line(f"New {info['untracked']} · Conflicts {info['conflicts']}", accent if info['conflicts'] else muted)]
+            changes = [line(item['code'] + ' ' + item['path'], accent if item['conflict'] else ink) for item in info['changes'][:4]]
+    keys = [line('Ctrl+b f  Files', muted), line('Ctrl+b p  Projects', muted),
+            line('Ctrl+b g  Git', muted), line('Ctrl+b m  Monitor', muted)]
+    host = [line('Host  ' + os.uname().nodename, muted)]
+    heading = [line('CONTEXT', muted)]
+    def context(compact=False):
+        core = heading + ([] if compact else ['']) + [branch] + stats + changes + host + ([] if compact else ['']) + keys
+        return core if compact else ['', line('─'*usable, muted), ''] + core
+    compact = available < 4 + len(context()) + 3
+    if compact:
+        host = []
+    header_size = 4
+    while changes and available < header_size + len(context(compact)) + 2:
+        changes.pop()
+    if available < header_size + len(context(compact)):
+        header_size = 2
+    if available < header_size + len(context(compact)) and info and not info['error']:
+        stats = [line(f"S:{info['staged']} M:{info['modified']} ?:{info['untracked']} !:{info['conflicts']}", muted)]
+    footer = context(compact)
+    budget = max(0, available-header_size-len(footer))
+    listing = []
+    try:
+        entries = files(cwd, info)
+        count = max(0, budget-1) if len(entries) > budget else len(entries)
+        for entry, generated, changed in entries[:count]:
+            directory = entry.is_dir(follow_symlinks=False)
+            style = muted if generated else (accent if changed or directory else ink)
+            label = ('* ' if changed else '') + (' ' if directory else ' ') + entry.name + ('/' if directory else '')
+            listing.append(line(label, style))
+        if len(entries) > count and budget:
+            listing.append(line(f'… {len(entries)-count} more', muted))
+    except OSError:
+        if budget:
+            listing = [line('Directory unavailable', muted)]
+    short = '~' + cwd[len(str(home)):] if cwd == str(home) or cwd.startswith(str(home)+'/') else cwd
+    if len(short) > usable:
+        short = '…/' + '/'.join(Path(cwd).parts[-2:])
+    header = ['', line('FILES', muted), line(short, accent), '']
+    if header_size == 2:
+        header = header[1:3]
+    rows = header + listing + footer
+    if len(rows) > available:
+        rows = footer[:available]
+    return '\033[?2026h\033[H' + ''.join('\033[2K'+row+'\r\n' for row in rows) + '\033[J\033[?2026l'
+
+
+def main():
+    stop = False
+    def ending(*_):
+        nonlocal stop
+        stop = True
+    signal.signal(signal.SIGTERM, ending)
+    signal.signal(signal.SIGINT, ending)
+    try:
+        sys.stdout.write('\033[?25l\033[2J')
+        while not stop:
+            sys.stdout.write(draw(sys.argv[1]))
+            sys.stdout.flush()
+            time.sleep(2)
+    finally:
+        sys.stdout.write('\033[0m\033[?25h\033[?2026l')
+        sys.stdout.flush()
+
+
+if __name__ == '__main__':
+    main()

@@ -14,6 +14,8 @@ description: 在 Ubuntu 上完整部署、复刻、检查或维护已固化的 C
 - Maple Mono Normal NF CN；Bash + Starship，短两行提示符。
 - fzf、zoxide、eza、bat、fd、ripgrep；Lazygit 和 bottom 按需打开。
 - Work、Dev、Studio 入口；项目使用命名 tmux 会话。
+- Agent 辅助侧栏优先展示源码、入口文档和改动，弱化产物目录；Git 分别统计暂存、未暂存、未跟踪和冲突，并显示少量明细。
+- 状态栏显示项目与分支、窗口用途。工具按仓库复用；已退出的受管理工具通过快捷键恢复，不强制终止已有 Shell。
 
 用户明确提出新偏好时，以用户当前要求为准。`assets/home/` 是配置模板；`assets/manifest.json` 记录已验证系统、模板校验值和固定发布资产。默认经过验证的系统是 Ubuntu 26.04 x86_64，字体 v7.9，bottom 0.14.9。系统包由目标发行版 apt 安装，安装版本会随其软件源更新，不承诺逐字节重建整个操作系统。
 
@@ -53,6 +55,8 @@ description: 在 Ubuntu 上完整部署、复刻、检查或维护已固化的 C
 - 发布 Skill 或推送 Git 仓库仅在用户明确要求时进行；本技能不包含用户 SSH 凭据、历史记录或完整个人 `.bashrc`。
 
 ## 可移植性自检
+
+侧栏、状态栏或工具生命周期修改后运行 `python3 <skill>/scripts/test_workbench.py`，验证 Git 状态、窗口高度、不同仓库切换与工具恢复；使用临时仓库和独立 tmux socket，不动现有 Agent。
 
 修改部署脚本时，使用 `--home <隔离目录> --staging` 测试配置安装、重复安装和回退。该模式不执行系统安装、联网下载或 live reload。至少检查：旧 Bash 区块外内容与权限保留；目标用户名/路径被正确渲染；第二次安装无改动；有后续改动时回退会保护它；无改动时回退恢复原内容。
 
