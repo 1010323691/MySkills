@@ -21,6 +21,20 @@ def fit(text, width):
     return result
 
 
+
+def change_label(item):
+    code = item['code']
+    if item['conflict']:
+        return '冲突'
+    if code == '??':
+        return '新增'
+    if code[0] != ' ' and code[1] != ' ':
+        return '暂存后又改动'
+    state = '已暂存' if code[0] != ' ' else '未暂存'
+    kind = next((label for symbol, label in [('R', '重命名'), ('C', '复制'), ('D', '删除'), ('A', '新增'), ('T', '类型变更')] if symbol in code), '修改')
+    return state + '·' + kind
+
+
 def draw(window):
     palette = tomllib.loads((home/'.config/terminal-workbench/palette.toml').read_text())
     def color(key):
@@ -43,20 +57,21 @@ def draw(window):
     role = 'shell' if command in {'bash', 'zsh', 'fish', 'sh', 'dash'} else ('agent' if command in {'command-code', 'cmd', 'codex', 'claude', 'opencode', 'aider', 'gemini'} else command or 'shell')
     if tm('show-options', '-wv', '-t', window, '@work-role') != role:
         tm('set-option', '-w', '-t', window, '@work-role', role)
-    branch = line(' ' + info['branch'], accent) if info else line('Local workspace', accent)
+    branch = line('分支  ' + info['branch'], accent) if info else line('当前目录未使用 Git', muted)
     stats = []
     changes = []
     if info:
         if info['error']:
-            stats = [line('Git status unavailable', muted)]
+            stats = [line('Git 状态读取失败，稍后重试', muted)]
         else:
-            stats = [line(f"Staged {info['staged']} · Modified {info['modified']}", muted),
-                     line(f"New {info['untracked']} · Conflicts {info['conflicts']}", accent if info['conflicts'] else muted)]
-            changes = [line(item['code'] + ' ' + item['path'], accent if item['conflict'] else ink) for item in info['changes'][:4]]
-    keys = [line('Ctrl+b f  Files', muted), line('Ctrl+b p  Projects', muted),
-            line('Ctrl+b g  Git', muted), line('Ctrl+b m  Monitor', muted)]
-    host = [line('Host  ' + os.uname().nodename, muted)]
-    heading = [line('CONTEXT', muted)]
+            stats = [line(f"待提交 {len(info['changes'])} 个文件" if info['changes'] else '工作区干净，无待提交改动', accent),
+                     line(f"已暂存 {info['staged']} · 未暂存 {info['modified']}", muted),
+                     line(f"新增 {info['untracked']} · 冲突 {info['conflicts']}", accent if info['conflicts'] else muted)]
+            changes = [line('[' + change_label(item) + '] ' + item['path'], accent if item['conflict'] else ink) for item in info['changes'][:4]]
+    keys = [line('Ctrl+b f  查找文件', muted), line('Ctrl+b p  切换项目', muted),
+            line('Ctrl+b g  审查改动', muted), line('Ctrl+b m  系统监控', muted)]
+    host = [line('本机  ' + os.uname().nodename, muted)]
+    heading = [line('项目状态', muted)]
     def context(compact=False):
         core = heading + ([] if compact else ['']) + [branch] + stats + changes + host + ([] if compact else ['']) + keys
         return core if compact else ['', line('─'*usable, muted), ''] + core
@@ -69,7 +84,7 @@ def draw(window):
     if available < header_size + len(context(compact)):
         header_size = 2
     if available < header_size + len(context(compact)) and info and not info['error']:
-        stats = [line(f"S:{info['staged']} M:{info['modified']} ?:{info['untracked']} !:{info['conflicts']}", muted)]
+        stats = [line(f"暂存{info['staged']} 未暂存{info['modified']} 新增{info['untracked']} 冲突{info['conflicts']}", muted)]
     footer = context(compact)
     budget = max(0, available-header_size-len(footer))
     listing = []
@@ -82,14 +97,14 @@ def draw(window):
             label = ('* ' if changed else '') + (' ' if directory else ' ') + entry.name + ('/' if directory else '')
             listing.append(line(label, style))
         if len(entries) > count and budget:
-            listing.append(line(f'… {len(entries)-count} more', muted))
+            listing.append(line(f'… 还有 {len(entries)-count} 项', muted))
     except OSError:
         if budget:
-            listing = [line('Directory unavailable', muted)]
+            listing = [line('目录暂时不可访问', muted)]
     short = '~' + cwd[len(str(home)):] if cwd == str(home) or cwd.startswith(str(home)+'/') else cwd
     if len(short) > usable:
         short = '…/' + '/'.join(Path(cwd).parts[-2:])
-    header = ['', line('FILES', muted), line(short, accent), '']
+    header = ['', line('项目文件', muted), line(short, accent), '']
     if header_size == 2:
         header = header[1:3]
     rows = header + listing + footer

@@ -108,13 +108,28 @@ class WorkbenchTests(unittest.TestCase):
             with self.subTest(height=height), patch('shutil.get_terminal_size', return_value=os.terminal_size((60, height))):
                 text = ANSI.sub('', self.sidebar['draw'](self.window))
                 self.assertLessEqual(len(text.split('\r\n'))-1, height-1)
-                for key in ('CONTEXT', 'Ctrl+b f', 'Ctrl+b p', 'Ctrl+b g', 'Ctrl+b m'):
+                for key in ('项目状态', 'Ctrl+b f', 'Ctrl+b p', 'Ctrl+b g', 'Ctrl+b m'):
                     self.assertIn(key, text)
                 if height >= 16:
-                    self.assertIn('Staged 3', text)
-                    self.assertIn('Conflicts 1', text)
+                    self.assertIn('已暂存 3', text)
+                    self.assertIn('冲突 1', text)
                 if height >= 24:
-                    self.assertIn('UU conflict.txt', text)
+                    self.assertIn('[冲突] conflict.txt', text)
+
+    def test_02_readable_file_states(self):
+        label = self.sidebar['change_label']
+        for code, expected in [('??', '新增'), (' M', '未暂存·修改'), ('M ', '已暂存·修改'),
+                               ('MM', '暂存后又改动'), ('R ', '已暂存·重命名'), (' D', '未暂存·删除'), ('UU', '冲突')]:
+            with self.subTest(code=code):
+                self.assertEqual(label({'code': code, 'conflict': code=='UU'}), expected)
+        # One untracked file should read as a new file, not a pair of question marks.
+        info = dict(root=str(self.repo), branch='main', staged=0, modified=0, untracked=1,
+                    conflicts=0, error=False, changes=[{'code':'??', 'path':'new.txt', 'old':None, 'conflict':False, 'mtime':0}])
+        with patch.dict(self.sidebar['draw'].__globals__, git_info=lambda cwd:info), patch('shutil.get_terminal_size', return_value=os.terminal_size((60, 47))):
+            text = ANSI.sub('', self.sidebar['draw'](self.window))
+        self.assertIn('待提交 1 个文件', text)
+        self.assertIn('[新增] new.txt', text)
+        self.assertNotIn('??', text)
 
     def test_03_tool_recovery_and_project_switch(self):
         first = self.tool('git')

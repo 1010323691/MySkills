@@ -1,5 +1,5 @@
 {
-  "version": "1.1.0",
+  "version": "1.1.1",
   "tested_os": {
     "id": "ubuntu",
     "version": "26.04",
@@ -54,7 +54,7 @@
     ".config/terminal-workbench/palette.toml": "827c737053c4ade872827f4ab3efe1a25ed3da8c3c9ada2ebcd8d089438766f9",
     ".config/micro/colorschemes/claude-cream.micro": "da3043e950a3622caf60b1a63c76610af58f5d83b07298a6e9d042fa0459e8f7",
     ".config/ghostty/themes/Claude Cream": "2590ebd7d5673bfa3807f34bf5fa757979fba3953bce6b26fd07df6baa3c4cce",
-    ".local/bin/terminal-sidebar": "d1cfdbc7b09466bb8dd92339e5bec7d7d85cf0d774759981ea9238272920f598",
+    ".local/bin/terminal-sidebar": "4abbfacf4e02c6b158faa94b132696b1f1627dbe7d0bddc8c5eb9661adf9af59",
     ".local/bin/terminal-layout": "65f5eb9e1915753366b4b7a3f5b359856fd12426771ceeb5bae19dedf4839386",
     ".local/bin/terminal-theme": "ebc61a8152bd34a4fe709440e5b85f7a7e41eb41a1656b30a5a967ac9d50e41c",
     ".local/bin/terminal-project": "93e270ef710fbaf7b350921dfc9e412235240900782b3ba8b9066a2721ade5a0",
