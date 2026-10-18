@@ -1,0 +1,74 @@
+{
+  "version": "1.0.0",
+  "tested_os": {
+    "id": "ubuntu",
+    "version": "26.04",
+    "architecture": "x86_64"
+  },
+  "apt_packages": [
+    "ghostty",
+    "tmux",
+    "eza",
+    "fastfetch",
+    "micro",
+    "starship",
+    "fzf",
+    "zoxide",
+    "bat",
+    "fd-find",
+    "ripgrep",
+    "lazygit",
+    "wl-clipboard",
+    "fontconfig",
+    "git"
+  ],
+  "assets": [
+    {
+      "kind": "font",
+      "version": "v7.9",
+      "name": "MapleMonoNormal-NF-CN-unhinted.zip",
+      "url": "https://github.com/subframe7536/maple-font/releases/download/v7.9/MapleMonoNormal-NF-CN-unhinted.zip",
+      "sha256": "a4ff81ab62ec4bebb0a7ebcd035289fedc5518a4f2f63dc978141f67d19f181c"
+    },
+    {
+      "kind": "bottom",
+      "version": "0.14.9",
+      "name": "bottom_x86_64-unknown-linux-gnu.tar.gz",
+      "url": "https://github.com/ClementTsang/bottom/releases/download/0.14.9/bottom_x86_64-unknown-linux-gnu.tar.gz",
+      "sha256": "e0c325829e8bdcea25a8a7651da05dbb6f1fc109ac5d2f0187867d3d5d9c0df8"
+    }
+  ],
+  "template_sha256": {
+    ".tmux.conf": "979e50f0f02e16e7ae4e1c96c197862439b564d05e43ab7460f354b2916d9797",
+    ".config/starship.toml": "e8747e2225dd3cb10c08e8915567093066c5f0e2d77219d3b5fe99b1d9d2fe4c",
+    ".config/bottom/bottom.toml": "90fda9830b7595e2ceca1b02d851e802c99cb645e50da5349a1523f669405719",
+    ".config/fastfetch/config.jsonc": "9d93416f20617bb89b9a040fefebac4190e0036d1aa899d88f431d51455b070a",
+    ".config/bat/config": "646bed6e1515ace618128882cb40dd60a08b4e57cefcf86886f56bcab1e176f3",
+    ".config/tmux/claude-colors.conf": "c91f86f61aa081bb268236cad3dc27ebf3eff9a5a28cdeacb93432e6a2a7804b",
+    ".config/ghostty/config": "3ad7f523adecd35868ff6bd4cacce949060e9f486c164085d0bfabc3217a9d7f",
+    ".config/lazygit/config.yml": "e7904dcc25aa953f072297473288f22f65cfa12b7ac6e0ea8251011a08ae33bd",
+    ".config/micro/settings.json": "4f8fabc62d03c635272a2dedd9215f8ea02229ecd9affe13210b44bc4219a4ca",
+    ".config/terminal-workbench/bottom-layout.toml": "6bae1a218e161bcbb00e6d7e6c14bdd35632b4c184c05f25ea32675e277267da",
+    ".config/terminal-workbench/shell.bash": "d1fe09eeaa77f23eda2e13e2f391d6032374baaa571dcf040e369e8b0715ab67",
+    ".config/terminal-workbench/colors.bash": "676c9739f2df633ab022cda05f5ff0a9b9013d30a389e5dc7e15397627a91cc3",
+    ".config/terminal-workbench/palette.toml": "827c737053c4ade872827f4ab3efe1a25ed3da8c3c9ada2ebcd8d089438766f9",
+    ".config/micro/colorschemes/claude-cream.micro": "da3043e950a3622caf60b1a63c76610af58f5d83b07298a6e9d042fa0459e8f7",
+    ".config/ghostty/themes/Claude Cream": "2590ebd7d5673bfa3807f34bf5fa757979fba3953bce6b26fd07df6baa3c4cce",
+    ".local/bin/terminal-sidebar": "1563d4ee681d1802feff6597114211732a5580d135e827098d6405a792f765cb",
+    ".local/bin/terminal-layout": "65f5eb9e1915753366b4b7a3f5b359856fd12426771ceeb5bae19dedf4839386",
+    ".local/bin/terminal-theme": "6c06e2b77e5ef464c737be2391213c14df6ffce3dedaa128ee5f3aa2c5fd40c1",
+    ".local/bin/terminal-project": "93e270ef710fbaf7b350921dfc9e412235240900782b3ba8b9066a2721ade5a0",
+    ".local/bin/ssh-work": "b07e91cbcb7654a0a037efd0debefa69602042d447c9dd105f5cdaf8237bd8f6",
+    ".local/bin/terminal-dev": "1c1cdb20ce9f90d875d0b16c848b5ec8b1007d41044eae239216802d7ede807c",
+    ".local/bin/terminal-tool": "8de237deab929e1cc77719a3c2077b9df7ac1e69f3306c914d752feeaaf40188",
+    ".local/bin/terminal-studio": "a7f93e1bd6347ac89d32b465249c67e6a21b45a04ca17664888a130a3384c645",
+    ".local/bin/terminal-files": "36c5fc0e61e22418e4b5918bf50943ce57e4db3c4fa97d4acd2a0d51d8535e56",
+    ".local/bin/terminal-studio-pane": "1052c8507c486373270d90944bc9b95c5c57075740ee079170cebc15ffe4890e",
+    ".local/bin/terminal-work": "d86c82ee86407bd178afd97200dfee94b31291461d42e0a9978aec60a80a0372",
+    ".local/bin/ghostty-tmux": "4e2c3be02adbcf1d9f80c96070e11fe94134754ba2867dc187aee7dd3fb46831",
+    ".local/share/applications/terminal-studio.desktop": "1a6e1e2f24a7cda833c97c4768ee03d76aa1579412d29b427a73221ecc3f3106",
+    ".local/share/applications/terminal-work.desktop": "f7dc973fffd7952cb160640e66539a764fa0d8b9e47357a38eec19d86424c5b8",
+    ".local/share/applications/terminal-dev.desktop": "3e46156b71545eee1487f06b757982e8e2e48b54c37247ef6f1002ea8ebd3b62"
+  },
+  "bash_integration_sha256": "6d172fe0c2e7365f251c1cdaac2340ec18a290e1c600b2aaba515792f36096f5"
+}

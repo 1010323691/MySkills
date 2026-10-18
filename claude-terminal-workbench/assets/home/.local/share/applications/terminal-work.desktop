@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Claude Terminal Work
+Comment=Project workspace: tools left, shell right
+Exec=/usr/bin/ghostty --gtk-single-instance=false --maximize=true -e __WORKBENCH_HOME__/.local/bin/terminal-work
+Icon=com.mitchellh.ghostty
+Terminal=false
+Categories=System;TerminalEmulator;
+StartupNotify=true

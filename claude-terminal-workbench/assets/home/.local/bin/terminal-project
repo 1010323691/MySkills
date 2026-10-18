@@ -1,0 +1,17 @@
+#!/usr/bin/python3
+import subprocess,os,sys
+from pathlib import Path
+if len(sys.argv)>1:os.execv(str(Path.home()/'.local/bin/terminal-work'),['terminal-work',*sys.argv[1:]])
+rows=subprocess.run(['tmux','list-sessions','-F','#{session_id}\t#{session_name}\t#{session_windows} windows · #{?session_attached,attached,detached}\t#{session_path}'],capture_output=True,text=True)
+if rows.returncode:os.execv(str(Path.home()/'.local/bin/terminal-work'),['terminal-work'])
+# Colors are inherited from interactive Bash or supplied by the tmux popup environment.
+import tomllib
+p=tomllib.loads((Path.home()/'.config/terminal-workbench/palette.toml').read_text())
+env=dict(os.environ)
+env['FZF_DEFAULT_OPTS']=f"--layout=reverse --border=rounded --color=bg:{p['background']},bg+:{p['selection']},fg:{p['foreground']},fg+:{p['foreground']},hl:{p['accent']},hl+:{p['accent']},prompt:{p['accent']},pointer:{p['accent']},border:{p['border']}"
+pick=subprocess.run(['fzf','--delimiter','\t','--with-nth','2..','--prompt','Projects › ','--header','Select a session · Esc cancel · proj /path creates a project'],input=rows.stdout,stdout=subprocess.PIPE,text=True,env=env)
+if pick.returncode or not pick.stdout:sys.exit(0)
+session=pick.stdout.split('\t',1)[0]
+cmd=['tmux','switch-client' if os.environ.get('TMUX') else 'attach-session','-t',session]
+if os.environ.get('TMUX') and os.environ.get('TERMINAL_CLIENT'):cmd+=['-c',os.environ['TERMINAL_CLIENT']]
+os.execvp('tmux',cmd)

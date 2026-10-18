@@ -1,0 +1,25 @@
+#!/usr/bin/python3
+import os,sys,subprocess
+root=os.path.abspath(os.path.expanduser(sys.argv[1] if len(sys.argv)>1 else '.'))
+if len(sys.argv)==1 and os.environ.get('TMUX') and os.environ.get('TMUX_PANE'):
+ try:
+  main=subprocess.check_output(['tmux','display-message','-p','-t',os.environ['TMUX_PANE'],'#{@work-main}'],text=True).strip()
+  if main:root=subprocess.check_output(['tmux','display-message','-p','-t',main,'#{pane_current_path}'],text=True).strip()
+ except subprocess.SubprocessError:pass
+if not os.path.isdir(root):sys.exit('Directory does not exist')
+env=dict(os.environ)
+# Bash shell config is not read when this helper runs in a tmux popup.
+from pathlib import Path
+import tomllib
+p=tomllib.loads((Path.home()/'.config/terminal-workbench/palette.toml').read_text())
+env['FZF_DEFAULT_OPTS']=f"--layout=reverse --border=rounded --color=bg:{p['background']},bg+:{p['selection']},fg:{p['foreground']},fg+:{p['foreground']},hl:{p['accent']},hl+:{p['accent']},prompt:{p['accent']},pointer:{p['accent']},border:{p['border']}"
+fd=subprocess.Popen(['fdfind','--type','f','--hidden','--exclude','.git','--max-results','10000','--print0'],cwd=root,stdout=subprocess.PIPE)
+try:
+ pick=subprocess.run(['fzf','--read0','--print0','--prompt','Files › ','--preview','batcat --color=always --style=numbers --line-range=:180 -- {} 2>/dev/null','--preview-window','right:55%:wrap'],stdin=fd.stdout,stdout=subprocess.PIPE,cwd=root,env=env)
+finally:
+ fd.stdout.close()
+ if fd.poll() is None:fd.terminate()
+ fd.wait()
+if pick.returncode==0 and pick.stdout:
+ filename=os.fsdecode(pick.stdout.rstrip(b'\0'))
+ os.chdir(root);os.execvp('micro',['micro',os.path.abspath(filename)])

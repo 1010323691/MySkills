@@ -1,0 +1,5 @@
+#!/usr/bin/python3
+"""Open a direct SSH tab/window and remote tmux, avoiding local/remote tmux nesting."""
+import os,sys
+if len(sys.argv)!=2 or sys.argv[1].startswith('-'):sys.exit('Usage: ssh-work user@host-or-ssh-alias')
+os.execv('/usr/bin/ghostty',['ghostty','--gtk-single-instance=false','--maximize=true','-e','env','TERM=xterm-256color','ssh','-t',sys.argv[1],'tmux new-session -A -s work'])

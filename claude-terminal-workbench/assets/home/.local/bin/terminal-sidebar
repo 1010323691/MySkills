@@ -1,0 +1,65 @@
+#!/usr/bin/python3
+"""Read-only live files and Git context, following the main pane's directory."""
+import os,sys,time,subprocess,shutil,unicodedata,signal,tomllib
+from pathlib import Path
+window=sys.argv[1];home=Path.home()
+p=tomllib.loads((home/'.config/terminal-workbench/palette.toml').read_text())
+def color(key):
+ value=p[key].lstrip('#');return '\033[38;2;'+ ';'.join(str(int(value[i:i+2],16)) for i in (0,2,4))+'m'
+reset='\033[0m';accent=color('accent');muted=color('muted');ink=color('foreground')
+def clean(s):return ''.join(c if ord(c)>=32 and ord(c)!=127 else ' ' for c in str(s))
+def fit(s,n):
+ out='';width=0
+ for c in clean(s):
+  cw=0 if unicodedata.combining(c) else (2 if unicodedata.east_asian_width(c) in 'WF' else 1)
+  if width+cw>n:return out[:-1]+'…' if out else ''
+  out+=c;width+=cw
+ return out
+
+def run(args):
+ try:return subprocess.check_output(args,text=True,stderr=subprocess.DEVNULL,timeout=1).strip()
+ except (subprocess.SubprocessError,OSError):return ''
+def draw():
+ global accent,muted,ink
+ try:p.update(tomllib.loads((home/'.config/terminal-workbench/palette.toml').read_text()))
+ except (OSError,tomllib.TOMLDecodeError):pass
+ accent=color('accent');muted=color('muted');ink=color('foreground')
+ width,height=shutil.get_terminal_size((50,44));usable=max(8,width-4)
+ main=run(['tmux','show-options','-wv','-t',window,'@work-main'])
+ cwd=run(['tmux','display-message','-p','-t',main,'#{pane_current_path}']) if main else str(home)
+ branch=run(['git','-C',cwd,'branch','--show-current'])
+ changes=run(['git','-C',cwd,'status','--porcelain','--untracked-files=no']).splitlines() if branch else []
+ file_rows=[]
+ try:
+  entries=sorted((e for e in os.scandir(cwd) if not e.name.startswith('.')),key=lambda e:(not e.is_dir(follow_symlinks=False),e.name.casefold()))
+  for entry in entries[:max(1,height-17)]:
+   isdir=entry.is_dir(follow_symlinks=False)
+   file_rows.append('  '+(accent+' ' if isdir else muted+' ')+ink+fit(entry.name+('/' if isdir else ''),usable-3)+reset)
+ except OSError:entries=[];file_rows=['  '+muted+'Directory unavailable'+reset]
+ short=cwd.replace(str(home),'~',1)
+ if fit(short,usable)!=short:
+  parts=Path(cwd).parts
+  for count in range(min(3,len(parts)),0,-1):
+   candidate='…/'+'/'.join(parts[-count:])
+   if fit(candidate,usable)==candidate:
+    short=candidate;break
+  else:short='…/'+fit(Path(cwd).name,usable-2)
+ rows=['', '  '+muted+'FILES'+reset,'  '+accent+fit(short,usable)+reset,'',*file_rows]
+ if len(entries)>len(file_rows):rows.append('  '+muted+f'… {len(entries)-len(file_rows)} more'+reset)
+ rows+=['','  '+muted+'─'*usable+reset,'','  '+muted+'CONTEXT'+reset,'', '  '+accent+fit(' '+branch if branch else 'Local workspace',usable)+reset]
+ if branch:rows.append('  '+muted+f'{len(changes)} tracked changes'+reset)
+ rows+=['  '+muted+fit('Host  '+os.uname().nodename,usable)+reset,'','  '+muted+'Ctrl+b f  Files'+reset,'  '+muted+'Ctrl+b p  Projects'+reset,'  '+muted+'Ctrl+b g  Git'+reset,'  '+muted+'Ctrl+b m  Monitor'+reset]
+ rows=rows[:max(1,height-1)]
+ return '\033[?2026h\033[H'+''.join('\033[2K'+line+'\r\n' for line in rows)+'\033[J\033[?2026l'
+stop=False
+def ending(*_):
+ global stop
+ stop=True
+signal.signal(signal.SIGTERM,ending)
+signal.signal(signal.SIGINT,ending)
+try:
+ sys.stdout.write('\033[?25l\033[2J');sys.stdout.flush()
+ while not stop:
+  sys.stdout.write(draw());sys.stdout.flush();time.sleep(2)
+finally:
+ sys.stdout.write('\033[0m\033[?25h\033[?2026l');sys.stdout.flush()

@@ -1,0 +1,14 @@
+#!/bin/bash
+# Initial pane content, followed by a normal interactive shell when it exits.
+case "${1:-}" in
+  files)
+    clear
+    printf '\033[38;2;193;95;60m    HOME / FILES\033[0m\n\n'
+    eza -l --icons=always --group-directories-first --color=always --no-permissions --no-user --time-style=long-iso "$HOME"
+    ;;
+  system) clear; fastfetch --config "$HOME/.config/fastfetch/config.jsonc" ;;
+  monitor) "$HOME/.local/bin/btm" --config_location "$HOME/.config/bottom/bottom.toml" ;;
+  editor) COLORTERM=truecolor micro "$HOME/.config/fastfetch/config.jsonc" +32:5 ;;
+  *) exit 2 ;;
+esac
+exec /bin/bash -l

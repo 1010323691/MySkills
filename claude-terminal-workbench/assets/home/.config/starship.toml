@@ -1,0 +1,36 @@
+# Generated from ~/.config/terminal-workbench/palette.toml
+add_newline = true
+command_timeout = 500
+scan_timeout = 30
+format = "$username$hostname$directory$git_branch$git_status$python$cmd_duration$line_break$character"
+[username]
+show_always = false
+style_user = "#777163"
+style_root = "bold #B74736"
+format = "[$user@]($style)"
+[hostname]
+ssh_only = true
+style = "bold #A95032"
+format = "[ssh:$hostname ]($style)"
+[directory]
+style = "bold #3D3929"
+format = "[$path]($style) "
+truncation_length = 3
+truncation_symbol = "…/"
+[git_branch]
+symbol = " "
+style = "#A95032"
+format = "[$symbol$branch]($style) "
+[git_status]
+style = "#777163"
+format = "([$all_status$ahead_behind]($style) )"
+[python]
+style = "#526B3D"
+format = "[ $virtualenv]($style) "
+[cmd_duration]
+min_time = 3000
+style = "#777163"
+format = "[$duration]($style) "
+[character]
+success_symbol = "[❯](bold #A95032)"
+error_symbol = "[❯](bold #B74736)"

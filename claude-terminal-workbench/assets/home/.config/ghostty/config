@@ -1,0 +1,25 @@
+# Main entry: named Work session. Shell integration is loaded in Bash explicitly.
+command = /bin/bash -c 'exec "$HOME/.local/bin/ghostty-tmux"'
+shell-integration = none
+font-family = Maple Mono Normal NF CN
+font-size = 12
+theme = Claude Cream
+window-theme = light
+background-opacity = 1
+window-padding-x = 12
+window-padding-y = 10
+split-divider-color = #DED8CC
+scrollback-limit = 10000000
+mouse-hide-while-typing = true
+mouse-shift-capture = never
+clipboard-paste-protection = true
+confirm-close-surface = true
+# Use tmux for daily splits, so layouts survive closing Ghostty.
+keybind = ctrl+shift+o=text:\x02|
+keybind = ctrl+shift+e=text:\x02-
+keybind = ctrl+alt+left=text:\x02h
+keybind = ctrl+alt+right=text:\x02l
+keybind = ctrl+alt+up=text:\x02k
+keybind = ctrl+alt+down=text:\x02j
+keybind = ctrl+shift+f=text:\x02z
+keybind = ctrl+shift+r=reload_config

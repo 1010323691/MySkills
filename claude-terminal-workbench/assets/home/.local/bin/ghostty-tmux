@@ -1,0 +1,4 @@
+#!/bin/bash
+# Stable main workspace; project selection is explicit via Ctrl+b p / proj.
+if [[ -n ${TMUX:-} ]]; then exec /bin/bash -l; fi
+exec "$HOME/.local/bin/terminal-work" "$@"

@@ -4,6 +4,7 @@
 
 | Skill | 用途 |
 |---|---|
+| [claude-terminal-workbench](./claude-terminal-workbench/) | Claude 米白 Ghostty + tmux 工作台：左辅助右主区，含完整配置、自动部署、备份回退与[使用说明](./claude-terminal-workbench/README.md) |
 | [huashu-design](./huashu-design/) | 花叔 Design：用 HTML 制作高保真原型、幻灯片、动画与信息图，先提供三个设计方向供选择，支持设计评审与导出 |
 | [ui-style-lab](./ui-style-lab/) | 单独调用先选择追加或使用组件；复用时列出已有样式库，按图设计时保存到 skill 并同步仓库，更新[静态展示页](./ui-style-lab/gallery/index.html)后返回用户确认效果 |
 | [shadcn-admin-design](./shadcn-admin-design/) | 基于 shadcn-admin 的后台设计向导：设计 / 优化 / 重构 → [六组完整风格模板](./shadcn-admin-design/assets/templates/gallery.html) → 需求与配色 → 效果图确认 → 实现与验证；含列表、图表、表单、滑块与滚动等常用组件 |

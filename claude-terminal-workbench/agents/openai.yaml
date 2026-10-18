@@ -1,0 +1,4 @@
+interface:
+  display_name: "Claude Terminal Workbench"
+  short_description: "部署和维护 Claude 米白终端工作台，包含检查、备份与回退"
+  default_prompt: "使用 $claude-terminal-workbench 为这台 Ubuntu 部署已固化的米白终端工作台，先检查环境，再安装并验证。"

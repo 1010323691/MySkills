@@ -1,0 +1,24 @@
+#!/bin/bash
+# Open the same persistent four-pane workspace without replacing existing work.
+set -euo pipefail
+session=studio
+runner="$HOME/.local/bin/terminal-studio-pane"
+if ! tmux has-session -t "=$session" 2>/dev/null; then
+    left=$(tmux new-session -d -P -F '#{pane_id}' -s "$session" -n workspace -x 180 -y 54 -c "$HOME" "'$runner' files")
+    right=$(tmux split-window -h -l 65% -t "$left" -P -F '#{pane_id}' -c "$HOME" "'$runner' system")
+    monitor=$(tmux split-window -v -l 58% -t "$left" -P -F '#{pane_id}' -c "$HOME" "'$runner' monitor")
+    editor=$(tmux split-window -v -l 58% -t "$right" -P -F '#{pane_id}' -c "$HOME" "'$runner' editor")
+    tmux select-pane -t "$left" -T '  FILES'
+    tmux select-pane -t "$right" -T '  SYSTEM'
+    tmux select-pane -t "$monitor" -T '  MONITOR'
+    tmux select-pane -t "$editor" -T '  EDITOR'
+    tmux set-window-option -t "$session:workspace" automatic-rename off
+    tmux set-window-option -t "$session:workspace" pane-border-status top
+    tmux set-window-option -t "$session:workspace" pane-border-format ' #[fg=#C15F3C]#{pane_title} #[default]'
+    tmux select-pane -t "$left"
+fi
+if [[ "${1:-}" == --prepare ]]; then exit 0; fi
+if [[ -n "${TMUX:-}" ]]; then
+    exec tmux switch-client -t "=$session"
+fi
+exec tmux attach-session -t "=$session"

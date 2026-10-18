@@ -1,0 +1,40 @@
+#!/usr/bin/python3
+"""A named project session, with auxiliary context on the left and shell on the right."""
+import sys,subprocess,hashlib,re,shlex
+from pathlib import Path
+home=Path.home()
+args=sys.argv[1:]; prepare='--prepare' in args; dev='--dev' in args
+args=[a for a in args if a not in ('--prepare','--dev')]
+if len(args)>1:sys.exit('Usage: terminal-work [--dev] [--prepare] [project-directory]')
+root=Path(args[0]).expanduser().resolve() if args else home
+if not root.is_dir():sys.exit('Directory does not exist: '+str(root))
+slug=re.sub(r'[^a-zA-Z0-9_-]+','-',root.name).strip('-')[:24] or 'project'
+name=('dev-' if dev else 'work-')+slug+'-'+hashlib.sha256(str(root).encode()).hexdigest()[:6]
+if root==home:name='dev' if dev else 'work'
+# Serialize startup so two simultaneous launches cannot create duplicate sessions.
+import fcntl
+cache=home/'.cache/terminal-workbench';cache.mkdir(parents=True,exist_ok=True)
+lock=(cache/'startup.lock').open('a');fcntl.flock(lock,fcntl.LOCK_EX)
+def tm(*cmd):return subprocess.check_output(['tmux',*map(str,cmd)],text=True).strip()
+exists=subprocess.run(['tmux','has-session','-t','='+name],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL).returncode==0
+if not exists:
+    # Initial detached size is replaced by actual client geometry on attach.
+    window,main=tm('new-session','-d','-P','-F','#{window_id}\t#{pane_id}','-s',name,'-n','work','-x','180','-y','52','-c',root,'/bin/bash -l').split('\t')
+    tm('set-option','-w','-t',window,'@work-main',main)
+    sidebar=tm('split-window','-h','-b','-l','30%','-P','-F','#{pane_id}','-t',main,'-c',root,shlex.join([str(home/'.local/bin/terminal-sidebar'),window]))
+    tm('set-option','-w','-t',window,'@work-sidebar',sidebar)
+    tm('set-option','-w','-t',window,'automatic-rename','off')
+    tm('select-pane','-t',main,'-T','WORKSPACE')
+    tm('select-pane','-t',sidebar,'-T','FILES · CONTEXT')
+    if dev:
+        logs=tm('split-window','-v','-l','30%','-P','-F','#{pane_id}','-t',main,'-c',root,'/bin/bash -l')
+        tm('select-pane','-t',logs,'-T','LOGS / COMMANDS')
+    tm('select-pane','-t',main)
+lock.close()
+if prepare:print(name);sys.exit(0)
+import os
+if os.environ.get('TMUX'):
+    cmd=['tmux','switch-client','-t','='+name]
+    if os.environ.get('TERMINAL_CLIENT'):cmd+=['-c',os.environ['TERMINAL_CLIENT']]
+else:cmd=['tmux','attach-session','-t','='+name]
+os.execvp(cmd[0],cmd)

@@ -1,0 +1,11 @@
+gui:
+  theme:
+    activeBorderColor: ["#A95032", bold]
+    inactiveBorderColor: ["#DED8CC"]
+    optionsTextColor: ["#486B8A"]
+    selectedLineBgColor: ["#E8DFD1"]
+    defaultFgColor: ["#3D3929"]
+    searchingActiveBorderColor: ["#A95032", bold]
+  nerdFontsVersion: "3"
+  showRandomTip: false
+  showBottomLine: false

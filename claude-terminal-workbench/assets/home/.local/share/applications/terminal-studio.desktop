@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=Claude Terminal Studio
+Comment=Persistent four-pane terminal workspace in warm ivory
+Exec=/usr/bin/ghostty --gtk-single-instance=false --maximize=true --font-size=11 -e __WORKBENCH_HOME__/.local/bin/terminal-studio
+Icon=com.mitchellh.ghostty
+Terminal=false
+Categories=System;TerminalEmulator;
+StartupNotify=true

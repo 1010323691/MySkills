@@ -1,0 +1,52 @@
+# Claude Cream monitor, updated every two seconds.
+[flags]
+rate = 2000
+hide_time = true
+default_widget_type = "proc"
+[processes]
+columns = ["PID", "Name", "CPU%", "Mem%"]
+[[row]]
+ratio = 3
+[[row.child]]
+type = "cpu"
+[[row]]
+ratio = 2
+[[row.child]]
+type = "mem"
+[[row]]
+ratio = 4
+[[row.child]]
+ratio = 2
+[[row.child.child]]
+type = "net"
+[[row.child.child]]
+type = "disk"
+[[row.child]]
+ratio = 3
+type = "proc"
+default = true
+
+[styles]
+theme = "default-light"
+[styles.cpu]
+all_entry_color = "#A95032"
+avg_entry_color = "#526B3D"
+cpu_core_colors = ["#A95032", "#486B8A", "#526B3D", "#805777", "#936622", "#3D7472"]
+[styles.memory]
+ram_color = "#805777"
+swap_color = "#936622"
+[styles.network]
+rx_color = "#486B8A"
+tx_color = "#526B3D"
+[styles.tables]
+headers = {color = "#A95032", bold = true}
+[styles.graphs]
+graph_color = "#DED8CC"
+legend_text = {color = "#777163"}
+[styles.widgets]
+border_color = "#777163"
+selected_border_color = "#A95032"
+widget_title = {color = "#3D3929"}
+text = {color = "#3D3929"}
+selected_text = {color = "#3D3929", bg_color = "#E8DFD1"}
+disabled_text = {color = "#777163"}
