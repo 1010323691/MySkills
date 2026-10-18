@@ -10,7 +10,7 @@ description: 在 Ubuntu 上完整部署、复刻、检查或维护已固化的 C
 ## 固定的产品选择
 
 - Ghostty + tmux；Claude 暖米白，深灰正文与陶土橙点缀。
-- **左侧约 30% 为实时文件/Git 概况，右侧约 70% 为主工作区。** 保持这个顺序。
+- **左侧为实时文件/Git 概况，右侧为主工作区。** 左侧默认最多 32 个终端字符列；普通窗口在 24～32 列间调整，小窗口优先为主区保留 40 列，宽屏不按比例继续放大。保持左辅右主的顺序。
 - Maple Mono Normal NF CN；Bash + Starship，短两行提示符。
 - fzf、zoxide、eza、bat、fd、ripgrep；Lazygit 和 bottom 按需打开。
 - Work、Dev、Studio 入口；项目使用命名 tmux 会话。

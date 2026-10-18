@@ -1,13 +1,26 @@
 #!/usr/bin/python3
-"""Maintain a useful left/right proportion after the client is resized."""
-import subprocess,sys
-try:
- args=['tmux','list-windows','-F','#{window_id}\t#{window_width}\t#{@work-sidebar}\t#{@work-main}']
- if len(sys.argv)>1:args+=['-t',sys.argv[1]]
- rows=subprocess.check_output(args,text=True).splitlines()
- for row in rows:
-  window,width,side,main=row.split('\t');width=int(width)
-  if side and main:
-   left=min(max(24,int(width*.30)),max(12,width-35))
-   subprocess.run(['tmux','resize-pane','-t',side,'-x',str(left)],stdout=subprocess.DEVNULL,stderr=subprocess.DEVNULL)
-except (subprocess.SubprocessError,ValueError):pass
+"""Keep a compact sidebar when attaching or resizing the terminal."""
+import subprocess, sys
+from pathlib import Path
+sys.path.insert(0, str(Path.home()/'.local/lib/terminal-workbench'))
+from workbench_context import sidebar_width
+
+
+def main():
+    args = ['tmux', 'list-windows']
+    args += ['-t', sys.argv[1]] if len(sys.argv)>1 else ['-a']
+    args += ['-F', '#{window_id}\t#{window_width}\t#{@work-sidebar}\t#{@work-main}\t#{window_zoomed_flag}']
+    try:
+        rows = subprocess.check_output(args, text=True).splitlines()
+        for row in rows:
+            window, width, side, primary, zoomed = row.split('\t')
+            width = int(width)
+            if side and primary and width >= 3 and zoomed != '1':
+                subprocess.run(['tmux', 'resize-pane', '-t', side, '-x', str(sidebar_width(width))],
+                               stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, check=True)
+    except (subprocess.SubprocessError, ValueError):
+        pass
+
+
+if __name__ == '__main__':
+    main()

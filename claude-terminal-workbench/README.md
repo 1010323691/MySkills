@@ -6,12 +6,12 @@
 
 ![Claude 米白终端工作台：左侧项目文件与 Git 状态，右侧 Agent CLI，底部项目与窗口栏](docs/images/agent-workbench-preview.png)
 
-上图为实际运行截图：左侧查看项目文件、分支和改动；右侧运行 Agent CLI；底部显示 `项目 › 分支 › 窗口用途`，可在 Agent 与 Monitor 等窗口间切换。截图中的项目和 Agent 是使用示例，部署 Skill 不会安装该项目或自动运行 Agent。
+上图为实际运行截图（早期 30% 侧栏布局；当前版本已改为最多 32 列的窄侧栏）：左侧查看项目文件、分支和改动；右侧运行 Agent CLI；底部显示 `项目 › 分支 › 窗口用途`，可在 Agent 与 Monitor 等窗口间切换。截图中的项目和 Agent 是使用示例，部署 Skill 不会安装该项目或自动运行 Agent。
 
 ## 复刻内容
 
 - Claude 暖米白、深灰正文、陶土橙点缀，Maple Mono Normal NF CN 中文与图标字体。
-- **左侧约 30% 辅助区，右侧约 70% 主工作区**；左侧显示文件与 Git 概况。
+- **左侧窄辅助区，右侧主工作区**；左侧通常 24～32 个终端字符列，宽屏上限 32 列，小窗口优先给主区保留 40 列，跟随窗口大小自动调整。
 - Ghostty + tmux + Bash + Starship；fzf、zoxide、eza、bat、fd、ripgrep。
 - Work / Dev / Studio 入口，项目命名会话，按需打开 Lazygit 与 bottom。
 - `ssh-work` 连接远端 tmux；远端也需安装 tmux，远端连接须另行实测。

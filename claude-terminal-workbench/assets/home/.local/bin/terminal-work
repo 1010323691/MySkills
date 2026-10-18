@@ -3,6 +3,8 @@
 import sys,subprocess,hashlib,re,shlex
 from pathlib import Path
 home=Path.home()
+sys.path.insert(0, str(home/'.local/lib/terminal-workbench'))
+from workbench_context import sidebar_width
 args=sys.argv[1:]; prepare='--prepare' in args; dev='--dev' in args
 args=[a for a in args if a not in ('--prepare','--dev')]
 if len(args)>1:sys.exit('Usage: terminal-work [--dev] [--prepare] [project-directory]')
@@ -21,7 +23,7 @@ if not exists:
     # Initial detached size is replaced by actual client geometry on attach.
     window,main=tm('new-session','-d','-P','-F','#{window_id}\t#{pane_id}','-s',name,'-n','work','-x','180','-y','52','-c',root,'/bin/bash -l').split('\t')
     tm('set-option','-w','-t',window,'@work-main',main)
-    sidebar=tm('split-window','-h','-b','-l','30%','-P','-F','#{pane_id}','-t',main,'-c',root,shlex.join([str(home/'.local/bin/terminal-sidebar'),window]))
+    sidebar=tm('split-window','-h','-b','-l',str(sidebar_width(int(tm('display-message','-p','-t',main,'#{window_width}')))),'-P','-F','#{pane_id}','-t',main,'-c',root,shlex.join([str(home/'.local/bin/terminal-sidebar'),window]))
     tm('set-option','-w','-t',window,'@work-sidebar',sidebar)
     tm('set-option','-w','-t',window,'automatic-rename','off')
     tm('select-pane','-t',main,'-T','WORKSPACE')

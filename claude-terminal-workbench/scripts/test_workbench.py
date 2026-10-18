@@ -216,5 +216,24 @@ class WorkbenchTests(unittest.TestCase):
         self.assertIn('terminal-status', (self.home/'.config/tmux/claude-colors.conf').read_text())
 
 
+    def test_06_sidebar_width_and_resize(self):
+        name = subprocess.check_output([str(self.home/'.local/bin/terminal-work'), '--prepare', str(self.other)], env=self.env, text=True).strip()
+        window = self.tm('list-windows', '-t', '='+name, '-F', '#{window_id}').strip()
+        side = self.tm('show-options', '-wv', '-t', window, '@work-sidebar').strip()
+        main = self.tm('show-options', '-wv', '-t', window, '@work-main').strip()
+        self.assertEqual(self.tm('display-message', '-p', '-t', side, '#{pane_width}').strip(), '32')
+        self.tm('set-option', '-w', '-t', window, 'window-size', 'manual')
+        for width, expected in ((72, 24), (100, 25), (128, 32), (198, 32), (320, 32), (60, 19)):
+            with self.subTest(window_width=width):
+                self.tm('resize-window', '-t', window, '-x', str(width), '-y', '30')
+                subprocess.run([str(self.home/'.local/bin/terminal-layout'), name], env=self.env, check=True)
+                self.assertEqual(int(self.tm('display-message', '-p', '-t', side, '#{pane_width}')), expected)
+                self.assertGreaterEqual(int(self.tm('display-message', '-p', '-t', main, '#{pane_width}')), 40)
+        self.tm('resize-pane', '-Z', '-t', main)
+        subprocess.run([str(self.home/'.local/bin/terminal-layout'), name], env=self.env, check=True)
+        self.assertEqual(self.tm('display-message', '-p', '-t', main, '#{window_zoomed_flag}').strip(), '1')
+        self.tm('kill-session', '-t', '='+name)
+
+
 if __name__ == '__main__':
     unittest.main(verbosity=2)

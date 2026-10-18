@@ -118,3 +118,8 @@ def files(cwd, info):
 
 def clean(value):
     return ''.join(c if ord(c) >= 32 and ord(c) != 127 else ' ' for c in str(value)).encode('utf-8', errors='replace').decode('utf-8')
+
+
+def sidebar_width(total):
+    """Cap the sidebar at 32 cells, reserving 40 cells for the main pane."""
+    return max(1, min(32, max(24, total//4), total-41))
