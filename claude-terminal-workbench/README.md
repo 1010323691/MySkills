@@ -2,6 +2,12 @@
 
 把已固化的 Ghostty + tmux 工作台交给智能体完整复刻，包含配置模板、部署脚本、备份与回退；不是只有一段风格提示词。
 
+## 实际效果
+
+![Claude 米白终端工作台：左侧项目文件与 Git 状态，右侧 Agent CLI，底部项目与窗口栏](docs/images/agent-workbench-preview.png)
+
+上图为实际运行截图：左侧查看项目文件、分支和改动；右侧运行 Agent CLI；底部显示 `项目 › 分支 › 窗口用途`，可在 Agent 与 Monitor 等窗口间切换。截图中的项目和 Agent 是使用示例，部署 Skill 不会安装该项目或自动运行 Agent。
+
 ## 复刻内容
 
 - Claude 暖米白、深灰正文、陶土橙点缀，Maple Mono Normal NF CN 中文与图标字体。
