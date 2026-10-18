@@ -131,6 +131,29 @@ class WorkbenchTests(unittest.TestCase):
         self.assertIn('[新增] new.txt', text)
         self.assertNotIn('??', text)
 
+    def test_02_filename_truncation(self):
+        fit = self.sidebar['fit']
+        for width in (0, 1, 2, 8, 25, 55):
+            with self.subTest(width=width):
+                text = fit('src/views/textformat/' + 'ChapterIssuesPanel'*10 + '.vue', width)
+                self.assertLessEqual(len(text), width)
+                self.assertLessEqual(text.count('…'), 1)
+        self.assertEqual(fit('文件.txt', 8), '文件.txt')
+        self.assertEqual(fit('中文文件名.txt', 8), '中文文…')
+        self.assertEqual(fit('e\u0301'*20, 5), 'e\u0301'*4+'…')
+        # A long Git path must not wrap or leave repeated ellipses in the rendered pane.
+        info = dict(root=str(self.repo), branch='main', staged=0, modified=1, untracked=0,
+                    conflicts=0, error=False, changes=[{'code':' M', 'path':'src/'+'long-file-name'*20+'.vue', 'old':None, 'conflict':False, 'mtime':0}])
+        for width in (30, 60, 100):
+            with self.subTest(pane_width=width), patch.dict(self.sidebar['draw'].__globals__, git_info=lambda cwd:info), patch('shutil.get_terminal_size', return_value=os.terminal_size((width, 47))):
+                text = ANSI.sub('', self.sidebar['draw'](self.window))
+                for row in text.split('\r\n'):
+                    self.assertNotIn('……', row)
+                    # All emitted rows fit, counting Chinese glyphs as two cells.
+                    import unicodedata
+                    cells = sum(0 if unicodedata.combining(c) else (2 if unicodedata.east_asian_width(c) in 'WF' else 1) for c in row)
+                    self.assertLessEqual(cells, width)
+
     def test_03_tool_recovery_and_project_switch(self):
         first = self.tool('git')
         self.wait_for(lambda: 'READY '+str(self.repo) in self.tm('capture-pane', '-p', '-t', first))

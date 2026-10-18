@@ -10,16 +10,22 @@ reset = '\033[0m'
 
 
 def fit(text, width):
-    result = ''
+    """Truncate by terminal cells, reserving one cell for a single ellipsis."""
+    if width <= 0:
+        return ''
+    text = clean(text)
+    glyphs = [(char, 0 if unicodedata.combining(char) else
+               (2 if unicodedata.east_asian_width(char) in 'WF' else 1)) for char in text]
+    if sum(size for _, size in glyphs) <= width:
+        return text
+    result = []
     used = 0
-    for char in clean(text):
-        size = 0 if unicodedata.combining(char) else (2 if unicodedata.east_asian_width(char) in 'WF' else 1)
-        if used + size > width:
-            return fit(result, max(0, width-1)) + '…' if width else ''
-        result += char
+    for char, size in glyphs:
+        if used + size > width-1:
+            break
+        result.append(char)
         used += size
-    return result
-
+    return ''.join(result) + '…'
 
 
 def change_label(item):
