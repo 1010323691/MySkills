@@ -29,13 +29,34 @@ def draw():
  cwd=run(['tmux','display-message','-p','-t',main,'#{pane_current_path}']) if main else str(home)
  branch=run(['git','-C',cwd,'branch','--show-current'])
  changes=run(['git','-C',cwd,'status','--porcelain','--untracked-files=no']).splitlines() if branch else []
+ # Build context first so directory size cannot consume its rows.
+ context=['','  '+muted+'─'*usable+reset,'','  '+muted+'CONTEXT'+reset,'',
+          '  '+accent+fit(' '+branch if branch else 'Local workspace',usable)+reset]
+ if branch:context.append('  '+muted+f'{len(changes)} tracked changes'+reset)
+ context+=['  '+muted+fit('Host  '+os.uname().nodename,usable)+reset,'',
+           '  '+muted+'Ctrl+b f  Files'+reset,'  '+muted+'Ctrl+b p  Projects'+reset,
+           '  '+muted+'Ctrl+b g  Git'+reset,'  '+muted+'Ctrl+b m  Monitor'+reset]
+ available=max(1,height-1)  # Reserve the last row to avoid terminal scrolling.
+ if available < 4+len(context)+2:
+  context=[row for row in context if row and '─' not in row]
+ header_size=4
+ if available < header_size+len(context):
+  header_size=2
+ if available < header_size+len(context):
+  context=[row for row in context if 'Host  ' not in row and 'tracked changes' not in row]
+ file_budget=max(0,available-header_size-len(context))
  file_rows=[]
  try:
   entries=sorted((e for e in os.scandir(cwd) if not e.name.startswith('.')),key=lambda e:(not e.is_dir(follow_symlinks=False),e.name.casefold()))
-  for entry in entries[:max(1,height-17)]:
+  # The overflow indicator is part of the file budget, not an extra row.
+  count=max(0,file_budget-1) if len(entries)>file_budget else len(entries)
+  for entry in entries[:count]:
    isdir=entry.is_dir(follow_symlinks=False)
    file_rows.append('  '+(accent+' ' if isdir else muted+' ')+ink+fit(entry.name+('/' if isdir else ''),usable-3)+reset)
- except OSError:entries=[];file_rows=['  '+muted+'Directory unavailable'+reset]
+  if len(entries)>count and file_budget:
+   file_rows.append('  '+muted+f'… {len(entries)-count} more'+reset)
+ except OSError:
+  if file_budget:file_rows=['  '+muted+'Directory unavailable'+reset]
  short=cwd.replace(str(home),'~',1)
  if fit(short,usable)!=short:
   parts=Path(cwd).parts
@@ -44,12 +65,12 @@ def draw():
    if fit(candidate,usable)==candidate:
     short=candidate;break
   else:short='…/'+fit(Path(cwd).name,usable-2)
- rows=['', '  '+muted+'FILES'+reset,'  '+accent+fit(short,usable)+reset,'',*file_rows]
- if len(entries)>len(file_rows):rows.append('  '+muted+f'… {len(entries)-len(file_rows)} more'+reset)
- rows+=['','  '+muted+'─'*usable+reset,'','  '+muted+'CONTEXT'+reset,'', '  '+accent+fit(' '+branch if branch else 'Local workspace',usable)+reset]
- if branch:rows.append('  '+muted+f'{len(changes)} tracked changes'+reset)
- rows+=['  '+muted+fit('Host  '+os.uname().nodename,usable)+reset,'','  '+muted+'Ctrl+b f  Files'+reset,'  '+muted+'Ctrl+b p  Projects'+reset,'  '+muted+'Ctrl+b g  Git'+reset,'  '+muted+'Ctrl+b m  Monitor'+reset]
- rows=rows[:max(1,height-1)]
+ header=['', '  '+muted+'FILES'+reset,'  '+accent+fit(short,usable)+reset,'']
+ if header_size==2:header=header[1:3]
+ rows=header+file_rows+context
+ if len(rows)>available:
+  # Extremely short panes prioritize context and controls over the file list.
+  rows=context[:available]
  return '\033[?2026h\033[H'+''.join('\033[2K'+line+'\r\n' for line in rows)+'\033[J\033[?2026l'
 stop=False
 def ending(*_):
