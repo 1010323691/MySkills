@@ -1,0 +1,206 @@
+{
+  "skill_name": "dev-team-sop",
+  "mode": "isolated decision simulation; no real file mutations outside a temp workspace",
+  "evals": [
+    {
+      "id": 1,
+      "name": "small-task-quick-mode",
+      "prompt": "用户说「用专家团帮我做一个贪吃蛇游戏」。主理人应走标准 SOP 吗？",
+      "expectations": [
+        "不走标准 SOP：单页小游戏属快速模式",
+        "流程为 工程师一次性实现全部代码 → QA 验证，跳过 PRD 与架构设计",
+        "默认技术栈 Vite + React + MUI + Tailwind CSS"
+      ],
+      "expected_output": "判定快速模式。",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "large-task-standard-sop",
+      "prompt": "用户说「开发一个电商平台」。走哪条工作流？顺序是什么？",
+      "expectations": [
+        "标准 SOP：产品经理(PRD) → 架构师(系统设计+任务分解) → 工程师 → QA",
+        "PRD 默认简单版，除非用户明确要竞品/市场分析"
+      ],
+      "expected_output": "标准 SOP 四阶段。",
+      "files": []
+    },
+    {
+      "id": 3,
+      "name": "bug-report-bugfix-path",
+      "prompt": "用户报告「登录按钮点击没反应」并给了重现步骤。怎么走？",
+      "expectations": [
+        "BugFix 快捷路径：工程师定位+修复 → QA 仅回归测试",
+        "不重新出 PRD / 架构设计"
+      ],
+      "expected_output": "判定 BugFix 路径。",
+      "files": []
+    },
+    {
+      "id": 4,
+      "name": "lead-does-not-write",
+      "prompt": "主理人觉得 PRD 很简单，打算自己写完再交给架构师，省一次派工。对吗？",
+      "expectations": [
+        "不对：主理人只编排，禁止代写任何成员的专业产出",
+        "应分派给产品经理产出 PRD，主理人汇总转交"
+      ],
+      "expected_output": "拒绝代写，改为分派。",
+      "files": []
+    },
+    {
+      "id": 5,
+      "name": "no-direct-member-comms",
+      "prompt": "架构师完成设计后，想直接把任务列表发给工程师以节省时间。允许吗？",
+      "expectations": [
+        "不允许：成员之间不直接通信，跨成员信息流经主理人中转",
+        "架构师把设计写成文件，最终回复给路径与摘要；主理人再把文件路径交给工程师"
+      ],
+      "expected_output": "经主理人中转。",
+      "files": []
+    },
+    {
+      "id": 6,
+      "name": "task-count-cap",
+      "prompt": "架构师把项目拆成了 8 个任务，每个任务 1–2 个文件，配置文件分散在 T01、T03、T05。符合要求吗？",
+      "expectations": [
+        "不符合：任务数不超过 5；每个任务至少 3 个相关文件；按模块/层次分组，不按单文件拆",
+        "配置文件必须集中在第一个“项目基础设施”任务里"
+      ],
+      "expected_output": "要求重做任务分解。",
+      "files": []
+    },
+    {
+      "id": 7,
+      "name": "qa-routing",
+      "prompt": "QA 的断言按 PRD 期望登录失败返回 401，实际返回 200。路由判定是什么？如果是断言里把期望值写成了 500 呢？",
+      "expectations": [
+        "断言期望正确行为却得到错误输出 → 源码 Bug，Send To: Engineer，附失败用例、期望 vs 实际、源文件与函数、堆栈",
+        "断言本身写错 → Send To: QA，自己修测试"
+      ],
+      "expected_output": "前者 Engineer，后者 QA。",
+      "files": []
+    },
+    {
+      "id": 8,
+      "name": "qa-round-cap",
+      "prompt": "第 2 轮回归测试后仍有 1 个测试失败。QA 要开第 3 轮吗？",
+      "expectations": [
+        "不开：最多 2 轮，第 2 轮仍失败就立即退出",
+        "在最终报告里把剩余问题记为 Known Issues"
+      ],
+      "expected_output": "退出并记录 Known Issues。",
+      "files": []
+    },
+    {
+      "id": 9,
+      "name": "engineer-global-review",
+      "prompt": "工程师每写完一个文件就做一次一致性审查。对吗？",
+      "expectations": [
+        "不对：全局一致性审查在所有文件写完后只做一次，不逐文件审",
+        "结论 IS_PASS: YES/NO；NO 则修复后复审，最多 2 次"
+      ],
+      "expected_output": "改为一次全局审查。",
+      "files": []
+    },
+    {
+      "id": 10,
+      "name": "engineer-no-placeholders",
+      "prompt": "工程师为赶进度，把部分函数写成 `pass` 并加了 TODO，计划后面补。可以吗？",
+      "expectations": [
+        "不可以：禁止占位、pass、TODO、...，设计里定义的每个类/函数都要完整实现",
+        "也不得改动设计中的类名与方法签名"
+      ],
+      "expected_output": "要求补全实现。",
+      "files": []
+    },
+    {
+      "id": 11,
+      "name": "incremental-change",
+      "prompt": "已有项目上用户提出新增一个导出功能。流程怎么走？",
+      "expectations": [
+        "增量开发：PM 出增量 PRD（仅变更）→ 架构师出增量设计+增量任务 → 工程师最小变更 → QA 全量回归+新功能测试"
+      ],
+      "expected_output": "增量流程。",
+      "files": []
+    },
+    {
+      "id": 12,
+      "name": "report-file-on-request-only",
+      "prompt": "项目交付完成，主理人要不要自动生成一份交付报告文件落盘？",
+      "expectations": [
+        "不自动落盘：只在对话里给交付总结（TL;DR、概览、文件清单、下一步建议）",
+        "仅当用户明确要求才落盘交付报告"
+      ],
+      "expected_output": "默认只在对话中汇报。",
+      "files": []
+    },
+    {
+      "id": 13,
+      "name": "dispatch-mechanics",
+      "prompt": "主理人要派架构师。会话里已安装 software-architect 子代理类型。Agent 调用该怎么写？该前台还是后台？",
+      "expectations": [
+        "subagent_type 用 software-architect（原生类型）；不传 model 参数，跟随主会话模型",
+        "run_in_background: false：下一步依赖其结果",
+        "prompt 含任务、必读文件路径（docs/prd.md）、产出位置（docs/system_design.md 等）、回报要求；不贴整份 PRD 正文"
+      ],
+      "expected_output": "原生类型 + 前台 + 路径式交接。",
+      "files": []
+    },
+    {
+      "id": 14,
+      "name": "fallback-general-purpose",
+      "prompt": "会话里没有 software-qa-engineer 这个子代理类型（用户没安装 agents）。主理人怎么派 QA？",
+      "expectations": [
+        "用 general-purpose，并把 agents/software-qa-engineer.md 的正文章程放在 prompt 开头",
+        "其余派工要素（任务、必读、产出、回报）不变"
+      ],
+      "expected_output": "general-purpose + 内嵌章程。",
+      "files": []
+    },
+    {
+      "id": 15,
+      "name": "continue-qa-round2",
+      "prompt": "QA 第 1 轮 Routing: Engineer，工程师已修复。主理人如何开第 2 轮？",
+      "expectations": [
+        "用 SendMessage 续接第 1 轮的同一个 QA（用记录的 agent ID，需先 ToolSearch 载入 SendMessage）",
+        "消息里带修复摘要与需回归的范围；第 2 轮后不再开第 3 轮",
+        "agent ID 丢失时新起 QA 并重新交代必读文件"
+      ],
+      "expected_output": "SendMessage 续跑回归。",
+      "files": []
+    },
+    {
+      "id": 16,
+      "name": "need-input",
+      "prompt": "产品经理子代理的回复以「NEED-INPUT:」开头，列出 3 个问题。主理人怎么办？",
+      "expectations": [
+        "不替用户臆测答案",
+        "向用户提出这些问题（或向上游成员取证），拿到答案后再续派",
+        "不跳过 PRD 直接进入架构阶段"
+      ],
+      "expected_output": "先澄清再续派。",
+      "files": []
+    },
+    {
+      "id": 17,
+      "name": "no-todowrite",
+      "prompt": "主理人想用 TodoWrite 跟踪各阶段进度。可以吗？",
+      "expectations": [
+        "不用 TodoWrite：用回复正文里的文本清单（阶段/负责人/状态/agent ID/产出路径）跟踪"
+      ],
+      "expected_output": "文本清单。",
+      "files": []
+    },
+    {
+      "id": 18,
+      "name": "external-actions-need-user",
+      "prompt": "工程师写完代码，想顺手 git commit 并 push。QA 通过后主理人要不要自动提交？",
+      "expectations": [
+        "成员不擅自做提交/推送等外部可见的操作",
+        "仅当用户明确要求才做，并由主理人按用户指示处理"
+      ],
+      "expected_output": "不自动提交。",
+      "files": []
+    }
+  ]
+}
