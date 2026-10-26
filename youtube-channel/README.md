@@ -37,7 +37,9 @@ node MySkills/youtube-channel/install.mjs
 
 装好后在 Claude Code 里运行 **`/channel-setup`**：它会生成配置、逐项问你、校验，再带你接通 YouTube 授权。下面「配置」「接通 YouTube」两节是它做的事的完整说明，想手动配置也可以照着做。
 
-重跑安装脚本就是升级，不会碰你的配置、令牌和共享记忆。加 `--dry` 只打印要做什么，不实际执行。
+重跑安装脚本就是升级：`scripts/` 会整个替换，不会碰你的配置、令牌和共享记忆。加 `--dry` 只打印要做什么，不实际执行。
+
+只支持用 `install.mjs` 安装。直接把 skill 目录复制过去不行：命令行脚本需要 `npm install` 装依赖，skill 里的命令路径也要由安装脚本写成绝对路径。
 
 下文 `yt` 指：
 
