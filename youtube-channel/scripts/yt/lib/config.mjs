@@ -17,7 +17,8 @@ export const DEFAULTS = {
   channelName: '',
   dataDir: '~/.youtube-channel/data',
   memoryDir: '',
-  personaFile: '',
+  // 人设：名字 / 怎么称呼主人 / 自称 / 补充几句 + 人设文件（Markdown 全文）；`yt persona` 拼成提示词
+  persona: { name: '', ownerTitle: '', selfClaim: '', file: '', notes: [] },
   proxy: '',
   limits: { writeDaily: 30, writeGapSec: 120, uploadDaily: 10, dailyUnits: 8000, minGapMs: 1000 },
   duty: { everyMin: 30, repliesPerRound: 1, journalAfterHour: 21, replyLanguage: 'match', recordFeedback: true },
@@ -54,7 +55,9 @@ export function config() {
   // 相对路径按配置文件所在目录解析，不随当前工作目录漂移
   c.dataDir = path.resolve(path.dirname(configPath), expandHome(c.dataDir || DEFAULTS.dataDir))
   c.memoryDir = c.memoryDir ? expandHome(c.memoryDir) : ''
-  c.personaFile = c.personaFile ? expandHome(c.personaFile) : ''
+  // 旧字段 personaFile（1.1）照样认，新写法是 persona.file
+  const pf = c.persona.file || user.personaFile || ''
+  c.persona.file = pf ? expandHome(pf) : ''
   c.youtube = { ...c.limits, proxy: c.proxy, memoryDir: c.memoryDir }
   cache = c
   return c
@@ -74,7 +77,11 @@ export function checkConfig() {
   if (!path.isAbsolute(expandHome(readUserConfig().user.dataDir ?? DEFAULTS.dataDir))) problems.push(`dataDir 建议写绝对路径（可以用 ~ 开头）；现在按配置文件所在目录解析为 ${c.dataDir}`)
   if (!c.memoryDir) problems.push('memoryDir 没填：值守和工作室之间没有共享记忆')
   else if (!path.isAbsolute(c.memoryDir)) problems.push('memoryDir 必须是绝对路径（可以用 ~ 开头）')
-  if (c.personaFile && !fs.existsSync(c.personaFile)) problems.push(`personaFile 指向的文件不存在：${c.personaFile}`)
+  const P0 = c.persona
+  if (P0.file && !fs.existsSync(P0.file)) problems.push(`persona.file 指向的文件不存在：${P0.file}`)
+  if (!P0.name && !P0.file) problems.push('persona 没填（至少填 name 或 file）：回复没有人设可依')
+  if (!Array.isArray(P0.notes)) problems.push('persona.notes 要是字符串数组')
+  if (readUserConfig().user.personaFile !== undefined) problems.push('personaFile 是旧写法，请改成 persona.file（现在仍然兼容）')
   if (c.proxy && !/^(https?|socks5?):\/\/.+/.test(c.proxy)) problems.push('proxy 要写成 http://主机:端口 这样的地址')
   const L = c.limits, D = c.duty, P = c.publish
   if (!int(L.writeDaily, 1, 100)) problems.push('limits.writeDaily 要是 1–100 的整数')

@@ -13,6 +13,7 @@ import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
 import { config, dataPath, checkConfig } from '../yt/lib/config.mjs'   // checkConfig 复用 config() 已缓存的文件内容
 import { memoryDirOf } from '../yt/lib/memory.mjs'
+import { personaPrompt } from '../yt/lib/persona.mjs'
 
 const YT = fileURLToPath(new URL('../yt/commands/yt.mjs', import.meta.url))
 const cfg = config()
@@ -35,6 +36,33 @@ const quota = () => yt('auth', 'status').quota
 
 const cmd = process.argv[2]
 const s = load()
+const hhmm = ms => new Date(ms).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+
+/** 人设：只报状态，不带全文（无事的轮次不用读）；要回复时 skill 运行 `yt persona` 取完整提示词 */
+function personaInfo() {
+  const { prompt, ...info } = personaPrompt(cfg)
+  return info
+}
+
+/** 频道数据：失败不影响巡视；和上一轮比出变化，存进状态文件 */
+function statsWithDelta() {
+  let cur
+  try { cur = yt('stats', '--n', '10') } catch (e) { return { error: String(e.message).slice(0, 200) } }
+  const prev = s.lastStats
+  const d = (a, b) => (prev && Number.isFinite(a) && Number.isFinite(b)) ? a - b : null
+  const prevVideo = new Map((prev?.videos ?? []).map(v => [v.id, v]))
+  const out = {
+    since: prev?.at ?? null,
+    channel: { ...cur.channel, delta: { subscribers: d(cur.channel.subscribers, prev?.channel?.subscribers), views: d(cur.channel.views, prev?.channel?.views), videos: d(cur.channel.videos, prev?.channel?.videos) } },
+    recent: { ...cur.recent, delta: { views: d(cur.recent.views, prev?.recent?.views), comments: d(cur.recent.comments, prev?.recent?.comments), likes: d(cur.recent.likes, prev?.recent?.likes) } },
+    videos: cur.videos.map(v => {
+      const p = prevVideo.get(v.id)
+      return { ...v, delta: p ? { views: v.views - p.views, comments: (v.comments ?? 0) - (p.comments ?? 0), likes: (v.likes ?? 0) - (p.likes ?? 0) } : null }
+    }),
+  }
+  s.lastStats = cur
+  return out
+}
 
 if (cmd === 'check') {
   const list = inbox()
@@ -49,11 +77,17 @@ if (cmd === 'check') {
   const idle = !fresh.length ? '没有新评论，也不到写日志的时候'
     : D.repliesPerRound === 0 ? '配置为只看不回、也不记反馈'
     : '今天回复已到上限，也不记反馈'
+  const nowMs = Date.now()
   console.log(JSON.stringify({
     work,
     reason: work ? undefined : idle,
+    at: hhmm(nowMs), nextRound: hhmm(nowMs + D.everyMin * 60000),
     memoryDir: memDir || null,
-    personaFile: cfg.personaFile || null, channelName: cfg.channelName || null,
+    persona: personaInfo(),
+    channelName: cfg.channelName || null,
+    // 频道数据 + 较上一轮的变化（每轮都汇报给主人）
+    stats: statsWithDelta(),
+    quota: { units: q.units, dailyUnits: q.dailyUnits, uploads: q.uploads, uploadDaily: q.uploadDaily },
     // 这一轮的规矩（来自配置的 duty 段）
     rules: { repliesThisRound: canReply ? Math.min(D.repliesPerRound, cap - replied) : 0, replyLanguage: D.replyLanguage, recordFeedback: D.recordFeedback },
     configProblems: checkConfig().problems,

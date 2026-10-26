@@ -5,6 +5,8 @@
 //   yt auth login [--no-open]            # 浏览器授权（回环地址 + PKCE）
 //   yt auth status | logout
 //   yt videos [--n 10]                   # 自己频道最近的视频
+//   yt persona                           # 人设提示词（配置 persona 段 + 人设文件），回复前先读
+//   yt stats [--n 10]                    # 频道数据：订阅、总播放、视频数 + 最近视频的播放 / 评论 / 赞
 //   yt comments <视频ID> [--n 20] [--order time|relevance]
 //   yt inbox [--n 20] [--unreplied]      # 整个频道的评论收件箱
 //   yt thread <楼ID>                     # 一整条楼（回复后回读核查用）
@@ -22,6 +24,7 @@ import { spawn, spawnSync } from 'node:child_process'
 import { config, dataPath, checkConfig, initConfig, configPath } from '../lib/config.mjs'
 import { createYouTube, youtubeSettings, YouTubeError } from '../lib/youtube.mjs'
 import { createMemory, memoryDirOf, MemoryError } from '../lib/memory.mjs'
+import { personaPrompt } from '../lib/persona.mjs'
 
 const fullCfg = config()
 const cfg = fullCfg.youtube ?? {}
@@ -116,6 +119,24 @@ async function main() {
     return out(await yt.myVideos({ n: num('n', 10) }), list => {
       if (!list.length) return console.log('（频道里还没有视频）')
       for (const v of list) console.log(`${v.id}  ${v.publishedAt?.slice(0, 10) ?? ''}  评论 ${v.comments ?? '关闭'} · 播放 ${v.views}  ${short(v.title, 60)}`)
+    })
+  }
+
+  if (cmd === 'persona') {
+    // 人设提示词：配置的 persona 段 + 人设文件全文；回复评论、写简介前先读
+    const p = personaPrompt(fullCfg)
+    return out(p, x => {
+      if (x.problem) console.error('⚠ ' + x.problem)
+      console.log(x.prompt || '（没有人设）')
+    })
+  }
+
+  if (cmd === 'stats') {
+    return out(await yt.stats({ n: num('n', 10) }), x => {
+      const c = x.channel
+      console.log(`${c.title}：订阅 ${c.subscribers ?? '（已隐藏）'} · 总播放 ${c.views} · 视频 ${c.videos} 个`)
+      console.log(`最近 ${x.recent.count} 个视频合计：播放 ${x.recent.views} · 评论 ${x.recent.comments} · 赞 ${x.recent.likes}`)
+      for (const v of x.videos) console.log(`  ${v.id}  ${v.publishedAt?.slice(0, 10) ?? ''}  播放 ${v.views} · 评论 ${v.comments ?? '关闭'} · 赞 ${v.likes ?? '隐藏'}  ${short(v.title, 50)}`)
     })
   }
 

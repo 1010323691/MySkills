@@ -350,8 +350,27 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
     return ids.map(id => {
       const v = byId.get(id)
       return { id, title: v?.snippet?.title ?? '', publishedAt: v?.snippet?.publishedAt ?? null,
-        views: Number(v?.statistics?.viewCount ?? 0), comments: v?.statistics?.commentCount === undefined ? null : Number(v.statistics.commentCount) }
+        views: Number(v?.statistics?.viewCount ?? 0), comments: v?.statistics?.commentCount === undefined ? null : Number(v.statistics.commentCount),
+        likes: v?.statistics?.likeCount === undefined ? null : Number(v.statistics.likeCount) }
     })
+  }
+
+  /** 频道整体数据：订阅、总播放、视频数（channels.list，1 单位）+ 最近视频的逐条数据 */
+  async function stats({ n = 10 } = {}) {
+    const j = await api('channels', { part: 'snippet,statistics', mine: 'true' })
+    const c = j.items?.[0]
+    if (!c) throw new YouTubeError('这个 Google 账号下没有 YouTube 频道', 'YT_AUTH')
+    const s = c.statistics ?? {}
+    const videos = await myVideos({ n })
+    const sum = key => videos.reduce((a, v) => a + (Number(v[key]) || 0), 0)
+    return {
+      at: new Date(now()).toISOString(),
+      channel: { id: c.id, title: c.snippet?.title ?? '', subscribers: s.hiddenSubscriberCount ? null : Number(s.subscriberCount ?? 0),
+        views: Number(s.viewCount ?? 0), videos: Number(s.videoCount ?? 0) },
+      // 评论数、点赞数 YouTube 只给逐条视频的，这里是最近 n 条视频的合计
+      recent: { count: videos.length, views: sum('views'), comments: sum('comments'), likes: sum('likes') },
+      videos,
+    }
   }
 
   function thread(item, myId) {
@@ -650,5 +669,5 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
     })
   }
 
-  return { loadClient, saveClient, login, logout, status, me, myVideos, comments, inbox, thread: threadOf, reply, replied, forget, api, upload, uploads, forgetUpload }
+  return { loadClient, saveClient, login, logout, status, me, myVideos, stats, comments, inbox, thread: threadOf, reply, replied, forget, api, upload, uploads, forgetUpload }
 }

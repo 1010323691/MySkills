@@ -2,7 +2,13 @@
   "channelName": "",
   "dataDir": "~/.youtube-channel/data",
   "memoryDir": "",
-  "personaFile": "",
+  "persona": {
+    "name": "",
+    "ownerTitle": "",
+    "selfClaim": "",
+    "file": "",
+    "notes": []
+  },
   "proxy": "",
   "limits": {
     "writeDaily": 30,

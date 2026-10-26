@@ -31,6 +31,7 @@ $YT auth status --json
 **从旧版迁移**（dsh-bili-whale 插件）：如果 `~/.bili-ai/youtube-token.json` 存在，问主人要不要沿用旧的登录。
 - 要的话：`dataDir` 填 `"~/.bili-ai"`，第 4 步就不用重新授权。
 - 旧配置 `~/.dsh/bili-whale.config.json` 里 `youtube` 段的 `memoryDir`、`proxy`、`writeDaily`、`writeGapSec`、`uploadDaily`、`dailyUnits` 可以拿来当默认值，并告诉主人这些值是从哪来的。
+- 旧配置里的 `persona.name` / `persona.ownerTitle` / `persona.selfClaim` 直接搬到新配置的同名字段；旧人设文件 `~/.bili-ai/persona.md` 填进 `persona.file`。旧配置的 `preferences`（喜欢 / 讨厌的 B站内容）是给刷 B站用的，不迁移，除非主人想把其中几条写进 `persona.notes`。
 
 ## 2. 逐组询问并填写
 
@@ -42,7 +43,13 @@ $YT auth status --json
 |---|---|---|
 | `channelName` | 频道叫什么 | 只用于显示和总结 |
 | `memoryDir` | 共享记忆放哪 | 绝对路径，可以用 `~` 开头。建议放在做视频的项目里，比如 `<项目>/memory`。留空 = 值守和工作室不共享记忆，不推荐 |
-| `personaFile` | 有没有人设文件 | Markdown，写角色名、口吻、自称、禁区；值守按它说话。没有就留空，问主人要不要现在一起写一份 |
+| `persona.name` | 角色叫什么 | 对外的名字，比如 Rei |
+| `persona.ownerTitle` | 她怎么称呼主人 | 比如 partner、主人 |
+| `persona.selfClaim` | 她怎么自称 | 比如 I、我、本小姐 |
+| `persona.file` | 有没有人设文件 | Markdown 全文：来历、口吻、口头禅、在乎什么、禁区。没有的话问主人要不要现在一起写一份 |
+| `persona.notes` | 还有什么要补充 | 字符串数组，每条一句，比如「不聊政治」 |
+
+这几项会被 `$YT persona` 拼成一段人设提示词，值守回复和发布写简介前都先读它。填完运行一次 `$YT persona` 给主人看效果。
 | `dataDir` | 令牌和账本放哪 | 一般用默认值；迁移时见上文 |
 | `proxy` | 访问 Google 要不要代理 | 国内网络一般要，格式 `http://127.0.0.1:7890`；留空 = 直连 |
 
