@@ -1,6 +1,6 @@
 // 频道共享记忆（2026-10-26）：工作室（Claude Code 做视频）和值守（DSH 里的她回评论）共用一个文件夹
 //
-// 配置：{ youtube: { memoryDir: 'D:\\projectPath\\claude频道\\memory' } }，留空 = 不用
+// 配置：config.json 里的 memoryDir（绝对路径，可以用 ~ 开头），留空 = 不用
 //
 //   README.md        这套约定本身（谁写什么、谁读什么）
 //   now.md           现在的进度与对外口径 —— 工作室收工时更新；她回评论前读
