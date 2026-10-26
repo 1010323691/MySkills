@@ -5,3 +5,6 @@ desktop.ini
 
 # Python
 __pycache__/
+
+# Node
+node_modules/

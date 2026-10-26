@@ -1,0 +1,7 @@
+{
+  "name": "youtube-channel",
+  "version": "1.0.0",
+  "description": "用 Claude Code 运营自己的 YouTube 频道：常驻会话定时值守评论（channel-duty），做视频的会话确认后发布（channel-publish），两边靠共享记忆目录接力。",
+  "author": { "name": "1010323691" },
+  "skills": "./skills/"
+}

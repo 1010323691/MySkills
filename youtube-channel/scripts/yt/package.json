@@ -1,0 +1,6 @@
+{
+  "name": "youtube-channel-yt",
+  "private": true,
+  "type": "module",
+  "dependencies": { "google-auth-library": "11.3.1" }
+}
