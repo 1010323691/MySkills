@@ -18,6 +18,8 @@ const step = (msg, fn) => { console.log((dry ? '[dry] ' : '') + msg); if (!dry) 
 const scripts = path.join(DEST, 'scripts')
 step(`复制脚本 → ${scripts}`, () => {
   fs.mkdirSync(DEST, { recursive: true })
+  // 先整个删掉再复制：新版删掉的文件不会残留（这里只有代码和依赖，配置和数据不在 scripts/ 下）
+  fs.rmSync(scripts, { recursive: true, force: true })
   fs.cpSync(path.join(SRC, 'scripts'), scripts, { recursive: true, filter: p => !p.includes(`${path.sep}node_modules`) })
   // 模板随插件升级；用户自己的 config.json 一律不碰
   fs.copyFileSync(path.join(SRC, 'config.template.json'), path.join(DEST, 'config.template.json'))

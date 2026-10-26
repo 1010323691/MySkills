@@ -11,7 +11,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { config, dataPath, checkConfig } from '../yt/lib/config.mjs'
+import { config, dataPath, checkConfig } from '../yt/lib/config.mjs'   // checkConfig 复用 config() 已缓存的文件内容
 import { memoryDirOf } from '../yt/lib/memory.mjs'
 
 const YT = fileURLToPath(new URL('../yt/commands/yt.mjs', import.meta.url))
@@ -24,22 +24,14 @@ const today = () => new Date().toLocaleDateString('sv-SE')
 const load = () => { try { return JSON.parse(fs.readFileSync(STATE, 'utf8')) } catch { return {} } }
 const save = s => { fs.mkdirSync(path.dirname(STATE), { recursive: true }); fs.writeFileSync(STATE, JSON.stringify(s, null, 2)) }
 
-function inbox() {
-  const r = spawnSync(process.execPath, [YT, 'inbox', '--unreplied', '--n', '50', '--json'], { encoding: 'utf8', timeout: 120000 })
-  if (r.status !== 0) throw new Error((r.stderr || r.stdout || 'yt inbox 失败').trim().slice(0, 500))
+const yt = (...args) => {
+  const r = spawnSync(process.execPath, [YT, ...args, '--json'], { encoding: 'utf8', timeout: 120000 })
+  if (r.status !== 0) throw new Error((r.stderr || r.stdout || `yt ${args[0]} 失败`).trim().slice(0, 500))
   return JSON.parse(r.stdout)
 }
-
-function repliesToday() {
-  let n = 0
-  try {
-    for (const line of fs.readFileSync(dataPath('activity.jsonl'), 'utf8').split('\n')) {
-      if (!line.includes('yt-reply-sent')) continue
-      try { const j = JSON.parse(line); if (new Date(j.at).toLocaleDateString('sv-SE') === today()) n++ } catch {}
-    }
-  } catch {}
-  return n
-}
+const inbox = () => yt('inbox', '--unreplied', '--n', '50')
+// 回复计数以 yt 自己的配额账本为准（按太平洋时间算天，和 YouTube 一致），不另记一份
+const quota = () => yt('auth', 'status').quota
 
 const cmd = process.argv[2]
 const s = load()
@@ -49,14 +41,17 @@ if (cmd === 'check') {
   const ids = list.map(t => t.id ?? t.threadId)
   const seen = new Set(s.lastSeen ?? [])
   const fresh = ids.filter(id => !seen.has(id))
-  const replied = repliesToday(), cap = cfg.limits.writeDaily
+  const q = quota(), replied = q.writes, cap = q.writeDaily
   // journalAfterHour 这个钟点以后的第一轮写值守日志，一天一次；24 = 不写
   const diaryDue = new Date().getHours() >= D.journalAfterHour && s.diaryDate !== today()
   const canReply = D.repliesPerRound > 0 && replied < cap
   const work = (fresh.length > 0 && (canReply || D.recordFeedback)) || diaryDue
+  const idle = !fresh.length ? '没有新评论，也不到写日志的时候'
+    : D.repliesPerRound === 0 ? '配置为只看不回、也不记反馈'
+    : '今天回复已到上限，也不记反馈'
   console.log(JSON.stringify({
     work,
-    reason: !work ? (fresh.length ? '今天回复已到上限' : '没有新评论，也不到写日志的时候') : undefined,
+    reason: work ? undefined : idle,
     memoryDir: memDir || null,
     personaFile: cfg.personaFile || null, channelName: cfg.channelName || null,
     // 这一轮的规矩（来自配置的 duty 段）

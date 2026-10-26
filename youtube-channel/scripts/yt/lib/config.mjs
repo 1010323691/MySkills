@@ -32,12 +32,17 @@ const merge = (base, over) => {
   return out
 }
 
-/** 读原始配置文件：{ exists, user, error } */
+let raw = null
+/** 读原始配置文件（带缓存）：{ exists, user, error } */
 export function readUserConfig() {
-  let raw
-  try { raw = fs.readFileSync(configPath, 'utf8') } catch { return { exists: false, user: {}, error: null } }
-  try { return { exists: true, user: JSON.parse(raw.replace(/^﻿/, '')), error: null } }
-  catch (e) { return { exists: true, user: {}, error: `配置文件不是合法 JSON：${e.message}` } }
+  if (raw) return raw
+  let text
+  try { text = fs.readFileSync(configPath, 'utf8') } catch { return (raw = { exists: false, user: {}, error: null }) }
+  let user
+  try { user = JSON.parse(text.replace(/^﻿/, '')) }
+  catch (e) { return (raw = { exists: true, user: {}, error: `配置文件不是合法 JSON：${e.message}` }) }
+  if (!user || typeof user !== 'object' || Array.isArray(user)) return (raw = { exists: true, user: {}, error: '配置文件最外层要是一个 { … } 对象' })
+  return (raw = { exists: true, user, error: null })
 }
 
 let cache = null
@@ -46,7 +51,8 @@ export function config() {
   if (cache) return cache
   const { user } = readUserConfig()
   const c = merge(DEFAULTS, user)
-  c.dataDir = path.resolve(expandHome(c.dataDir || DEFAULTS.dataDir))
+  // 相对路径按配置文件所在目录解析，不随当前工作目录漂移
+  c.dataDir = path.resolve(path.dirname(configPath), expandHome(c.dataDir || DEFAULTS.dataDir))
   c.memoryDir = c.memoryDir ? expandHome(c.memoryDir) : ''
   c.personaFile = c.personaFile ? expandHome(c.personaFile) : ''
   c.youtube = { ...c.limits, proxy: c.proxy, memoryDir: c.memoryDir }
@@ -65,6 +71,7 @@ export function checkConfig() {
   const problems = []
   if (!exists) problems.push(`还没有配置文件：${configPath}（运行 yt config init）`)
   if (error) problems.push(error)
+  if (!path.isAbsolute(expandHome(readUserConfig().user.dataDir ?? DEFAULTS.dataDir))) problems.push(`dataDir 建议写绝对路径（可以用 ~ 开头）；现在按配置文件所在目录解析为 ${c.dataDir}`)
   if (!c.memoryDir) problems.push('memoryDir 没填：值守和工作室之间没有共享记忆')
   else if (!path.isAbsolute(c.memoryDir)) problems.push('memoryDir 必须是绝对路径（可以用 ~ 开头）')
   if (c.personaFile && !fs.existsSync(c.personaFile)) problems.push(`personaFile 指向的文件不存在：${c.personaFile}`)
@@ -89,6 +96,6 @@ export function initConfig() {
   if (fs.existsSync(configPath)) return { path: configPath, created: false }
   fs.mkdirSync(path.dirname(configPath), { recursive: true })
   fs.copyFileSync(templatePath, configPath)
-  cache = null
+  cache = raw = null
   return { path: configPath, created: true }
 }

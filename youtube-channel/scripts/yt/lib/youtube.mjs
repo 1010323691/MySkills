@@ -52,7 +52,8 @@ export function youtubeSettings(cfg = {}) {
   const out = { ...YT_DEFAULTS }
   for (const key of Object.keys(out)) {
     const n = Number(cfg[key])
-    if (Number.isFinite(n) && n > 0) out[key] = Math.floor(n)
+    // uploadDaily 允许 0 = 禁止上传；其余 0 当没填（防手滑关掉闸门）
+    if (Number.isFinite(n) && (n > 0 || (key === 'uploadDaily' && n === 0))) out[key] = Math.floor(n)
   }
   out.minGapMs = Math.max(500, out.minGapMs)
   out.dailyUnits = Math.min(10000, out.dailyUnits)
@@ -185,6 +186,7 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
       if (s.day !== day) Object.assign(s, { day, units: 0, writes: 0, uploads: 0 })
       if (kind === 'upload') {
         if (Number(s.uploadsUntil ?? 0) > t) throw new YouTubeError(`YouTube 上传额度已用尽，${new Date(s.uploadsUntil).toISOString()} 后再试`, 'YT_PAUSED')
+        if (cfg.uploadDaily === 0) throw new YouTubeError('配置里 limits.uploadDaily 是 0：禁止上传', 'YT_BUDGET')
         if (Number(s.uploads ?? 0) >= cfg.uploadDaily) throw new YouTubeError(`今天的上传额度已用完（${cfg.uploadDaily} 个，太平洋时间零点重置）`, 'YT_BUDGET')
       } else if (Number(s.units ?? 0) + units > cfg.dailyUnits) throw new YouTubeError(`已达到本地 YouTube 配额预算（${s.units}/${cfg.dailyUnits} 单位，太平洋时间零点重置）`, 'YT_BUDGET')
       if (kind === 'reply') {

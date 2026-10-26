@@ -163,13 +163,13 @@ yt auth status
 | 字段 | 默认 | 说明 |
 |---|---|---|
 | `channelName` | 空 | 频道名，只用于显示 |
-| `dataDir` | `~/.youtube-channel/data` | 令牌、账本、活动日志放在这里 |
+| `dataDir` | `~/.youtube-channel/data` | 令牌、账本、活动日志放在这里；写绝对路径，相对路径按配置文件所在目录解析 |
 | `memoryDir` | 空 | 共享记忆目录，**绝对路径**（可以用 `~` 开头）。建议放在做视频的项目里；填好后运行 `yt memory init` |
 | `personaFile` | 空 | 人设文件（Markdown），值守按它的口吻回复 |
 | `proxy` | 空 | 访问 Google 的代理，例如 `http://127.0.0.1:7890`；留空 = 直连，也会读环境变量 `HTTPS_PROXY` |
 | `limits.writeDaily` | 30 | 每天最多回几条（1–100） |
 | `limits.writeGapSec` | 120 | 两条回复至少隔几秒（≥30） |
-| `limits.uploadDaily` | 10 | 每天最多上传几个（0 = 禁止上传） |
+| `limits.uploadDaily` | 10 | 每天最多上传几个（0 = 禁止上传，`--go` 会直接被拒） |
 | `limits.dailyUnits` | 8000 | 每天最多用多少 API 配额（官方默认 10000） |
 | `limits.minGapMs` | 1000 | 两次 API 请求的最小间隔 |
 | `duty.everyMin` | 30 | 值守间隔（分钟，10–720），用于 `/loop` |

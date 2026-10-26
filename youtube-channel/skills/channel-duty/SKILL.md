@@ -38,7 +38,7 @@ $DUTY check
 
 ## 2b. 记反馈（`rules.recordFeedback` 为 true 时）
 
-不管回没回，值得工作室知道的评论（提问、想看、纠错、批评、建议），每条记一笔：
+只看 `isNew: true` 的评论（旧评论上一轮已经看过，再记就重复了）。其中值得工作室知道的（提问、想看、纠错、批评、建议），不管回没回，每条记一笔：
 
 `$YT memory feedback --video <视频ID> --comment-id <评论ID> --kind question|request|correction|criticism|suggestion|other --message "一句话"`
 
