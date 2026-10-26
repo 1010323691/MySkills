@@ -15,6 +15,7 @@
 //   yt upload <视频文件> --title "…" [--description "…"] [--privacy public] --dry|--go   # 只在主人下指令时用
 //   yt uploads [--forget <视频文件>]      # 上传账本
 //   yt captions <视频ID>                 # 视频已有的字幕
+//   yt disclose <视频ID> --ai yes|no --dry|--go   # 设 AI 合成内容声明
 //   yt caption <视频ID> --caption en=字幕.srt [--caption ja=…] --dry|--go   # 给已发布的视频补字幕
 //   yt localize <视频ID> [--language en] [--audio-language en] [--localize ja=标题简介.txt …] --dry|--go   # 设语言、补多语言标题简介
 //   yt config [show | path | init | check]             # 配置文件（模板见 config.template.json，skill channel-setup 引导填写）
@@ -87,6 +88,7 @@ function usage(code = 0) {
     '              --caption en=字幕.srt（可写多次；带名称写成 "en:English (CC)=字幕.srt"；--caption-draft 存为草稿）\n' +
     '              --localize ja=标题简介.txt（可写多次；文件第一行是标题，其余是简介）\n' +
     '              多音轨：YouTube API 不支持，只能在 Studio → 语言 里手动加\n' +
+    'AI 声明：--ai-disclosure yes|no（看起来真实的 AI 生成 / 改动内容要声明；动画、AI 写脚本、克隆自己的声音不用）\n' +
     '反馈参数：yt memory feedback --message "一句话概括" [--kind 提问|想看|纠错|批评|建议|其他] [--video <视频ID>] [--comment-id <评论ID>] [--who <昵称>]')
   process.exit(code)
 }
@@ -258,6 +260,19 @@ async function main() {
     })
   }
 
+  if (cmd === 'disclose') {
+    const go = flags.has('go'), dry = flags.has('dry')
+    if (go === dry) throw new YouTubeError('写操作必须二选一：--dry（只看要改什么）或 --go（真的改）', 'YT_ARGS')
+    const r = await yt.disclose(sub, { ai: text0('ai') }, { go })
+    return out(r, x => {
+      const yn = b => b ? '是' : '否'
+      console.log(`视频：${x.title}（${x.videoId}）`)
+      if (!x.changed) return console.log(`  AI 合成内容声明已经是「${yn(x.after)}」，不用改`)
+      console.log(`  ${x.dry ? '[dry] ' : '✓ '}AI 合成内容声明：${yn(x.before)} → ${yn(x.after)}`)
+      if (x.dry) console.log('  要花 50 配额单位。确认无误后把 --dry 换成 --go')
+    })
+  }
+
   if (cmd === 'upload') {
     const go = flags.has('go'), dry = flags.has('dry')
     if (go === dry) throw new YouTubeError('上传必须二选一：--dry（只看要发什么）或 --go（真的传）', 'YT_ARGS')
@@ -282,6 +297,8 @@ async function main() {
       language: text('language') ?? (fullCfg.publish.language || undefined),
       audioLanguage: text('audio-language') ?? (fullCfg.publish.audioLanguage || undefined),
       captions: captionArgs(), localizations: localizeArgs(),
+      // AI 合成内容声明：--ai-disclosure yes|no；不写就用配置 publish.aiDisclosure（null = 不声明，YouTube 默认）
+      aiDisclosure: text('ai-disclosure') ?? fullCfg.publish.aiDisclosure ?? undefined,
     }
     let last = 0
     const r = await yt.upload(input, { go, onProgress: (done, total) => {
@@ -313,6 +330,7 @@ async function main() {
         for (const [l, v] of Object.entries(x.localizations ?? {})) console.log(`  多语言标题 ${langLabel(l)}：${short(v.title, 60)}${v.description ? ' · 简介 ' + short(v.description, 30) : ''}`)
         for (const c of x.captions ?? []) console.log(`  字幕 ${langLabel(c.lang)}「${c.name}」：${c.file}（${(c.size / 1024).toFixed(1)} KB）${c.draft ? ' · 草稿' : ''}`)
         if (x.captions?.length) console.log(`  字幕要花 ${x.captions.length * 400} 配额单位`)
+        console.log(`  AI 合成内容声明：${s.containsSyntheticMedia === true ? '是（YouTube 会在视频上标「经过修改或合成的内容」）' : s.containsSyntheticMedia === false ? '否' : '未声明（YouTube 默认按否处理）'}`)
         console.log('  多音轨：YouTube API 不支持，传完到 Studio → 语言 里手动添加')
         if (dossier) console.log(`  档案：${path.resolve(dossierFile)} → 传完存进 ${path.join(memoryDir, 'videos')}`)
         console.log('\n确认无误后把 --dry 换成 --go')
@@ -321,6 +339,7 @@ async function main() {
         console.log(`  ${x.url} · ${{ public: '公开', unlisted: '不公开', private: '私享' }[x.privacy] ?? x.privacy}${x.publishAt ? ` · 定时 ${x.publishAt}` : ''}`)
         console.log('  YouTube 还要转码几分钟，刚传完可能暂时看不了')
         if (x.dossier) console.log(`  档案：${x.dossier}`)
+        if (x.aiDisclosure !== null) console.log(`  AI 合成内容声明：${x.aiDisclosure ? '是' : '否'}`)
         if (x.language) console.log(`  语言：${langLabel(x.language)}${x.audioLanguage && x.audioLanguage !== x.language ? ' · 音轨 ' + langLabel(x.audioLanguage) : ''}`)
         if (x.localizations.length) console.log(`  多语言标题：${x.localizations.map(langLabel).join('、')}`)
         for (const c of x.captions) console.log(`  ✓ 字幕 ${langLabel(c.lang)}「${c.name}」`)

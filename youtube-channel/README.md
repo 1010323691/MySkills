@@ -165,6 +165,7 @@ yt auth status
     "tags": [],
     "language": "",
     "audioLanguage": "",
+    "aiDisclosure": null,
     "requireDossier": true
   }
 }
@@ -197,6 +198,7 @@ yt auth status
 | `publish.tags` | `[]` | 每期都带的标签 |
 | `publish.language` | 空 | 默认的标题简介和音轨语言，如 `en`、`ja`、`zh-Hans` |
 | `publish.audioLanguage` | 空 | 音轨语言和标题语言不同时才填 |
+| `publish.aiDisclosure` | `null` | AI 合成内容声明：`true` 声明、`false` 不含、`null` 不声明（YouTube 默认）。看起来真实的 AI 生成或改动内容必须声明，动画、AI 写脚本、克隆自己的声音不用 |
 | `publish.requireDossier` | true | 上传必须带 `--dossier` 档案（设了 memoryDir 才生效） |
 
 命令行参数优先于配置里的默认值。
@@ -236,13 +238,14 @@ yt auth status
 
 **发布**：在做视频的会话里说「发布到 YouTube」，或运行 `/channel-publish`。它会先给你看 `--dry` 的结果，你确认了才真的上传。
 
-**多语言**：
+**多语言与 AI 声明**：
 
 | 想要 | 插件能不能做 | 怎么做 |
 |---|---|---|
 | 多语言字幕 | ✓ | 上传时 `--caption en=en.srt --caption ja=ja.vtt`；已发布的视频用 `yt caption <视频ID> …`。每条 400 配额单位 |
 | 多语言标题和简介 | ✓ | 先 `--language en` 设主语言，再 `--localize ja=ja.txt`（第一行标题，其余简介）；已发布的视频用 `yt localize <视频ID> …` |
 | 标记音轨语言 | ✓ | `--language` 或 `--audio-language` |
+| AI 合成内容声明 | ✓ | 上传时 `--ai-disclosure yes`，或配置 `publish.aiDisclosure`；已发布的视频用 `yt disclose <视频ID> --ai yes` |
 | 多语言音轨（配音） | ✗ | YouTube API 没有这个接口。到 YouTube Studio → 视频 → 语言 → 添加语言 → 上传纯音频文件；频道要开通高级功能 |
 
 **白名单**：值守会话挂着时，每次运行命令弹授权提示会让循环卡住。可以在值守项目的 `.claude/settings.json` 里放行：
@@ -279,6 +282,7 @@ yt uploads [--forget <文件>]           上传账本
 yt captions <视频ID>                   已有字幕
 yt caption <视频ID> --caption en=字幕.srt … --dry|--go     补字幕
 yt localize <视频ID> --language en --localize ja=文件 … --dry|--go   设语言、补多语言标题简介
+yt disclose <视频ID> --ai yes|no --dry|--go                 设 AI 合成内容声明
 yt memory [status|init|dossier|feedback|log]
 ```
 

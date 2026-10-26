@@ -82,6 +82,7 @@ $YT auth status --json
 | `tags` | `[]` | 每期都带的标签 |
 | `language` | 空 | 默认的标题简介和音轨语言（如 `en`）；要发多语言标题时必须有 |
 | `audioLanguage` | 空 | 音轨语言和标题语言不同时才填 |
+| `aiDisclosure` | null | AI 合成内容声明的默认值：true / false / null（不声明）。看起来真实的 AI 生成或改动内容（让真人说没说过的话、改真实事件的画面、生成以假乱真的场景、AI 生成的音乐是视频主体）必须声明；明显不真实的动画和图表、AI 只用来写脚本 / 标题 / 封面、调色滤镜、画质修复、克隆自己的声音配音不用声明。按频道内容问主人 |
 | `requireDossier` | true | 上传时必须带 `--dossier` 档案（设了 memoryDir 才生效） |
 
 每组填完运行一次 `$YT config check`，有 ✗ 就和主人一起改到全部通过。

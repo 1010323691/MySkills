@@ -22,7 +22,7 @@ export const DEFAULTS = {
   proxy: '',
   limits: { writeDaily: 30, writeGapSec: 120, uploadDaily: 10, dailyUnits: 8000, minGapMs: 1000 },
   duty: { everyMin: 30, repliesPerRound: 1, journalAfterHour: 21, replyLanguage: 'match', recordFeedback: true },
-  publish: { privacy: 'public', category: '', playlist: '', tags: [], language: '', audioLanguage: '', requireDossier: true },
+  publish: { privacy: 'public', category: '', playlist: '', tags: [], language: '', audioLanguage: '', aiDisclosure: null, requireDossier: true },
 }
 
 const merge = (base, over) => {
@@ -97,6 +97,7 @@ export function checkConfig() {
   if (!Array.isArray(P.tags)) problems.push('publish.tags 要是字符串数组')
   const LANG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/
   if (P.language && !LANG.test(P.language)) problems.push('publish.language 要是语言代码，如 en、ja、zh-Hans')
+  if (![null, true, false].includes(P.aiDisclosure)) problems.push('publish.aiDisclosure 只能是 true、false 或 null（null = 不声明）')
   if (P.audioLanguage && !LANG.test(P.audioLanguage)) problems.push('publish.audioLanguage 要是语言代码，如 en、ja、zh-Hans')
   return { path: configPath, exists, problems }
 }

@@ -564,10 +564,10 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
   }
 
   /** 自己频道的一个视频：snippet + localizations（1 单位）；不是自己的就拒绝 */
-  async function ownVideo(videoId) {
+  async function ownVideo(videoId, part = 'snippet,localizations') {
     if (!ID.test(String(videoId ?? ''))) throw new YouTubeError('视频 ID 不对（形如 qHHoPgrCkQU）', 'YT_ARGS')
     const ch = await me()
-    const j = await api('videos', { part: 'snippet,localizations', id: videoId })
+    const j = await api('videos', { part: part.includes('snippet') ? part : 'snippet,' + part, id: videoId })
     const v = j.items?.[0]
     if (!v) throw new YouTubeError('找不到这个视频', 'YT_ARGS')
     if (v.snippet?.channelId !== ch.id) throw new YouTubeError('这个视频不是你自己频道发的', 'YT_SCOPE')
@@ -616,6 +616,34 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
     return { dry: false, ...summary }
   }
 
+  // ── AI 合成内容声明（status.containsSyntheticMedia）──────────────
+  //   YouTube 要求：看起来真实的 AI 生成 / 改动内容（让真人说没说过的话、改真实事件画面、生成以假乱真的场景）必须声明
+  //   不用声明：明显不真实的动画、AI 只用来写脚本 / 标题 / 封面、调色滤镜、克隆自己的声音配音
+  const aiFlag = v => {
+    if (v === undefined || v === null || v === '') return null
+    if (v === true || v === false) return v
+    const s = String(v).trim().toLowerCase()
+    if (['yes', 'true', '1', 'on', '是'].includes(s)) return true
+    if (['no', 'false', '0', 'off', '否'].includes(s)) return false
+    throw new YouTubeError('AI 声明只能是 yes 或 no', 'YT_ARGS')
+  }
+
+  /** 给已发布的视频设 AI 合成内容声明（videos.update part=status，50 单位）；其余 status 字段原样带回 */
+  async function disclose(videoId, { ai } = {}, { go = false } = {}) {
+    const flag = aiFlag(ai)
+    if (flag === null) throw new YouTubeError('用法：yt disclose <视频ID> --ai yes|no --dry|--go', 'YT_ARGS')
+    const v = await ownVideo(videoId, 'snippet,status')
+    const st = v.status ?? {}
+    const before = st.containsSyntheticMedia === true
+    const summary = { videoId, title: v.snippet?.title ?? '', before, after: flag, changed: before !== flag }
+    if (!go || !summary.changed) return { dry: !go, ...summary }
+    // status 是整段覆盖：可写字段都要带回去，只读字段（uploadStatus、madeForKids 等）不能带
+    const keep = ['privacyStatus', 'publishAt', 'license', 'embeddable', 'publicStatsViewable', 'selfDeclaredMadeForKids']
+    const status = Object.fromEntries(keep.filter(k => st[k] !== undefined).map(k => [k, st[k]]))
+    await api('videos', { part: 'status' }, { method: 'PUT', kind: 'write', units: 50, body: { id: videoId, status: { ...status, containsSyntheticMedia: flag } } })
+    return { dry: false, ...summary }
+  }
+
   /** 校验参数、拼出要发给 YouTube 的元数据（dry 和 go 共用，dry 不发任何写请求） */
   function uploadPlan(input) {
     const abs = path.resolve(String(input.file ?? ''))
@@ -661,7 +689,8 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
     const captions = captionPlan(input.captions ?? [])
     const resource = {
       snippet: { title, description, tags, categoryId, ...(defaultLanguage ? { defaultLanguage } : {}), ...(defaultAudioLanguage ? { defaultAudioLanguage } : {}) },
-      status: { privacyStatus: privacy, selfDeclaredMadeForKids: input.kids === true, ...(publishAt ? { publishAt } : {}) },
+      status: { privacyStatus: privacy, selfDeclaredMadeForKids: input.kids === true, ...(publishAt ? { publishAt } : {}),
+        ...(aiFlag(input.aiDisclosure) !== null ? { containsSyntheticMedia: aiFlag(input.aiDisclosure) } : {}) },
     }
     return { abs, size: st.size, mime, key: fingerprint(abs, st), resource, thumbnail, playlistId, localizations, captions }
   }
@@ -799,6 +828,7 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
     }
     return { dry: false, videoId: video.id, url: `https://youtu.be/${video.id}`, privacy: video.status?.privacyStatus ?? plan.resource.status.privacyStatus,
       publishAt: video.status?.publishAt ?? plan.resource.status.publishAt ?? null, title: video.snippet?.title ?? plan.resource.snippet.title,
+      aiDisclosure: plan.resource.status.containsSyntheticMedia ?? null,
       language: plan.resource.snippet.defaultLanguage ?? null, audioLanguage: plan.resource.snippet.defaultAudioLanguage ?? null,
       localizations: Object.keys(plan.localizations ?? {}), captions, warnings }
   }
@@ -814,5 +844,5 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
   }
 
   return { loadClient, saveClient, login, logout, status, me, myVideos, stats, comments, inbox, thread: threadOf, reply, replied, forget, api, upload, uploads, forgetUpload,
-    addCaptions, listCaptions, localize }
+    addCaptions, listCaptions, localize, disclose }
 }
