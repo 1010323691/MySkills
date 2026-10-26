@@ -11,7 +11,7 @@ description: 把做好的成片发布到自己的 YouTube 频道：先 --dry 给
 $YT = node "<skill>/../../scripts/yt/commands/yt.mjs"
 ```
 
-运行时换成真实的绝对路径，任何工作目录都能用。先跑 `$YT auth status`，确认已登录、今天还有上传额度、共享记忆目录（下文 `<mem>`）已设置。
+运行时换成真实的绝对路径，任何工作目录都能用。先跑 `$YT auth status` 和 `$YT config show`：确认已登录、今天还有上传额度，并记下共享记忆目录 `memoryDir`（下文 `<mem>`）和 `publish` 段的默认值。没登录或配置有问题，先跑 `/channel-setup`。
 
 ## 规矩
 
@@ -26,13 +26,13 @@ $YT = node "<skill>/../../scripts/yt/commands/yt.mjs"
 | `--title "…"` | 必填，≤100 字 |
 | `--description-file <简介.txt>` | 简介，可含章节时间戳；短的可以用 `--description "…"` |
 | `--thumbnail <封面.jpg/png>` | 封面，≤2MB；频道要先在 YouTube 完成手机验证才能设自定义封面 |
-| `--tags "a,b,c"` | 标签，合计 ≤500 字 |
-| `--privacy public\|unlisted\|private` | 默认 public |
+| `--tags "a,b,c"` | 标签，合计 ≤500 字；不写就用配置的 `publish.tags` |
+| `--privacy public\|unlisted\|private` | 不写就用配置的 `publish.privacy` |
 | `--publish-at 2026-11-01T20:00:00+08:00` | 定时发布：先私享，到点自动公开；不要同时写 `--privacy` |
-| `--playlist PLxxxx` | 加进播放列表 |
-| `--category <ID>` | 分类 ID，不写就用默认 |
+| `--playlist PLxxxx` | 加进播放列表；不写就用配置的 `publish.playlist` |
+| `--category <ID>` | 分类 ID；不写就用配置的 `publish.category` |
 | `--kids` | 只有面向儿童时才加 |
-| `--dossier <档案.md>` | **一定要带**：这期的档案，传完存进 `<mem>/videos/<视频ID>.md`，值守回评论时照它说 |
+| `--dossier <档案.md>` | 配置 `publish.requireDossier` 为 true 时必须带：这期的档案，传完存进 `<mem>/videos/<视频ID>.md`，值守回评论时照它说 |
 
 档案写这期的一句话、真实数字和来源、做法、预想问答。只写确认过的东西，值守会照着它回复观众。
 

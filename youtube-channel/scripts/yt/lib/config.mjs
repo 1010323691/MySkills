@@ -1,62 +1,27 @@
-// 统一配置层 —— 一个文件承载所有"属于使用者"的东西。
+// 配置：一个 JSON 文件承载所有使用者自己的参数，代码里不写死
 //
-// 为什么要有它（2026-10-14 外部评审指出的最大架构缺口）：
-//   在此之前，"个人化的东西"散在四处、形态还不一样 ——
-//     ① `~/.bili-ai/quota.json`（额度/白名单，独立文件）
-//     ② `~/.dsh/whale-night.config.json`（作息，独立文件）
-//     ③ `whale-diary.md` 的叙事段落（偏好被 feed.mjs 解析 Markdown 提取 ✗ 脆弱）
-//     ④ 代码里硬编码（历史昵称 SELF_NAMES ✗）
-//   使用者的体验是"我得读源码才知道要改哪" ✗ —— 这不是模板，是作者的自用件。
-//   现在：**填一个 `bili-whale.config.json` 就完成自定义** ✓，其余全是中性默认值。
+//   位置：$YOUTUBE_CHANNEL_CONFIG → ~/.youtube-channel/config.json（见 paths.mjs）
+//   模板：插件根目录的 config.template.json；`yt config init` 复制过去，skill `channel-setup` 引导填写
 //
-// 查找顺序：$BILI_WHALE_CONFIG → ~/.dsh/bili-whale.config.json → 内置默认值（中性）
+// 没有配置文件也能跑（全用默认值），但 `yt config check` 会报出来
 import fs from 'node:fs'
 import path from 'node:path'
-// ⚠️ 2026-10-21：configPath 必须 **import 进来** 才可用 ✗
-//   `export { configPath } from './paths.mjs'` 只是再导出，不会创建本地绑定 →
-//   下面 config() 里的 fs.readFileSync(configPath) 会拿到 undefined → 抛错 → 被 catch 吞掉
-//   → 静默退回默认值（self / owner / quota / preferences 全部失效）✗ 实测踩到
-import { dshPath, configPath } from './paths.mjs'
+import { fileURLToPath } from 'node:url'
+import { configPath, expandHome } from './paths.mjs'
 
-
-const HOME = process.env.USERPROFILE || process.env.HOME || '.'
 export { configPath } from './paths.mjs'
+export const templatePath = fileURLToPath(new URL('../../../config.template.json', import.meta.url))
 
-/** 中性默认值：不含任何作者的个人信息，换个人也能跑。 */
+/** 默认值：和模板一致，中性、不含任何个人信息 */
 export const DEFAULTS = {
-  sessionRotateDays: 0,
-  personaOncePerSession: false,
-  risk: { minGapMs: 1500, readHourly: 600, readDaily: 3000, writeHourly: 12, writeDaily: 30, writeGapSec: 120, dmGapSec: 60 },
-  persona: {
-    name: '<角色名>',
-    ownerTitle: '你',      // 助手怎么称呼使用者
-    selfClaim: '我',       // 助手怎么自称
-    diaryTitle: '今日摘要', // diary show 的标题（想用自己的口吻就改这里）
-  },
-  preferences: {
-    like: ['AI 工具与插件', '鬼畜与怀旧向剪辑', '猫咪', 'Live2D/模型'],
-    dislike: ['带货', '擦边', '标题党', '纯搬运'],
-  },
-  notify: { type: 'none', url: '', template: 'text', cmd: '' },   // none | desktop | webhook | command（见 commands/notify.mjs）
-  aliases: [],                  // 历史昵称（兜底用；当前昵称仍从 nav 动态读）
-  // 使用者本人（分享型评论要 @ 的人）：mid 用于白名单/查询，name 用于正文里的 @昵称
-  // （acc/info 查询会风控，所以 name 缓存一份；改过就用 thread 的 `@到:` 验一下）
-  owner: { mid: '', name: '' },
-  quota: { shareDaily: 3 },
-  // 「标尺」（2026-10-18 加）：分享前必须打分，不到 share.minScore 就是"今天没有值得发的"（合法结果）
-  share: { aiCommentGuard: false, aiThreshold: 30, enabled: true, via: 'comment', minScore: 13, silentAfterDays: 3 },  // 分享型（@主人）开关与评分阈值
-  // 倾听（2026-10-18 补默认值，与设置页对齐）：评论区 + 直播间
-  // 2026-10-24 改默认：\u8bc4\u8bba\u76d1\u542c\u9ed8\u8ba4\u5173\u3001\u79c1\u4fe1\u76d1\u542c\u9ed8\u8ba4\u5f00 \u4f46\u95f4\u9694 60 \u79d2
-  //   原因：新装的号多半是刚创的小号 \u2014\u2014 \u957f\u65f6\u95f4\u76d1\u542c\u662f\u98ce\u63a7\u7684\u5934\u53f7\u98ce\u9669 \u2717
-  //   \u60f3\u5f00\u5c31\u53bb\u8bbe\u7f6e\u9875\u6253\u5f00 \u2713 \u9ed8\u8ba4\u4e0d\u66ff\u4ed6\u4eec\u6253\u5f00 \u2717
-  listen: { comment: false, commentIntervalSec: 60, scope: 'both', oncePerPerson: true, allDay: false, dm: true, dmIntervalSec: 60, live: false, liveRoom: '', liveScope: 'owner' },
-  // 作息：windows[] = 每天允许醒来的时段（每个窗口 = 一次机会）；maxWakesPerDay 缺省 = 窗口数（硬上限 3）
-  night: { windows: [{ start: '20:00', end: '24:00', wakes: 1 }], skipChance: 0.3, minGapMin: 10, maxVideos: 5 },
-  // 平台（2026-10-26）：B 站 / YouTube 任选其一或者兼而有之；缺省只开 B 站（见 lib/platforms.mjs）
-  platforms: { bili: true, youtube: false },
-  // YouTube（2026-10-26 阶段 1）：proxy 留空 = 直连；预算按官方每天 10,000 单位留余量（一次回复 = 50 单位）
-  //   listen = 评论监听（默认关）；replyMode = review 先审后发 / direct 直接回
-  youtube: { proxy: '', minGapMs: 1000, dailyUnits: 8000, writeDaily: 30, writeGapSec: 120, uploadDaily: 10, listen: false, listenIntervalSec: 300, allDay: false, replyMode: 'review', memoryDir: '', announce: true, perWake: 5 },
+  channelName: '',
+  dataDir: '~/.youtube-channel/data',
+  memoryDir: '',
+  personaFile: '',
+  proxy: '',
+  limits: { writeDaily: 30, writeGapSec: 120, uploadDaily: 10, dailyUnits: 8000, minGapMs: 1000 },
+  duty: { everyMin: 30, repliesPerRound: 1, journalAfterHour: 21, replyLanguage: 'match', recordFeedback: true },
+  publish: { privacy: 'public', category: '', playlist: '', tags: [], requireDossier: true },
 }
 
 const merge = (base, over) => {
@@ -67,13 +32,63 @@ const merge = (base, over) => {
   return out
 }
 
+/** 读原始配置文件：{ exists, user, error } */
+export function readUserConfig() {
+  let raw
+  try { raw = fs.readFileSync(configPath, 'utf8') } catch { return { exists: false, user: {}, error: null } }
+  try { return { exists: true, user: JSON.parse(raw.replace(/^﻿/, '')), error: null } }
+  catch (e) { return { exists: true, user: {}, error: `配置文件不是合法 JSON：${e.message}` } }
+}
+
 let cache = null
-/** 读取合并后的配置（带缓存）。 */
+/** 合并后的配置（带缓存）。另附 `youtube` 视图，给 yt 命令和共享记忆模块用 */
 export function config() {
   if (cache) return cache
-  let user = {}
-  try { user = JSON.parse(fs.readFileSync(configPath, 'utf8')) } catch { /* 没配置就用默认 */ }
-  cache = merge(DEFAULTS, user)
-  cache.__hasUserFile = Object.keys(user).length > 0
-  return cache
+  const { user } = readUserConfig()
+  const c = merge(DEFAULTS, user)
+  c.dataDir = path.resolve(expandHome(c.dataDir || DEFAULTS.dataDir))
+  c.memoryDir = c.memoryDir ? expandHome(c.memoryDir) : ''
+  c.personaFile = c.personaFile ? expandHome(c.personaFile) : ''
+  c.youtube = { ...c.limits, proxy: c.proxy, memoryDir: c.memoryDir }
+  cache = c
+  return c
+}
+
+/** 数据目录下的路径：令牌、账本、活动日志 */
+export const dataPath = (...parts) => path.join(config().dataDir, ...parts)
+
+const int = (v, lo, hi) => Number.isInteger(v) && v >= lo && v <= hi
+/** 检查配置：返回问题清单（空 = 没问题） */
+export function checkConfig() {
+  const { exists, error } = readUserConfig()
+  const c = config()
+  const problems = []
+  if (!exists) problems.push(`还没有配置文件：${configPath}（运行 yt config init）`)
+  if (error) problems.push(error)
+  if (!c.memoryDir) problems.push('memoryDir 没填：值守和工作室之间没有共享记忆')
+  else if (!path.isAbsolute(c.memoryDir)) problems.push('memoryDir 必须是绝对路径（可以用 ~ 开头）')
+  if (c.personaFile && !fs.existsSync(c.personaFile)) problems.push(`personaFile 指向的文件不存在：${c.personaFile}`)
+  if (c.proxy && !/^(https?|socks5?):\/\/.+/.test(c.proxy)) problems.push('proxy 要写成 http://主机:端口 这样的地址')
+  const L = c.limits, D = c.duty, P = c.publish
+  if (!int(L.writeDaily, 1, 100)) problems.push('limits.writeDaily 要是 1–100 的整数')
+  if (!int(L.writeGapSec, 30, 86400)) problems.push('limits.writeGapSec 至少 30')
+  if (!int(L.uploadDaily, 0, 100)) problems.push('limits.uploadDaily 要是 0–100 的整数')
+  if (!int(L.dailyUnits, 100, 10000)) problems.push('limits.dailyUnits 要在 100–10000 之间（官方默认每天 10000）')
+  if (!int(D.everyMin, 10, 720)) problems.push('duty.everyMin 要是 10–720 的整数（分钟）')
+  if (!int(D.repliesPerRound, 0, 10)) problems.push('duty.repliesPerRound 要是 0–10 的整数')
+  if (!int(D.journalAfterHour, 0, 24)) problems.push('duty.journalAfterHour 要是 0–24 的整数（24 = 不写值守日志）')
+  if (!['match', 'en', 'ja', 'zh'].includes(D.replyLanguage)) problems.push('duty.replyLanguage 只能是 match / en / ja / zh')
+  if (!['public', 'unlisted', 'private'].includes(P.privacy)) problems.push('publish.privacy 只能是 public / unlisted / private')
+  if (P.playlist && !/^[A-Za-z0-9_-]+$/.test(P.playlist)) problems.push('publish.playlist 要是播放列表 ID（形如 PLxxxx）')
+  if (!Array.isArray(P.tags)) problems.push('publish.tags 要是字符串数组')
+  return { path: configPath, exists, problems }
+}
+
+/** 从模板生成配置文件；已有就不动 */
+export function initConfig() {
+  if (fs.existsSync(configPath)) return { path: configPath, created: false }
+  fs.mkdirSync(path.dirname(configPath), { recursive: true })
+  fs.copyFileSync(templatePath, configPath)
+  cache = null
+  return { path: configPath, created: true }
 }

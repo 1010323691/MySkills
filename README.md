@@ -23,7 +23,7 @@
 | [skill-creator](./skill-creator/) | 创建/迭代 skill 官方版：草稿 → 跑 evals → 定性+定量评审 → 重写循环，含 description 触发优化脚本 |
 | [tool-call-pitfalls](./tool-call-pitfalls/) | 工具调用陷阱记录与同步：仓库 tool-call-pitfalls.md 为事实源，同步仓库 CLAUDE.md、个人记忆与用户级门禁（~/.claude/CLAUDE.md），含新增/移除（按环境补充观察）/核对三模式、dry run 与新机器安装流程 |
 | [dev-team-sop](./dev-team-sop/) | 软件开发团队 SOP（Claude Code 原生版，依据 WorkBuddy 专家团 software-company 原版）：主会话当主理人，用 Agent 派出 PM / 架构师 / 工程师 / QA 子代理，文件交接；按规模路由快速模式 / BugFix / 标准 SOP / 增量；工程师全局自审，QA 智能路由、最多 2 轮；含 4 个可安装的子代理定义 |
-| [youtube-channel](./youtube-channel/) | 用 Claude Code 运营 YouTube 频道（插件包，含 2 个 skill）：channel-duty 常驻值守、按评论语言回复，channel-publish 确认后发布；共享记忆接力，附 [Google OAuth 接通流程](./youtube-channel/README.md#接通-youtube第一次装时做一次)，用 `node youtube-channel/install.mjs` 安装 |
+| [youtube-channel](./youtube-channel/) | 用 Claude Code 运营 YouTube 频道（插件包，含 3 个 skill）：channel-setup 按 JSON 模板引导配置并接通授权，channel-duty 常驻值守、按评论语言回复，channel-publish 确认后发布；参数全在 config.json，共享记忆接力，附 [Google OAuth 接通流程](./youtube-channel/README.md#接通-youtube第一次装时做一次)，用 `node youtube-channel/install.mjs` 安装 |
 
 ## 安装方式
 

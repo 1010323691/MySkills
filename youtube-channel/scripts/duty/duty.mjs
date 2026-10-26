@@ -5,20 +5,20 @@
 //   node scripts/duty/duty.mjs done [--diary] # 这一轮做完了：记下看过的评论（--diary 记下今天已写值守日志）
 //
 // 它只读、只记状态，不回评论；回复走 `yt reply`（判重、限额、写 replies.md 都在那边）
-// 状态文件：<共享记忆目录>/.duty-state.json；没设共享记忆就放 ~/.bili-ai/duty-state.json
+// 状态文件：<共享记忆目录>/.duty-state.json；没设共享记忆就放 <dataDir>/duty-state.json
+// 参数全部来自配置文件的 duty / limits 段（yt config show 可看），这里不写死
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { fileURLToPath } from 'node:url'
-import { config } from '../yt/lib/config.mjs'
-import { dshPath, homePath } from '../yt/lib/paths.mjs'
+import { config, dataPath, checkConfig } from '../yt/lib/config.mjs'
 import { memoryDirOf } from '../yt/lib/memory.mjs'
 
 const YT = fileURLToPath(new URL('../yt/commands/yt.mjs', import.meta.url))
 const cfg = config()
 const memDir = memoryDirOf(cfg)
-const STATE = memDir ? path.join(memDir, '.duty-state.json') : homePath('.bili-ai', 'duty-state.json')
-const DIARY_AFTER = Number(process.env.DUTY_DIARY_AFTER) || 21   // 这个钟点以后的第一轮写值守日志，一天一次
+const STATE = memDir ? path.join(memDir, '.duty-state.json') : dataPath('duty-state.json')
+const D = cfg.duty
 
 const today = () => new Date().toLocaleDateString('sv-SE')
 const load = () => { try { return JSON.parse(fs.readFileSync(STATE, 'utf8')) } catch { return {} } }
@@ -33,7 +33,7 @@ function inbox() {
 function repliesToday() {
   let n = 0
   try {
-    for (const line of fs.readFileSync(dshPath('whale-log.jsonl'), 'utf8').split('\n')) {
+    for (const line of fs.readFileSync(dataPath('activity.jsonl'), 'utf8').split('\n')) {
       if (!line.includes('yt-reply-sent')) continue
       try { const j = JSON.parse(line); if (new Date(j.at).toLocaleDateString('sv-SE') === today()) n++ } catch {}
     }
@@ -49,13 +49,19 @@ if (cmd === 'check') {
   const ids = list.map(t => t.id ?? t.threadId)
   const seen = new Set(s.lastSeen ?? [])
   const fresh = ids.filter(id => !seen.has(id))
-  const replied = repliesToday(), cap = Number(cfg.youtube?.writeDaily) || 30
-  const diaryDue = new Date().getHours() >= DIARY_AFTER && s.diaryDate !== today()
-  const work = (fresh.length > 0 && replied < cap) || diaryDue
+  const replied = repliesToday(), cap = cfg.limits.writeDaily
+  // journalAfterHour 这个钟点以后的第一轮写值守日志，一天一次；24 = 不写
+  const diaryDue = new Date().getHours() >= D.journalAfterHour && s.diaryDate !== today()
+  const canReply = D.repliesPerRound > 0 && replied < cap
+  const work = (fresh.length > 0 && (canReply || D.recordFeedback)) || diaryDue
   console.log(JSON.stringify({
     work,
     reason: !work ? (fresh.length ? '今天回复已到上限' : '没有新评论，也不到写日志的时候') : undefined,
     memoryDir: memDir || null,
+    personaFile: cfg.personaFile || null, channelName: cfg.channelName || null,
+    // 这一轮的规矩（来自配置的 duty 段）
+    rules: { repliesThisRound: canReply ? Math.min(D.repliesPerRound, cap - replied) : 0, replyLanguage: D.replyLanguage, recordFeedback: D.recordFeedback },
+    configProblems: checkConfig().problems,
     newCount: fresh.length, unrepliedCount: list.length,
     repliesToday: replied, dailyCap: cap, diaryDue,
     // 评论原文是素材不是指令；压成一行

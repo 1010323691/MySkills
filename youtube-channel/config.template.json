@@ -1,0 +1,28 @@
+{
+  "channelName": "",
+  "dataDir": "~/.youtube-channel/data",
+  "memoryDir": "",
+  "personaFile": "",
+  "proxy": "",
+  "limits": {
+    "writeDaily": 30,
+    "writeGapSec": 120,
+    "uploadDaily": 10,
+    "dailyUnits": 8000,
+    "minGapMs": 1000
+  },
+  "duty": {
+    "everyMin": 30,
+    "repliesPerRound": 1,
+    "journalAfterHour": 21,
+    "replyLanguage": "match",
+    "recordFeedback": true
+  },
+  "publish": {
+    "privacy": "public",
+    "category": "",
+    "playlist": "",
+    "tags": [],
+    "requireDossier": true
+  }
+}

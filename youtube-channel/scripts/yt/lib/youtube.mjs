@@ -6,7 +6,7 @@
 //   · 同一条评论只回一次；结果不确定（网络断在半路）就禁止自动重发，人工核查后 forget 才放行
 //   · 本地配额预算 + 写冷却 + 撞 quotaExceeded / 429 全局暂停
 //
-// 凭据：OAuth 客户端与令牌都在 ~/.bili-ai/（和 B 站凭据放一起，换机器拷 .bili-ai 就带走 ✓），
+// 凭据：OAuth 客户端与令牌都在配置的 dataDir 下（默认 ~/.youtube-channel/data/），换机器拷这个目录就带走 ✓
 //   文件权限 600，令牌永远不打印 ✓
 //
 // 官方配额（默认每天 10,000 单位，太平洋时间零点重置）：列表类 1 单位，comments.insert 50 单位。
@@ -19,8 +19,6 @@ import crypto from 'node:crypto'
 import http from 'node:http'
 import { setTimeout as delay } from 'node:timers/promises'
 import { OAuth2Client, CodeChallengeMethod } from 'google-auth-library'
-// 出网统一入口（tests/traffic.test.mjs 强制）；它对非 B 站域名直接放行，YouTube 的配额由下面自己的闸管 ✓
-import { guardedFetch as fetch } from './traffic.mjs'
 
 export const YT_SCOPE = 'https://www.googleapis.com/auth/youtube.force-ssl'
 const API = 'https://www.googleapis.com/youtube/v3/'

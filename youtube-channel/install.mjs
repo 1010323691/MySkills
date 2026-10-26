@@ -19,13 +19,15 @@ const scripts = path.join(DEST, 'scripts')
 step(`复制脚本 → ${scripts}`, () => {
   fs.mkdirSync(DEST, { recursive: true })
   fs.cpSync(path.join(SRC, 'scripts'), scripts, { recursive: true, filter: p => !p.includes(`${path.sep}node_modules`) })
+  // 模板随插件升级；用户自己的 config.json 一律不碰
+  fs.copyFileSync(path.join(SRC, 'config.template.json'), path.join(DEST, 'config.template.json'))
 })
 step('安装依赖（npm install）', () => {
   // 参数都是常量，整条交给 shell（Windows 上 npm 是 .cmd，必须经 shell 启动）
   const r = spawnSync('npm install --no-audit --no-fund --omit=dev', { cwd: path.join(scripts, 'yt'), stdio: 'inherit', shell: true })
   if (r.status !== 0) { console.error('npm install 失败'); process.exit(1) }
 })
-for (const name of ['channel-duty', 'channel-publish']) {
+for (const name of ['channel-setup', 'channel-duty', 'channel-publish']) {
   const to = path.join(SKILLS, name)
   step(`安装 skill → ${to}`, () => {
     fs.mkdirSync(to, { recursive: true })
@@ -34,7 +36,7 @@ for (const name of ['channel-duty', 'channel-publish']) {
     fs.writeFileSync(path.join(to, 'SKILL.md'), md)
   })
 }
-console.log(`\n完成。下一步（第一次装才需要）：
-  node "${path.join(scripts, 'yt', 'commands', 'yt.mjs')}" auth client <下载的客户端.json>
-  node "${path.join(scripts, 'yt', 'commands', 'yt.mjs')}" auth login
-详见 README 的「接通 YouTube」一节。`)
+console.log(`\n完成。下一步：在 Claude Code 里运行 /channel-setup，它会生成配置、逐项问你、再带你接通 YouTube 授权。
+不用向导的话：
+  node "${path.join(scripts, 'yt', 'commands', 'yt.mjs')}" config init     # 生成 ${path.join(DEST, 'config.json')}，照 README 填写
+详见 README 的「配置」和「接通 YouTube」两节。`)

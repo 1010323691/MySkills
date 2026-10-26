@@ -4,10 +4,12 @@
 
 | 组成 | 做什么 |
 |---|---|
-| `skills/channel-duty` | 值守一轮：查新评论 → 挑一条按评论语言回复 → 记观众反馈 → 晚上给工作室写值守日志。配合 `/loop 30m /channel-duty` 常驻 |
+| `skills/channel-setup` | 配置向导：从模板生成 `config.json`，逐项问你并填好、校验，再带你接通 Google 授权，最后给出启动值守的命令 |
+| `skills/channel-duty` | 值守一轮：查新评论 → 按配置回几条（默认按评论语言）→ 记观众反馈 → 晚上给工作室写值守日志。配合 `/loop <间隔>m /channel-duty` 常驻 |
 | `skills/channel-publish` | 发布：`--dry` 给主人确认 → `--go` 上传 → 把这期档案写进共享记忆、更新对外口径 |
 | `scripts/yt/` | YouTube 命令行：登录、看评论、回复、上传、共享记忆（来自已退役的 DSH 插件 dsh-bili-whale，只保留 YouTube 这一路） |
-| `scripts/duty/duty.mjs` | 值守巡视器：和上一轮比有没有新评论、今天回了几条、该不该写日志，输出 JSON 给 skill 判断 |
+| `scripts/duty/duty.mjs` | 值守巡视器：和上一轮比有没有新评论、今天回了几条、该不该写日志，连同这一轮的规矩一起输出 JSON 给 skill |
+| `config.template.json` | 配置模板。所有可调的参数都在这里，代码里不写死 |
 
 ```
 做视频的会话 ──/channel-publish──▶ YouTube ◀──/loop 30m /channel-duty── 值守会话
@@ -29,11 +31,13 @@ node MySkills/youtube-channel/install.mjs
 ```
 
 安装脚本做三件事：
-1. 把 `scripts/` 复制到 `~/.youtube-channel/scripts/` 并装依赖（`google-auth-library`）。位置可以用环境变量 `YOUTUBE_CHANNEL_HOME` 改。
-2. 把两个 skill 复制到 `~/.claude/skills/`。
+1. 把 `scripts/` 和 `config.template.json` 复制到 `~/.youtube-channel/` 并装依赖（`google-auth-library`）。位置可以用环境变量 `YOUTUBE_CHANNEL_HOME` 改。
+2. 把三个 skill 复制到 `~/.claude/skills/`。
 3. 把 skill 里的命令路径写成绝对路径。
 
-重跑就是升级，不会碰令牌、配置和共享记忆。加 `--dry` 只打印要做什么，不实际执行。
+装好后在 Claude Code 里运行 **`/channel-setup`**：它会生成配置、逐项问你、校验，再带你接通 YouTube 授权。下面「配置」「接通 YouTube」两节是它做的事的完整说明，想手动配置也可以照着做。
+
+重跑安装脚本就是升级，不会碰你的配置、令牌和共享记忆。加 `--dry` 只打印要做什么，不实际执行。
 
 下文 `yt` 指：
 
@@ -94,13 +98,13 @@ yt auth status
 
 | 文件 | 内容 |
 |---|---|
-| `~/.bili-ai/youtube-client.json` | 导入的 OAuth 客户端（含 client_secret） |
-| `~/.bili-ai/youtube-token.json` | 访问令牌和刷新令牌，过期自动刷新 |
-| `~/.bili-ai/youtube-state.json` | 今日配额计数、暂停状态 |
-| `~/.bili-ai/youtube-replied.json` | 回复判重账本，同一条评论不会回两次 |
-| `~/.bili-ai/youtube-uploads.json` | 上传账本，用于断点续传和防重复上传 |
+| `<dataDir>/youtube-client.json` | 导入的 OAuth 客户端（含 client_secret） |
+| `<dataDir>/youtube-token.json` | 访问令牌和刷新令牌，过期自动刷新 |
+| `<dataDir>/youtube-state.json` | 今日配额计数、暂停状态 |
+| `<dataDir>/youtube-replied.json` | 回复判重账本，同一条评论不会回两次 |
+| `<dataDir>/youtube-uploads.json` | 上传账本，用于断点续传和防重复上传 |
 
-`.bili-ai` 这个目录名是从原插件沿用下来的。这些文件都别提交到 git，也别发给别人。退出登录用 `yt auth logout`，它会同时撤销 Google 那边的授权。
+`<dataDir>` 默认是 `~/.youtube-channel/data`。这些文件都别提交到 git，也别发给别人；换机器时把整个目录拷过去就能带走登录。退出登录用 `yt auth logout`，它会同时撤销 Google 那边的授权。
 
 ### 常见问题
 
@@ -109,41 +113,83 @@ yt auth status
 | 一周后突然要重新登录 | 同意屏幕还是「测试」状态，按第 2 步发布成正式版，再 `yt auth login` |
 | `access_denied` 或「此应用尚未完成 Google 验证流程」 | 测试状态下没把这个账号加进「测试用户」 |
 | 报「没有勾选管理你的 YouTube 账号权限」 | 重新 `yt auth login`，在权限页勾上那一项 |
-| 连不上 Google（国内网络） | 配置里写 `youtube.proxy`，例如 `http://127.0.0.1:7890`，或者设置环境变量 `HTTPS_PROXY` |
+| 连不上 Google（国内网络） | 配置里写 `proxy`，例如 `http://127.0.0.1:7890`，或者设置环境变量 `HTTPS_PROXY` |
 | 上传后视频被锁成私享 | YouTube 对未经审核的 API 项目上传的视频可能限制为私享；需要的话在 Google 提交 YouTube API 审核（API Services Audit） |
 | 设不了自定义封面 | 频道要先在 YouTube 完成手机号验证 |
-| 配额用完 | 官方默认每天 10,000 单位，太平洋时间零点重置；插件默认最多用 8,000 单位留余量 |
+| 配额用完 | 官方默认每天 10,000 单位，太平洋时间零点重置；插件按配置的 `limits.dailyUnits`（默认 8,000）留余量 |
 
 ## 配置
 
-配置文件是 `~/.dsh/bili-whale.config.json`，可以用环境变量 `BILI_WHALE_CONFIG` 换位置。名字是从原插件沿用的，只用到其中的 `youtube` 一节：
+所有参数都在一个 JSON 文件里：
+
+- 位置：`~/.youtube-channel/config.json`。可以用环境变量 `YOUTUBE_CHANNEL_CONFIG` 指定别的文件，`yt config path` 显示实际用的是哪个。
+- 生成：`yt config init` 从模板复制一份，已有的不覆盖。
+- 校验：`yt config check` 列出每个问题，没问题时显示 ✓。`yt config show` 显示合并默认值之后的完整配置。
+- 推荐用 `/channel-setup` 填写，它会一项项问你。
+
+模板（[config.template.json](./config.template.json)）：
 
 ```json
 {
-  "youtube": {
-    "memoryDir": "D:\\projectPath\\my-channel\\memory",
-    "proxy": "",
-    "writeDaily": 50,
+  "channelName": "",
+  "dataDir": "~/.youtube-channel/data",
+  "memoryDir": "",
+  "personaFile": "",
+  "proxy": "",
+  "limits": {
+    "writeDaily": 30,
     "writeGapSec": 120,
     "uploadDaily": 10,
-    "dailyUnits": 8000
+    "dailyUnits": 8000,
+    "minGapMs": 1000
+  },
+  "duty": {
+    "everyMin": 30,
+    "repliesPerRound": 1,
+    "journalAfterHour": 21,
+    "replyLanguage": "match",
+    "recordFeedback": true
+  },
+  "publish": {
+    "privacy": "public",
+    "category": "",
+    "playlist": "",
+    "tags": [],
+    "requireDossier": true
   }
 }
 ```
 
-| 字段 | 说明 |
-|---|---|
-| `memoryDir` | 共享记忆目录，**必须是绝对路径**。设好后运行 `yt memory init` 生成模板 |
-| `proxy` | 访问 Google 的代理，留空表示直连 |
-| `writeDaily` / `writeGapSec` | 每天最多回几条、两条回复之间至少隔几秒 |
-| `uploadDaily` | 每天最多上传几个视频 |
-| `dailyUnits` | 每天最多用多少 API 配额 |
+| 字段 | 默认 | 说明 |
+|---|---|---|
+| `channelName` | 空 | 频道名，只用于显示 |
+| `dataDir` | `~/.youtube-channel/data` | 令牌、账本、活动日志放在这里 |
+| `memoryDir` | 空 | 共享记忆目录，**绝对路径**（可以用 `~` 开头）。建议放在做视频的项目里；填好后运行 `yt memory init` |
+| `personaFile` | 空 | 人设文件（Markdown），值守按它的口吻回复 |
+| `proxy` | 空 | 访问 Google 的代理，例如 `http://127.0.0.1:7890`；留空 = 直连，也会读环境变量 `HTTPS_PROXY` |
+| `limits.writeDaily` | 30 | 每天最多回几条（1–100） |
+| `limits.writeGapSec` | 120 | 两条回复至少隔几秒（≥30） |
+| `limits.uploadDaily` | 10 | 每天最多上传几个（0 = 禁止上传） |
+| `limits.dailyUnits` | 8000 | 每天最多用多少 API 配额（官方默认 10000） |
+| `limits.minGapMs` | 1000 | 两次 API 请求的最小间隔 |
+| `duty.everyMin` | 30 | 值守间隔（分钟，10–720），用于 `/loop` |
+| `duty.repliesPerRound` | 1 | 每轮最多回几条（0 = 只看不回） |
+| `duty.journalAfterHour` | 21 | 几点以后的第一轮写值守日志（24 = 不写） |
+| `duty.replyLanguage` | `match` | `match` 按评论语言回；`en` / `ja` / `zh` 固定一种 |
+| `duty.recordFeedback` | true | 有价值的评论记进反馈池 |
+| `publish.privacy` | `public` | 上传默认可见性；定时发布时自动改为私享 |
+| `publish.category` | 空 | 默认分类 ID（28 科技、27 教育、22 人物和博客） |
+| `publish.playlist` | 空 | 默认加进的播放列表 ID |
+| `publish.tags` | `[]` | 每期都带的标签 |
+| `publish.requireDossier` | true | 上传必须带 `--dossier` 档案（设了 memoryDir 才生效） |
 
-人设文件放在 `~/.bili-ai/persona.md`（可选），值守按它的口吻回复。
+命令行参数优先于配置里的默认值。
+
+**从 dsh-bili-whale 迁移**：旧登录在 `~/.bili-ai/`，把 `dataDir` 填成 `"~/.bili-ai"` 就能直接沿用，不用重新授权。旧配置 `~/.dsh/bili-whale.config.json` 不再读取，里面 `youtube` 段的值要搬到新配置的 `memoryDir`、`proxy` 和 `limits` 里。`/channel-setup` 会检测到旧数据并带你迁移。
 
 ## 共享记忆
 
-`yt memory init` 会在 `memoryDir` 下生成以下文件，约定写在其中的 `README.md` 里：
+`yt memory init` 会在配置的 `memoryDir` 下生成以下文件，约定写在其中的 `README.md` 里：
 
 | 文件 | 谁写 | 谁读 |
 |---|---|---|
@@ -157,7 +203,7 @@ yt auth status
 
 ## 使用
 
-**值守**：在桌面版新建一个会话，工作目录放在共享记忆所在的项目，然后发送
+**值守**：在桌面版新建一个会话，工作目录放在共享记忆所在的项目，然后发送（30 换成你配置的 `duty.everyMin`）
 
 ```
 /loop 30m /channel-duty
@@ -165,8 +211,9 @@ yt auth status
 
 间隔和 skill 要写在**同一条命令**里。只写 `/loop 30m` 会进入通用的自主巡检，不会去查评论。
 
-- 每 30 分钟醒一次，没有新评论就一句话结束；有就挑一条回。
-- 21 点后的第一轮写值守日志。这个钟点可以用环境变量 `DUTY_DIARY_AFTER` 改。
+- 每轮先看有没有新评论，没有就一句话结束；有就按 `duty.repliesPerRound` 挑几条回。
+- `duty.journalAfterHour` 之后的第一轮写值守日志，一天一次。
+- 改了配置不用重启循环，下一轮就按新配置执行；只有改 `everyMin` 时要重新发一次 `/loop`。
 - 要求：桌面应用一直开着，电脑不睡眠；`/loop` 7 天后过期，到时重发一次。
 
 **发布**：在做视频的会话里说「发布到 YouTube」，或运行 `/channel-publish`。它会先给你看 `--dry` 的结果，你确认了才真的上传。
@@ -191,6 +238,7 @@ yt auth status
 ## 命令速查
 
 ```
+yt config [show|path|init|check]       配置文件
 yt auth client <客户端.json> | login [--no-open] | status | logout
 yt videos [--n 10]                     自己频道最近的视频
 yt comments <视频ID> [--n 20]          某个视频的评论

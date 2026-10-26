@@ -12,14 +12,14 @@
 //   yt replied [--forget <评论ID>]       # 判重账本
 //   yt upload <视频文件> --title "…" [--description "…"] [--privacy public] --dry|--go   # 只在主人下指令时用
 //   yt uploads [--forget <视频文件>]      # 上传账本
+//   yt config [show | path | init | check]             # 配置文件（模板见 config.template.json，skill channel-setup 引导填写）
 //   yt memory [init | dossier <视频ID> [--file 档案.md] | feedback --message "…" | log --message "…"]   # 频道共享记忆
 //
 // 所有读命令都可加 --json。写操作是 reply 和 upload，必须显式 --dry（只打印请求）或 --go（真的发）。
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
-import { config } from '../lib/config.mjs'
-import { homePath, dshPath } from '../lib/paths.mjs'
+import { config, dataPath, checkConfig, initConfig, configPath } from '../lib/config.mjs'
 import { createYouTube, youtubeSettings, YouTubeError } from '../lib/youtube.mjs'
 import { createMemory, memoryDirOf, MemoryError } from '../lib/memory.mjs'
 
@@ -46,7 +46,7 @@ const [cmd, sub] = positional
 const JSON_OUT = flags.has('json')
 const num = (key, fallback) => { const n = Number(flags.get(key)); return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback }
 
-const yt = createYouTube({ directory: homePath('.bili-ai'), settings: () => youtubeSettings(cfg) })
+const yt = createYouTube({ directory: fullCfg.dataDir, settings: () => youtubeSettings(cfg) })
 
 function usage(code = 0) {
   console.log(fs.readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 17).map(l => l.replace(/^\/\/ ?/, '')).join('\n'))
@@ -104,7 +104,7 @@ async function main() {
         console.log(`登录：${s.loggedIn ? `✓ ${s.channel?.title ?? ''}（${s.channel?.id ?? '?'}）` : '✗ 未登录（yt auth login）'}`)
         console.log(`今日配额（太平洋时间 ${s.quota.day}）：${s.quota.units}/${s.quota.dailyUnits} 单位 · 回复 ${s.quota.writes}/${s.quota.writeDaily} 条 · 上传 ${s.quota.uploads}/${s.quota.uploadDaily} 个`)
         if (s.pausedUntil) console.log(`⚠ 已暂停到 ${s.pausedUntil}：${s.pauseReason}`)
-        console.log(`共享记忆：${mem ? `${mem.dir}${mem.ready ? ` · 档案 ${mem.videos.length} 期 · 待处理反馈 ${mem.openFeedback} 条` : ' · ✗ 还没初始化（yt memory init）'}` : '未设置（youtube.memoryDir）'}`)
+        console.log(`共享记忆：${mem ? `${mem.dir}${mem.ready ? ` · 档案 ${mem.videos.length} 期 · 待处理反馈 ${mem.openFeedback} 条` : ' · ✗ 还没初始化（yt memory init）'}` : '未设置（配置里的 memoryDir）'}`)
       })
     }
     throw new YouTubeError('auth 子命令：client / login / status / logout', 'YT_ARGS')
@@ -148,7 +148,7 @@ async function main() {
     const r = await yt.reply(sub, message, { go })
     if (!r.dry) {
       try {
-        fs.appendFileSync(dshPath('whale-log.jsonl'), JSON.stringify({ at: new Date().toISOString(), kind: 'yt-reply-sent', target: r.target.author,
+        fs.appendFileSync(dataPath('activity.jsonl'), JSON.stringify({ at: new Date().toISOString(), kind: 'yt-reply-sent', target: r.target.author,
           note: `YouTube 回复 · 视频 ${r.videoId} · ${short(r.text, 60)}` }) + '\n')
       } catch {}
       // 记进共享记忆：工作室那边据此知道频道在评论区公开说过什么 ✓
@@ -178,14 +178,18 @@ async function main() {
     // 档案先读进来再传：文件不对就在上传前报错，别等视频发出去了才发现 ✓
     const dossierFile = text('dossier')
     if (flags.has('dossier') && !dossierFile) throw new YouTubeError('--dossier 后面要跟档案文件路径', 'YT_ARGS')
-    if (dossierFile && !memoryDir) throw new YouTubeError('还没设置共享记忆目录（youtube.memoryDir），--dossier 没地方存', 'YT_ARGS')
+    if (dossierFile && !memoryDir) throw new YouTubeError('还没设置共享记忆目录（配置里的 memoryDir），--dossier 没地方存', 'YT_ARGS')
     let dossier = null
     if (dossierFile) { try { dossier = fs.readFileSync(path.resolve(dossierFile), 'utf8') } catch { throw new YouTubeError(`找不到档案文件：${dossierFile}`, 'YT_ARGS') } }
+    if (!dossierFile && fullCfg.publish.requireDossier && memoryDir) throw new YouTubeError('配置要求每期都带档案（publish.requireDossier）：加上 --dossier <档案.md>', 'YT_ARGS')
     if (dossier !== null && !dossier.trim()) throw new YouTubeError('档案文件是空的', 'YT_ARGS')
     const input = {
       file: sub, title: text('title'), description: descFile ? fs.readFileSync(path.resolve(descFile), 'utf8') : text('description'),
-      tags: text('tags'), category: text('category'), privacy: text('privacy'), publishAt: text('publish-at'),
-      kids: flags.has('kids'), thumbnail: text('thumbnail'), playlist: text('playlist'),
+      tags: text('tags') ?? (fullCfg.publish.tags?.length ? fullCfg.publish.tags.join(',') : undefined),
+      category: text('category') ?? (fullCfg.publish.category || undefined),
+      // 定时发布必须私享 → 有 --publish-at 时不套默认隐私
+      privacy: text('privacy') ?? (text('publish-at') ? undefined : fullCfg.publish.privacy), publishAt: text('publish-at'),
+      kids: flags.has('kids'), thumbnail: text('thumbnail'), playlist: text('playlist') ?? (fullCfg.publish.playlist || undefined),
     }
     let last = 0
     const r = await yt.upload(input, { go, onProgress: (done, total) => {
@@ -193,7 +197,7 @@ async function main() {
     } })
     if (!r.dry) {
       try {
-        fs.appendFileSync(dshPath('whale-log.jsonl'), JSON.stringify({ at: new Date().toISOString(), kind: 'yt-upload', target: r.videoId,
+        fs.appendFileSync(dataPath('activity.jsonl'), JSON.stringify({ at: new Date().toISOString(), kind: 'yt-upload', target: r.videoId,
           note: `YouTube 上传 · ${r.privacy} · ${short(r.title, 60)}` }) + '\n')
       } catch {}
       if (dossier) {
@@ -237,6 +241,30 @@ async function main() {
       if (!rows.length) return console.log('（还没上传过视频）')
       for (const v of rows) console.log(`${v.at}  ${String(v.status).padEnd(9)}  ${short(v.title, 40)}${v.videoId ? '  → https://youtu.be/' + v.videoId : ''}\n    ${v.file}`)
     })
+  }
+
+  if (cmd === 'config') {
+    if (sub === 'path') return console.log(configPath)
+    if (sub === 'init') {
+      const r = initConfig()
+      console.log(r.created ? `✓ 已从模板生成配置：${r.path}
+  下一步：按 skill channel-setup 填写，再 yt config check` : `配置已经存在，没动它：${r.path}`)
+      return
+    }
+    if (sub === 'check') {
+      const r = checkConfig()
+      return out(r, x => {
+        console.log(`配置文件：${x.path}${x.exists ? '' : '（不存在）'}`)
+        if (!x.problems.length) return console.log('✓ 配置没问题')
+        for (const p of x.problems) console.log('✗ ' + p)
+        process.exitCode = 1
+      })
+    }
+    if (!sub || sub === 'show') {
+      const { youtube, ...shown } = fullCfg
+      return out({ path: configPath, ...shown }, x => console.log(JSON.stringify(x, null, 2)))
+    }
+    throw new YouTubeError('config 子命令：show / path / init / check', 'YT_ARGS')
   }
 
   if (cmd === 'memory') {
