@@ -29,6 +29,8 @@
     "category": "",
     "playlist": "",
     "tags": [],
+    "language": "",
+    "audioLanguage": "",
     "requireDossier": true
   }
 }

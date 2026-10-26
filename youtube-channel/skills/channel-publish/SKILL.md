@@ -32,11 +32,25 @@ $YT = node "<skill>/../../scripts/yt/commands/yt.mjs"
 | `--playlist PLxxxx` | 加进播放列表；不写就用配置的 `publish.playlist` |
 | `--category <ID>` | 分类 ID；不写就用配置的 `publish.category` |
 | `--kids` | 只有面向儿童时才加 |
+| `--language <代码>` | 标题简介和音轨的语言，如 `en`、`ja`、`zh-Hans`；不写就用配置的 `publish.language`。要写多语言标题必须先设它 |
+| `--audio-language <代码>` | 音轨语言和标题语言不同时单独写；不写就跟 `--language` 一样 |
+| `--caption <语言>=<字幕文件>` | 字幕，可以写多次，一种语言一次；支持 srt、vtt、sbv、ttml 等；带名称写成 `"en:English (CC)=字幕.srt"`；每条 400 配额单位 |
+| `--localize <语言>=<文件>` | 多语言标题和简介，可以写多次；文件第一行是标题，其余是简介；不能和 `--language` 同一种语言 |
 | `--dossier <档案.md>` | 配置 `publish.requireDossier` 为 true 时必须带：这期的档案，传完存进 `<mem>/videos/<视频ID>.md`，值守回评论时照它说 |
 
 档案写这期的一句话、真实数字和来源、做法、预想问答。只写确认过的东西，值守会照着它回复观众。
 
 标题和简介是频道对外说的话：写之前先运行 `$YT persona` 读人设，口吻、自称、禁区（比如不说收入、不夸大能力）都按人设来。
+
+## 多语言（字幕、标题简介、音轨）
+
+- **字幕**和**多语言标题简介**插件能做：上传时带上 `--caption` / `--localize`；已经发布的视频用
+  - `$YT captions <视频ID>`：看已有字幕；
+  - `$YT caption <视频ID> --caption en=… --dry|--go`：补字幕；
+  - `$YT localize <视频ID> --language en --localize ja=… --dry|--go`：设语言、补多语言标题简介（已有的其他语言会保留）。
+- **多音轨**（同一个视频带几种语言的配音）YouTube API 不支持。传完后告诉主人：到 YouTube Studio → 该视频 → 语言 → 添加语言 → 上传纯音频文件（时长和视频一致），频道要开通高级功能。
+- 视频上传成功后，字幕或多语言标题没设上只算警告，按输出里给的命令补，不要重传视频。
+- 写多语言标题简介时每种语言都按人设口吻写，不要逐字机翻；数字和说法以档案为准。
 
 ## 2. 试运行
 
@@ -44,7 +58,7 @@ $YT = node "<skill>/../../scripts/yt/commands/yt.mjs"
 $YT upload <成片> --title "…" --description-file … --thumbnail … --dossier … --dry
 ```
 
-把输出里的频道、标题、隐私设置、定时、封面、文件大小列给主人，问一句「确认发布吗？」，然后等。
+把输出里的频道、标题、隐私设置、定时、封面、文件大小、语言、多语言标题、字幕列给主人，问一句「确认发布吗？」，然后等。
 
 ## 3. 上传
 
@@ -53,5 +67,5 @@ $YT upload <成片> --title "…" --description-file … --thumbnail … --dossi
 ## 4. 收尾
 
 1. 告诉主人视频链接。
-2. 更新 `<mem>/now.md` 的「最近发布」（标题、链接、发布时间），「正在做」「下一期」按实际情况改。没写进 `now.md` 的事，值守不会对观众说。
+2. 更新 `<mem>/now.md` 的「最近发布」（标题、链接、发布时间、带了哪些语言的字幕和标题），「正在做」「下一期」按实际情况改。没写进 `now.md` 的事，值守不会对观众说。
 3. 确认 `<mem>/videos/<视频ID>.md` 已经生成；漏了就补：`$YT memory dossier <视频ID> --file <档案.md>`。

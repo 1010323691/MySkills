@@ -80,6 +80,8 @@ $YT auth status --json
 | `category` | 空 | YouTube 分类 ID，比如 28 = 科技、27 = 教育、22 = 人物和博客 |
 | `playlist` | 空 | 默认加进的播放列表 ID（PLxxxx） |
 | `tags` | `[]` | 每期都带的标签 |
+| `language` | 空 | 默认的标题简介和音轨语言（如 `en`）；要发多语言标题时必须有 |
+| `audioLanguage` | 空 | 音轨语言和标题语言不同时才填 |
 | `requireDossier` | true | 上传时必须带 `--dossier` 档案（设了 memoryDir 才生效） |
 
 每组填完运行一次 `$YT config check`，有 ✗ 就和主人一起改到全部通过。

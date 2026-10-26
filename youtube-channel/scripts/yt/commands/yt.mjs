@@ -14,10 +14,13 @@
 //   yt replied [--forget <评论ID>]       # 判重账本
 //   yt upload <视频文件> --title "…" [--description "…"] [--privacy public] --dry|--go   # 只在主人下指令时用
 //   yt uploads [--forget <视频文件>]      # 上传账本
+//   yt captions <视频ID>                 # 视频已有的字幕
+//   yt caption <视频ID> --caption en=字幕.srt [--caption ja=…] --dry|--go   # 给已发布的视频补字幕
+//   yt localize <视频ID> [--language en] [--audio-language en] [--localize ja=标题简介.txt …] --dry|--go   # 设语言、补多语言标题简介
 //   yt config [show | path | init | check]             # 配置文件（模板见 config.template.json，skill channel-setup 引导填写）
 //   yt memory [init | dossier <视频ID> [--file 档案.md] | feedback --message "…" | log --message "…"]   # 频道共享记忆
 //
-// 所有读命令都可加 --json。写操作是 reply 和 upload，必须显式 --dry（只打印请求）或 --go（真的发）。
+// 所有读命令都可加 --json。写操作是 reply、upload、caption、localize，必须显式 --dry（只打印请求）或 --go（真的发）。
 import fs from 'node:fs'
 import path from 'node:path'
 import { spawn, spawnSync } from 'node:child_process'
@@ -38,24 +41,52 @@ if (proxy && process.env.NODE_USE_ENV_PROXY !== '1') {
   process.exit(r.status ?? 1)
 }
 
-const positional = [], flags = new Map()
+const positional = [], flags = new Map(), multi = new Map()
 for (let i = 2; i < process.argv.length; i += 1) {
   const a = process.argv[i]
   if (!a.startsWith('--')) { positional.push(a); continue }
   const next = process.argv[i + 1]
-  flags.set(a.slice(2), next === undefined || next.startsWith('--') ? true : (i += 1, next))
+  const v = next === undefined || next.startsWith('--') ? true : (i += 1, next)
+  flags.set(a.slice(2), v)
+  // --caption / --localize 可以写多次：每次都收进 multi
+  if (!multi.has(a.slice(2))) multi.set(a.slice(2), [])
+  multi.get(a.slice(2)).push(v)
 }
+const many = key => (multi.get(key) ?? []).filter(v => typeof v === 'string')
+// --caption en=字幕.srt，或带名称 --caption "en:English (CC)=字幕.srt"
+const captionArgs = () => many('caption').map(v => {
+  const i = v.indexOf('=')
+  if (i < 1) throw new YouTubeError(`--caption 要写成 语言=字幕文件，例如 en=subs/en.srt：${v}`, 'YT_ARGS')
+  const head = v.slice(0, i), j = head.indexOf(':')
+  return { lang: (j < 0 ? head : head.slice(0, j)).trim(), name: j < 0 ? '' : head.slice(j + 1).trim(), file: v.slice(i + 1).trim(), draft: flags.has('caption-draft') }
+})
+// --localize ja=标题简介.txt：文件第一行是标题，空一行之后是简介
+const localizeArgs = () => many('localize').map(v => {
+  const i = v.indexOf('=')
+  if (i < 1) throw new YouTubeError(`--localize 要写成 语言=文件，例如 ja=meta/ja.txt：${v}`, 'YT_ARGS')
+  const file = path.resolve(v.slice(i + 1).trim())
+  let text
+  try { text = fs.readFileSync(file, 'utf8').replace(/^﻿/, '').replace(/\r\n/g, '\n') } catch { throw new YouTubeError(`找不到多语言标题文件：${file}`, 'YT_ARGS') }
+  const lines = text.split('\n'), k = lines.findIndex(l => l.trim())
+  return { lang: v.slice(0, i).trim(), title: k < 0 ? '' : lines[k].trim(), description: k < 0 ? '' : lines.slice(k + 1).join('\n').trim() }
+})
+const langLabel = l => { try { return `${l}（${new Intl.DisplayNames(['zh-CN'], { type: 'language' }).of(l)}）` } catch { return l } }
 const [cmd, sub] = positional
 const JSON_OUT = flags.has('json')
+const text0 = key => { const v = flags.get(key); return typeof v === 'string' ? v : undefined }
 const num = (key, fallback) => { const n = Number(flags.get(key)); return Number.isFinite(n) && n > 0 ? Math.floor(n) : fallback }
 
 const yt = createYouTube({ directory: fullCfg.dataDir, settings: () => youtubeSettings(cfg) })
 
 function usage(code = 0) {
-  console.log(fs.readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 17).map(l => l.replace(/^\/\/ ?/, '')).join('\n'))
+  console.log(fs.readFileSync(new URL(import.meta.url), 'utf8').split('\n').slice(1, 22).map(l => l.replace(/^\/\/ ?/, '')).join('\n'))
   console.log('上传的其余参数：--description-file <文件> --tags a,b --category 22 --privacy public|unlisted|private\n' +
     '              --publish-at 2026-11-01T20:00:00+08:00（定时发布，自动先私享）--kids（面向儿童）--thumbnail 封面.jpg --playlist PLxxxx\n' +
     '              --dossier 档案.md（这期的构想 / 要点 / 预想问答，传完存进共享记忆 videos/<视频ID>.md）\n' +
+    '多语言参数：--language en（标题简介和音轨的语言）--audio-language en（音轨语言不同时单独写）\n' +
+    '              --caption en=字幕.srt（可写多次；带名称写成 "en:English (CC)=字幕.srt"；--caption-draft 存为草稿）\n' +
+    '              --localize ja=标题简介.txt（可写多次；文件第一行是标题，其余是简介）\n' +
+    '              多音轨：YouTube API 不支持，只能在 Studio → 语言 里手动加\n' +
     '反馈参数：yt memory feedback --message "一句话概括" [--kind 提问|想看|纠错|批评|建议|其他] [--video <视频ID>] [--comment-id <评论ID>] [--who <昵称>]')
   process.exit(code)
 }
@@ -190,6 +221,43 @@ async function main() {
     })
   }
 
+  if (cmd === 'captions') {
+    return out(await yt.listCaptions(sub), list => {
+      if (!list.length) return console.log('（这个视频还没有字幕）')
+      for (const c of list) console.log(`${langLabel(c.lang)}「${c.name}」${c.kind === 'asr' ? ' · 自动生成' : ''}${c.draft ? ' · 草稿' : ''} · ${c.status ?? ''}  ID=${c.id}`)
+    })
+  }
+
+  if (cmd === 'caption') {
+    const go = flags.has('go'), dry = flags.has('dry')
+    if (go === dry) throw new YouTubeError('写操作必须二选一：--dry（只看要传什么）或 --go（真的传）', 'YT_ARGS')
+    const r = await yt.addCaptions(sub, captionArgs(), { go })
+    return out(r, x => {
+      console.log(`视频：${x.title}（${x.videoId}）`)
+      if (x.dry) {
+        for (const c of x.captions) console.log(`  [dry] 字幕 ${langLabel(c.lang)}「${c.name}」：${c.file}${c.draft ? ' · 草稿' : ''}`)
+        console.log(`  要花 ${x.units} 配额单位。确认无误后把 --dry 换成 --go`)
+      } else {
+        for (const c of x.done) console.log(`  ✓ 字幕 ${langLabel(c.lang)}「${c.name}」`)
+        for (const c of x.failed) console.log(`  ✗ 字幕 ${langLabel(c.lang)}「${c.name}」：${c.error}`)
+        if (x.failed.length) process.exitCode = 1
+      }
+    })
+  }
+
+  if (cmd === 'localize') {
+    const go = flags.has('go'), dry = flags.has('dry')
+    if (go === dry) throw new YouTubeError('写操作必须二选一：--dry（只看要改什么）或 --go（真的改）', 'YT_ARGS')
+    const r = await yt.localize(sub, { language: text0('language'), audioLanguage: text0('audio-language'), localizations: localizeArgs() }, { go })
+    return out(r, x => {
+      console.log(`视频：${x.title}（${x.videoId}）`)
+      console.log(`  ${x.dry ? '[dry] ' : '✓ '}默认语言 ${x.defaultLanguage ? langLabel(x.defaultLanguage) : '（未设）'} · 音轨 ${x.audioLanguage ? langLabel(x.audioLanguage) : '（未设）'}`)
+      if (x.adding.length) console.log(`  ${x.dry ? '[dry] 将写入' : '✓ 已写入'}多语言标题简介：${x.adding.map(langLabel).join('、')}`)
+      if (x.keeping.length) console.log(`  保留已有：${x.keeping.map(langLabel).join('、')}`)
+      if (x.dry) console.log('  要花 50 配额单位。确认无误后把 --dry 换成 --go')
+    })
+  }
+
   if (cmd === 'upload') {
     const go = flags.has('go'), dry = flags.has('dry')
     if (go === dry) throw new YouTubeError('上传必须二选一：--dry（只看要发什么）或 --go（真的传）', 'YT_ARGS')
@@ -211,6 +279,9 @@ async function main() {
       // 定时发布必须私享 → 有 --publish-at 时不套默认隐私
       privacy: text('privacy') ?? (text('publish-at') ? undefined : fullCfg.publish.privacy), publishAt: text('publish-at'),
       kids: flags.has('kids'), thumbnail: text('thumbnail'), playlist: text('playlist') ?? (fullCfg.publish.playlist || undefined),
+      language: text('language') ?? (fullCfg.publish.language || undefined),
+      audioLanguage: text('audio-language') ?? (fullCfg.publish.audioLanguage || undefined),
+      captions: captionArgs(), localizations: localizeArgs(),
     }
     let last = 0
     const r = await yt.upload(input, { go, onProgress: (done, total) => {
@@ -238,6 +309,11 @@ async function main() {
         console.log(`  面向儿童：${s.selfDeclaredMadeForKids ? '是' : '否'}`)
         if (x.thumbnail) console.log(`  封面：${x.thumbnail}`)
         if (x.playlistId) console.log(`  加入播放列表：${x.playlistId}`)
+        console.log(`  语言：标题简介 ${x.snippet.defaultLanguage ? langLabel(x.snippet.defaultLanguage) : '（未设）'} · 音轨 ${x.snippet.defaultAudioLanguage ? langLabel(x.snippet.defaultAudioLanguage) : '（未设）'}`)
+        for (const [l, v] of Object.entries(x.localizations ?? {})) console.log(`  多语言标题 ${langLabel(l)}：${short(v.title, 60)}${v.description ? ' · 简介 ' + short(v.description, 30) : ''}`)
+        for (const c of x.captions ?? []) console.log(`  字幕 ${langLabel(c.lang)}「${c.name}」：${c.file}（${(c.size / 1024).toFixed(1)} KB）${c.draft ? ' · 草稿' : ''}`)
+        if (x.captions?.length) console.log(`  字幕要花 ${x.captions.length * 400} 配额单位`)
+        console.log('  多音轨：YouTube API 不支持，传完到 Studio → 语言 里手动添加')
         if (dossier) console.log(`  档案：${path.resolve(dossierFile)} → 传完存进 ${path.join(memoryDir, 'videos')}`)
         console.log('\n确认无误后把 --dry 换成 --go')
       } else {
@@ -245,6 +321,9 @@ async function main() {
         console.log(`  ${x.url} · ${{ public: '公开', unlisted: '不公开', private: '私享' }[x.privacy] ?? x.privacy}${x.publishAt ? ` · 定时 ${x.publishAt}` : ''}`)
         console.log('  YouTube 还要转码几分钟，刚传完可能暂时看不了')
         if (x.dossier) console.log(`  档案：${x.dossier}`)
+        if (x.language) console.log(`  语言：${langLabel(x.language)}${x.audioLanguage && x.audioLanguage !== x.language ? ' · 音轨 ' + langLabel(x.audioLanguage) : ''}`)
+        if (x.localizations.length) console.log(`  多语言标题：${x.localizations.map(langLabel).join('、')}`)
+        for (const c of x.captions) console.log(`  ✓ 字幕 ${langLabel(c.lang)}「${c.name}」`)
         for (const w of x.warnings) console.log('  ⚠ ' + w)
       }
     })

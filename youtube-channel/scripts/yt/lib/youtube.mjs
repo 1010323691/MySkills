@@ -252,7 +252,11 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
       commentNotFound: '找不到这条评论（可能已被删除）', videoNotFound: '找不到这个视频', processingFailure: 'YouTube 处理失败，稍后核查是否已发出',
       uploadLimitExceeded: '这个频道今天的上传次数已到 YouTube 上限', invalidTitle: '标题不合法（1–100 字，不能有 < >）', invalidDescription: '简介不合法（≤5000 字节，不能有 < >）',
       invalidTags: '标签不合法（合计 ≤500 字）', invalidPublishAt: '定时发布时间不合法（要是将来的时间，且视频为私享）',
-      mediaBodyTooLarge: '封面文件太大（YouTube 要求 ≤2MB）', playlistNotFound: '找不到这个播放列表（要是你自己频道的）' }[reason]
+      mediaBodyTooLarge: '封面文件太大（YouTube 要求 ≤2MB）', playlistNotFound: '找不到这个播放列表（要是你自己频道的）',
+      captionExists: '这个视频已经有同语言、同名称的字幕了（换个 name，或先在 Studio 删掉旧的）', contentRequired: '字幕文件是空的',
+      invalidMetadata: '字幕元数据不合法（检查语言代码和名称）', nameTooLong: '字幕名称太长（≤150 字）',
+      defaultLanguageNotSet: '要写多语言标题 / 简介，必须先设视频默认语言（--language）',
+      invalidDefaultLanguage: '默认语言代码不合法', invalidLocalizations: '多语言标题 / 简介不合法（检查语言代码、标题 ≤100 字、简介 ≤5000 字节）' }[reason]
     return new YouTubeError(`YouTube ${what} 返回 HTTP ${res.status}${reason ? ' / ' + reason : ''}：${hint ?? detail}`, res.status === 401 ? 'YT_AUTH' : 'YT_HTTP')
   }
 
@@ -490,6 +494,128 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
   const saveUploads = fn => locked(UPLOADS + '.lock', () => { const o = uploads(); o.byFile ??= {}; const r = fn(o); writeJson(UPLOADS, o); return r })
   const fingerprint = (abs, st) => crypto.createHash('sha256').update(`${process.platform === 'win32' ? abs.toLowerCase() : abs}|${st.size}|${Math.floor(st.mtimeMs)}`).digest('hex').slice(0, 24)
 
+  // ── 多语言（2026-10-27）─────────────────────────────────────────
+  //   字幕：captions.insert（400 单位 / 条）；多语言标题简介：videos 的 localizations（要先有 snippet.defaultLanguage）
+  //   多音轨：Data API 没有接口，只能在 YouTube Studio 里手动加 ✗
+  const LANG = /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/
+  const CAPTION_TYPES = ['.srt', '.vtt', '.sbv', '.sub', '.ttml', '.dfxp', '.xml', '.scc', '.ass', '.ssa', '.txt']
+  const langName = lang => { try { return new Intl.DisplayNames([lang], { type: 'language' }).of(lang) || lang } catch { return lang } }
+  function checkLang(v, what) {
+    if (v === undefined || v === null || v === '') return null
+    const s = String(v).trim()
+    if (!LANG.test(s)) throw new YouTubeError(`${what} 要是语言代码（如 en、ja、zh-Hans、zh-CN）：${s}`, 'YT_ARGS')
+    return s
+  }
+  /** 校验一组字幕：[{ lang, file, name?, draft? }] → 绝对路径 + 默认名称（该语言自己的叫法） */
+  function captionPlan(list = []) {
+    const seen = new Set()
+    return list.map(c => {
+      const lang = checkLang(c.lang, '字幕语言')
+      if (!lang) throw new YouTubeError('字幕要写语言：--caption en=字幕.srt', 'YT_ARGS')
+      const file = path.resolve(String(c.file ?? ''))
+      let st
+      try { st = fs.statSync(file) } catch { throw new YouTubeError(`找不到字幕文件：${file}`, 'YT_ARGS') }
+      if (!st.isFile() || st.size <= 0) throw new YouTubeError(`字幕文件是空的：${file}`, 'YT_ARGS')
+      if (st.size > 100 * 1024 ** 2) throw new YouTubeError(`字幕文件超过 100MB：${file}`, 'YT_ARGS')
+      if (!CAPTION_TYPES.includes(path.extname(file).toLowerCase())) throw new YouTubeError(`不认识的字幕格式：${path.extname(file)}（支持 ${CAPTION_TYPES.join(' ')}）`, 'YT_ARGS')
+      const name = String(c.name ?? '').trim() || langName(lang)
+      if ([...name].length > 150) throw new YouTubeError('字幕名称要 ≤150 字', 'YT_ARGS')
+      const k = lang.toLowerCase() + '|' + name
+      if (seen.has(k)) throw new YouTubeError(`同一种语言、同一个名称的字幕给了两次：${lang}`, 'YT_ARGS')
+      seen.add(k)
+      return { lang, file, name, draft: c.draft === true, size: st.size }
+    })
+  }
+  /** 校验多语言标题简介：[{ lang, title, description }] → { [lang]: { title, description } } */
+  function localizationPlan(list = [], defaultLanguage) {
+    if (!list.length) return null
+    if (!defaultLanguage) throw new YouTubeError('写多语言标题 / 简介前要先设视频默认语言：--language <主标题的语言>', 'YT_ARGS')
+    const out = {}
+    for (const l of list) {
+      const lang = checkLang(l.lang, '多语言标题的语言')
+      if (!lang) throw new YouTubeError('多语言标题要写语言：--localize ja=标题简介.txt', 'YT_ARGS')
+      if (lang.toLowerCase() === defaultLanguage.toLowerCase()) throw new YouTubeError(`${lang} 就是默认语言，它的标题简介直接用 --title / --description`, 'YT_ARGS')
+      if (out[lang]) throw new YouTubeError(`多语言标题的语言给了两次：${lang}`, 'YT_ARGS')
+      const title = String(l.title ?? '').trim(), description = String(l.description ?? '')
+      if (!title || [...title].length > 100 || /[<>]/.test(title)) throw new YouTubeError(`${lang} 的标题要 1–100 字，且不能有 < >`, 'YT_ARGS')
+      if (Buffer.byteLength(description, 'utf8') > 5000 || /[<>]/.test(description)) throw new YouTubeError(`${lang} 的简介要 ≤5000 字节，且不能有 < >`, 'YT_ARGS')
+      out[lang] = { title, description }
+    }
+    return out
+  }
+
+  /** 传一条字幕（multipart：JSON 元数据 + 字幕文件） */
+  async function postCaption(videoId, c) {
+    await reserve(400, 'write')
+    const boundary = 'ytc' + crypto.randomBytes(12).toString('hex')
+    const meta = JSON.stringify({ snippet: { videoId, language: c.lang, name: c.name, isDraft: c.draft } })
+    const body = Buffer.concat([
+      Buffer.from(`--${boundary}\r\nContent-Type: application/json; charset=UTF-8\r\n\r\n${meta}\r\n--${boundary}\r\nContent-Type: application/octet-stream\r\n\r\n`),
+      fs.readFileSync(c.file),
+      Buffer.from(`\r\n--${boundary}--\r\n`),
+    ])
+    const res = await authed(UPLOAD + 'captions?' + new URLSearchParams({ uploadType: 'multipart', part: 'snippet' }), {
+      method: 'POST', body, signal: AbortSignal.timeout(120000),
+      headers: { 'content-type': `multipart/related; boundary=${boundary}`, 'content-length': String(body.length) },
+    }, '上传字幕')
+    if (!res.ok) throw await failure(res, await res.json().catch(() => null), 'captions.insert')
+    const j = await res.json().catch(() => ({}))
+    return { id: j.id ?? null, lang: c.lang, name: c.name }
+  }
+
+  /** 自己频道的一个视频：snippet + localizations（1 单位）；不是自己的就拒绝 */
+  async function ownVideo(videoId) {
+    if (!ID.test(String(videoId ?? ''))) throw new YouTubeError('视频 ID 不对（形如 qHHoPgrCkQU）', 'YT_ARGS')
+    const ch = await me()
+    const j = await api('videos', { part: 'snippet,localizations', id: videoId })
+    const v = j.items?.[0]
+    if (!v) throw new YouTubeError('找不到这个视频', 'YT_ARGS')
+    if (v.snippet?.channelId !== ch.id) throw new YouTubeError('这个视频不是你自己频道发的', 'YT_SCOPE')
+    return v
+  }
+
+  /** 给已发布的视频补字幕 */
+  async function addCaptions(videoId, list, { go = false } = {}) {
+    const plan = captionPlan(list)
+    if (!plan.length) throw new YouTubeError('用法：yt caption <视频ID> --caption en=字幕.srt [--caption ja=…] --dry|--go', 'YT_ARGS')
+    const v = await ownVideo(videoId)
+    if (!go) return { dry: true, videoId, title: v.snippet?.title ?? '', captions: plan, units: plan.length * 400 }
+    const done = [], failed = []
+    for (const c of plan) {
+      try { done.push(await postCaption(videoId, c)) } catch (e) { failed.push({ lang: c.lang, name: c.name, error: e.message }) }
+    }
+    return { dry: false, videoId, title: v.snippet?.title ?? '', done, failed }
+  }
+
+  /** 列出视频已有的字幕（captions.list，50 单位） */
+  async function listCaptions(videoId) {
+    await ownVideo(videoId)
+    const j = await api('captions', { part: 'snippet', videoId }, { units: 50 })
+    return (j.items ?? []).map(c => ({ id: c.id, lang: c.snippet?.language, name: c.snippet?.name, kind: c.snippet?.trackKind, draft: c.snippet?.isDraft === true,
+      status: c.snippet?.status, updatedAt: c.snippet?.lastUpdated }))
+  }
+
+  /** 给已发布的视频设语言 / 补多语言标题简介（videos.update，50 单位）；已有的其他语言保留 */
+  async function localize(videoId, { language, audioLanguage, localizations = [] } = {}, { go = false } = {}) {
+    const v = await ownVideo(videoId)
+    const sn = v.snippet ?? {}
+    const defaultLanguage = checkLang(language, '--language') ?? sn.defaultLanguage ?? null
+    const audio = checkLang(audioLanguage, '--audio-language') ?? sn.defaultAudioLanguage ?? null
+    const add = localizationPlan(localizations, defaultLanguage) ?? {}
+    if (!language && !audioLanguage && !Object.keys(add).length) throw new YouTubeError('用法：yt localize <视频ID> [--language en] [--audio-language en] [--localize ja=标题简介.txt …] --dry|--go', 'YT_ARGS')
+    const merged = { ...(v.localizations ?? {}), ...add }
+    // YouTube 会在 localizations 里给默认语言也存一份；有的话跟主标题简介保持一致，不删
+    if (defaultLanguage && merged[defaultLanguage]) merged[defaultLanguage] = { title: sn.title, description: sn.description ?? '' }
+    // update 的 snippet 是整段覆盖：标题、分类、简介、标签要原样带回去，否则会被清空
+    const snippet = { title: sn.title, categoryId: sn.categoryId, description: sn.description ?? '', tags: sn.tags ?? [],
+      ...(defaultLanguage ? { defaultLanguage } : {}), ...(audio ? { defaultAudioLanguage: audio } : {}) }
+    const body = { id: videoId, snippet, ...(Object.keys(merged).length ? { localizations: merged } : {}) }
+    const summary = { videoId, title: sn.title ?? '', defaultLanguage, audioLanguage: audio, adding: Object.keys(add), keeping: Object.keys(v.localizations ?? {}).filter(k => !add[k] && k !== defaultLanguage) }
+    if (!go) return { dry: true, ...summary }
+    await api('videos', { part: body.localizations ? 'snippet,localizations' : 'snippet' }, { method: 'PUT', kind: 'write', units: 50, body })
+    return { dry: false, ...summary }
+  }
+
   /** 校验参数、拼出要发给 YouTube 的元数据（dry 和 go 共用，dry 不发任何写请求） */
   function uploadPlan(input) {
     const abs = path.resolve(String(input.file ?? ''))
@@ -529,11 +655,15 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
     }
     const playlistId = input.playlist ? String(input.playlist).trim() : null
     if (playlistId && !ID.test(playlistId)) throw new YouTubeError('--playlist 要是播放列表 ID（形如 PLxxxx）', 'YT_ARGS')
+    const defaultLanguage = checkLang(input.language, '--language')
+    const defaultAudioLanguage = checkLang(input.audioLanguage, '--audio-language') ?? defaultLanguage
+    const localizations = localizationPlan(input.localizations ?? [], defaultLanguage)
+    const captions = captionPlan(input.captions ?? [])
     const resource = {
-      snippet: { title, description, tags, categoryId },
+      snippet: { title, description, tags, categoryId, ...(defaultLanguage ? { defaultLanguage } : {}), ...(defaultAudioLanguage ? { defaultAudioLanguage } : {}) },
       status: { privacyStatus: privacy, selfDeclaredMadeForKids: input.kids === true, ...(publishAt ? { publishAt } : {}) },
     }
-    return { abs, size: st.size, mime, key: fingerprint(abs, st), resource, thumbnail, playlistId }
+    return { abs, size: st.size, mime, key: fingerprint(abs, st), resource, thumbnail, playlistId, localizations, captions }
   }
 
   async function authed(url, init, what) {
@@ -564,7 +694,7 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
     if (prior?.status === 'done') throw new YouTubeError(`这个文件已经传过了（${prior.at}，视频 https://youtu.be/${prior.videoId}）；同一个文件不重复发布`, 'YT_DUP')
     const ch = await me()
     const summary = { file: plan.abs, size: plan.size, channel: ch.title, ...plan.resource, thumbnail: plan.thumbnail, playlistId: plan.playlistId,
-      resume: prior?.session ? true : false }
+      localizations: plan.localizations, captions: plan.captions, resume: prior?.session ? true : false }
     if (!go) return { dry: true, ...summary }
     if (prior?.status === 'unknown') throw new YouTubeError(`这个文件上次上传的结果不确定（${prior.at}）。先到 YouTube Studio 看有没有这条；没有再运行 yt uploads --forget "${plan.abs}"`, 'YT_DUP')
 
@@ -655,8 +785,22 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
           body: { snippet: { playlistId: plan.playlistId, resourceId: { kind: 'youtube#video', videoId: video.id } } } })
       } catch (e) { warnings.push(`没加进播放列表：${e.message}`) }
     }
+    // 多语言标题简介：上传时 snippet 已带默认语言，这里只补 localizations
+    if (plan.localizations) {
+      try {
+        await api('videos', { part: 'snippet,localizations' }, { method: 'PUT', kind: 'write', units: 50,
+          body: { id: video.id, snippet: { ...plan.resource.snippet }, localizations: plan.localizations } })
+      } catch (e) { warnings.push(`多语言标题简介没设上：${e.message}（之后可以用 yt localize ${video.id} … 补）`) }
+    }
+    const captions = []
+    for (const c of plan.captions) {
+      try { captions.push(await postCaption(video.id, c)) }
+      catch (e) { warnings.push(`${c.lang} 字幕没传上：${e.message}（之后可以用 yt caption ${video.id} --caption ${c.lang}=… 补）`) }
+    }
     return { dry: false, videoId: video.id, url: `https://youtu.be/${video.id}`, privacy: video.status?.privacyStatus ?? plan.resource.status.privacyStatus,
-      publishAt: video.status?.publishAt ?? plan.resource.status.publishAt ?? null, title: video.snippet?.title ?? plan.resource.snippet.title, warnings }
+      publishAt: video.status?.publishAt ?? plan.resource.status.publishAt ?? null, title: video.snippet?.title ?? plan.resource.snippet.title,
+      language: plan.resource.snippet.defaultLanguage ?? null, audioLanguage: plan.resource.snippet.defaultAudioLanguage ?? null,
+      localizations: Object.keys(plan.localizations ?? {}), captions, warnings }
   }
 
   async function forgetUpload(file) {
@@ -669,5 +813,6 @@ export function createYouTube({ directory, fetch: transport = fetch, now = Date.
     })
   }
 
-  return { loadClient, saveClient, login, logout, status, me, myVideos, stats, comments, inbox, thread: threadOf, reply, replied, forget, api, upload, uploads, forgetUpload }
+  return { loadClient, saveClient, login, logout, status, me, myVideos, stats, comments, inbox, thread: threadOf, reply, replied, forget, api, upload, uploads, forgetUpload,
+    addCaptions, listCaptions, localize }
 }
