@@ -1,0 +1,6 @@
+{
+  "name": "bilibili-channel-scripts",
+  "private": true,
+  "type": "module",
+  "dependencies": { "qrcode": "1.5.4" }
+}

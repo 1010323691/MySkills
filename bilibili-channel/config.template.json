@@ -1,0 +1,40 @@
+{
+  "channelName": "",
+  "dataDir": "~/.bilibili-channel/data",
+  "memoryDir": "",
+  "self": { "mid": "", "name": "" },
+  "owner": { "mid": "", "name": "" },
+  "persona": {
+    "name": "",
+    "ownerTitle": "",
+    "selfClaim": "",
+    "file": "",
+    "notes": []
+  },
+  "preferences": {
+    "like": [],
+    "dislike": [],
+    "keywords": []
+  },
+  "duty": {
+    "everyMin": 30,
+    "repliesPerRound": 1,
+    "journalAfterHour": 21,
+    "replyLanguage": "match",
+    "recordFeedback": true,
+    "replyMode": "direct",
+    "onlyOwner": false
+  },
+  "risk": {
+    "minGapMs": 1500,
+    "readHourly": 600,
+    "readDaily": 3000,
+    "writeHourly": 12,
+    "writeDaily": 30,
+    "writeGapSec": 120,
+    "dmGapSec": 60
+  },
+  "quota": { "shareDaily": 3 },
+  "share": { "enabled": true, "via": "comment", "minScore": 13, "silentAfterDays": 3 },
+  "notify": { "type": "none", "url": "", "template": "text", "cmd": "" }
+}

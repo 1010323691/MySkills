@@ -33,7 +33,7 @@ const TEMPLATES = {
 | 谁 | 在哪 | 做什么 |
 |---|---|---|
 | 工作室 | Claude Code（频道项目） | 构想、脚本、画面、配音、剪辑；主人确认后上传 |
-| 值守 | DSH 插件里的会话 | 看评论、回复、巡视频道、记下观众反馈 |
+| 值守 | Claude Code 里常驻的值守会话 | 看评论、回复、巡视频道、记下观众反馈 |
 
 两边不会直接对话，靠这里的文件接力。约定：
 
@@ -81,7 +81,7 @@ const TEMPLATES = {
 `,
   'journal.md': `# 值守日志
 
-> 值守（DSH 里回评论的那一边）每次写日记那一轮记 1–3 句：\`yt memory log --message "…"\`。
+> 值守（Claude 值守会话）每次写日记那一轮记 1–3 句：\`yt memory log --message "…"\`。
 > 工作室开工时读：值守那边看到了什么、做了什么、想让工作室知道什么。详细的感想在值守自己的日记里。
 
 `,
@@ -100,7 +100,7 @@ export class MemoryError extends Error {
 }
 
 export function createMemory(dir, { now = () => Date.now() } = {}) {
-  if (!dir) throw new MemoryError('还没设置共享记忆目录（设置页 YouTube → 共享记忆目录，或配置 youtube.memoryDir）', 'MEM_OFF')
+  if (!dir) throw new MemoryError('还没设置共享记忆目录（配置里的 memoryDir）', 'MEM_OFF')
   const file = name => path.join(dir, name)
   const videoFile = id => {
     if (!VIDEO_ID.test(String(id ?? ''))) throw new MemoryError('视频 ID 不对（形如 qHHoPgrCkQU）', 'MEM_ARGS')
