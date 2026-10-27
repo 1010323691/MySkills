@@ -87,10 +87,10 @@ export function checkConfig() {
   else if (!path.isAbsolute(c.memoryDir)) problems.push('memoryDir 必须是绝对路径（可以用 ~ 开头）')
   if (!MID(c.self.mid)) problems.push('self.mid 要是纯数字（B站 UID）')
   if (!MID(c.owner.mid)) problems.push('owner.mid 要是纯数字（B站 UID）')
-  if (!c.owner.mid) problems.push('owner.mid 没填：私信报备、只认主人回复、@主人 都用不了')
+  if (!c.owner.mid) problems.push('owner.mid 没填：私信报备、只认用户回复、分享时 @用户 都用不了')
   // 主人和她共用一个号是合法用法（不算问题，不会每轮值守都报 ⚠），只在 config check 里提示一次
   const notes = []
-  if (c.owner.mid && String(c.owner.mid) === String(c.self.mid)) notes.push('owner.mid 和 self.mid 是同一个号：私信报备（不能给自己发）、分享时 @主人、duty.onlyOwner 用不了，其余功能照常；要用这些就让她换一个单独的号')
+  if (c.owner.mid && String(c.owner.mid) === String(c.self.mid)) notes.push('owner.mid 和 self.mid 是同一个号：私信报备（不能给自己发）、分享时 @用户、duty.onlyOwner 用不了，其余功能照常；要用这些就给角色单独准备一个号')
   if (c.owner.mid && String(c.owner.mid) === String(c.self.mid) && c.share.enabled !== false) notes.push('建议把 share.enabled 设为 false：同一个号分享只会 @ 自己')
   const P = c.persona
   if (P.file && !fs.existsSync(P.file)) problems.push(`persona.file 指向的文件不存在：${P.file}`)

@@ -41,7 +41,7 @@ for (const name of ['bili-init', 'bili-setup', 'bili-duty', 'bili-post', 'bili-b
     fs.writeFileSync(path.join(to, 'SKILL.md'), md)
   })
 }
-console.log(`\n完成。下一步：在 Claude Code 里运行 /bili-setup，它会生成配置、逐项问你、再带你扫码登录 B站。
+console.log(`\n完成。下一步：在想让角色安家的目录里开一个 Claude Code 会话，运行 /bili-init，它会带你扫码登录、配好账号、从零创建人设、建好记忆库。以后换号、改配置用 /bili-setup。
 不用向导的话：
   node "${path.join(scripts, 'bili', 'bili.mjs')}" config init     # 生成 ${path.join(DEST, 'config.json')}，照 README 填写
 详见 README 的「配置」和「登录 B站」两节。`)
