@@ -71,7 +71,7 @@ function statsWithDelta() {
 if (cmd === 'check') {
   let cred
   try { cred = loadCred() } catch (e) {
-    console.log(JSON.stringify({ work: false, error: e.message.split(/\r?\n/)[0], reason: '没登录 B站：运行 bili login（或 /bili-setup）' }, null, 2))
+    console.log(JSON.stringify({ work: false, error: e.message.split(/\r?\n/)[0], reason: '没登录 B站：运行 bili login（第一次用跑 /bili-init）' }, null, 2))
     process.exit(0)
   }
   const H = makeHeaders(cred)

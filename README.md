@@ -23,7 +23,7 @@
 | [skill-creator](./skill-creator/) | 创建/迭代 skill 官方版：草稿 → 跑 evals → 定性+定量评审 → 重写循环，含 description 触发优化脚本 |
 | [tool-call-pitfalls](./tool-call-pitfalls/) | 工具调用陷阱记录与同步：仓库 tool-call-pitfalls.md 为事实源，同步仓库 CLAUDE.md、个人记忆与用户级门禁（~/.claude/CLAUDE.md），含新增/移除（按环境补充观察）/核对三模式、dry run 与新机器安装流程 |
 | [dev-team-sop](./dev-team-sop/) | 软件开发团队 SOP（Claude Code 原生版，依据 WorkBuddy 专家团 software-company 原版）：主会话当主理人，用 Agent 派出 PM / 架构师 / 工程师 / QA 子代理，文件交接；按规模路由快速模式 / BugFix / 标准 SOP / 增量；工程师全局自审，QA 智能路由、最多 2 轮；含 4 个可安装的子代理定义 |
-| [bilibili-channel](./bilibili-channel/) | 用 Claude Code 运营 B站 号（skill 包，含 5 个 skill 和命令行脚本）：bili-init 在会话目录建家（人设、日记本、私人日记、关系、成长、共享记忆），bili-setup 引导配置并扫码登录，bili-duty 常驻值守回复与 @，bili-post 发动态、私信主人，bili-browse 逛 B站、看视频、收藏、分享；人设和共享记忆与 youtube-channel 通用，用 `node bilibili-channel/install.mjs` 安装 |
+| [bilibili-channel](./bilibili-channel/) | 用 Claude Code 运营 B站 号（skill 包，含 5 个 skill 和命令行脚本）：bili-init 第一次使用一条龙（扫码登录、账号、从零创建人设、日记本等记忆库、值守与风控配置），bili-setup 换号和改配置，bili-duty 常驻值守回复与 @，bili-post 发动态、私信主人，bili-browse 逛 B站、看视频、收藏、分享；人设和共享记忆与 youtube-channel 通用，用 `node bilibili-channel/install.mjs` 安装 |
 | [youtube-channel](./youtube-channel/) | 用 Claude Code 运营 YouTube 频道（skill 包，含 3 个 skill 和命令行脚本）：yt-setup 按 JSON 模板引导配置并接通授权，yt-duty 常驻值守、按评论语言回复，yt-publish 确认后发布；参数全在 config.json，共享记忆接力，附 [Google OAuth 接通流程](./youtube-channel/README.md#接通-youtube第一次装时做一次)，用 `node youtube-channel/install.mjs` 安装 |
 
 ## 安装方式

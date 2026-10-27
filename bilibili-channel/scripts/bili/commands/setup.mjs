@@ -87,7 +87,7 @@ try {
     if (sub === 'path') console.log(configPath)
     else if (sub === 'init') {
       const r = initConfig()
-      console.log(r.created ? `✓ 已从模板生成配置：${r.path}\n  下一步：按 skill bili-setup 填写，再 bili config check` : `配置已经存在，没动它：${r.path}`)
+      console.log(r.created ? `✓ 已从模板生成配置：${r.path}\n  下一步：在要安家的目录里跑 /bili-init（或按 bili-setup 手动填写），再 bili config check` : `配置已经存在，没动它：${r.path}`)
     } else if (sub === 'check') {
       out(checkConfig(), x => {
         console.log(`配置文件：${x.path}${x.exists ? '' : '（不存在）'}`)

@@ -1,7 +1,7 @@
 // 配置：一个 JSON 文件承载所有使用者自己的参数，代码里不写死
 //
 //   位置：$BILIBILI_CHANNEL_CONFIG → ~/.bilibili-channel/config.json（见 paths.mjs）
-//   模板：插件根目录的 config.template.json；`bili config init` 复制过去，skill `bili-setup` 引导填写
+//   模板：插件根目录的 config.template.json；`bili config init` 复制过去，skill `bili-init` 引导填写（之后用 `bili-setup` 维护）
 //
 // 字段沿用旧版 dsh-bili-whale 的形状（self / owner / persona / preferences / risk / quota / share / notify），
 // 原有命令照读不改；新增 dataDir / memoryDir / persona.file / persona.notes / duty

@@ -179,7 +179,7 @@ const index = `${START}
 | \`memory/journal.md\` | 值守日志（给工作室看） | 值守 |
 | \`memory/replies.md\` | 评论区说过的话 | 插件自动 |
 
-技能：\`/bili-duty\` 值守 · \`/bili-post\` 发动态 / 私信 · \`/bili-browse\` 逛 B站 · \`/bili-setup\` 配置与登录 · \`/bili-init\` 重建这个家（不覆盖已有文件）。
+技能：\`/bili-duty\` 值守 · \`/bili-post\` 发动态 / 私信 · \`/bili-browse\` 逛 B站 · \`/bili-setup\` 换号、改配置 · \`/bili-init\` 初始化 / 补齐这个家（不覆盖已有文件）。
 ${END}`
 const claudeMd = path.join(ROOT, 'CLAUDE.md')
 let cm = fs.existsSync(claudeMd) ? fs.readFileSync(claudeMd, 'utf8') : ''

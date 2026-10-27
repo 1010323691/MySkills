@@ -1,9 +1,11 @@
 ---
 name: bili-setup
-description: bilibili-channel 插件的配置向导：从模板生成 config.json，逐项问用户并填好（自己的号和用户的 UID、共享记忆、值守频率、刷 B站 的口味、风控额度、通知），带用户扫码登录 B站，校验通过后给出启动值守的命令。第一次安装、换号、改配置、登录失效时使用；bili-duty / bili-post / bili-browse 报配置或登录问题时也先跑这个。
+description: bilibili-channel 的配置维护：换号、重新扫码登录、改用户的号、值守频率、刷 B站 的口味、风控额度、通知等配置项，也是各配置字段的说明书。第一次使用请跑 /bili-init（一条龙：账号、人设、记忆库、配置都在里面）；之后换号、登录失效、想改某几项配置时用这个；bili-duty / bili-post / bili-browse 报登录或配置问题时也跑这个。
 ---
 
-# bilibili-channel 配置向导
+# bilibili-channel 配置维护
+
+第一次使用走 `/bili-init`，它会按这里的字段说明带用户把账号、人设、记忆库、配置一次配好。这个 skill 用在之后：换号、重新登录、改某几项配置。
 
 设本 skill 目录为 `<skill>`，命令：
 
@@ -27,6 +29,7 @@ $BILI login status --json
 
 - 没有配置文件 → `$BILI config init`。
 - 已有配置 → 只问用户想改哪几项。
+- 人设或记忆库（日记本等）还没有 → 请用户在要安家的目录里跑 `/bili-init`。
 
 **从旧版迁移**（dsh-bili-whale 插件）：
 - `~/.bili-ai/credentials.json` 存在 → 问用户要不要沿用旧登录和旧账本（限额、判重、收藏、评论过的视频）。要的话 `dataDir` 填 `"~/.bili-ai"`，第 3 步就不用扫码。
@@ -40,7 +43,7 @@ $BILI login status --json
 | 字段 | 问什么 | 说明 |
 |---|---|---|
 | `channelName` | 频道叫什么 | 只用于汇报 |
-| `self.mid` / `self.name` | 角色用的 B站 号 | 第 3 步登录后 `$BILI login status` 会显示，直接填进去 |
+| `self.mid` / `self.name` | 角色用的 B站 号 | 扫码登录成功后自动填；换号时改这里 |
 | `owner.mid` / `owner.name` | 用户的 B站 号 | 私信只发给这个号、分享时 @ 这个号、`duty.onlyOwner` 只认这个号；不知道 UID 就让用户打开自己空间页，网址里的数字就是。用户和角色用同一个号时照填，再把 `share.enabled` 设为 false、`notify.type` 设为 `none`（私信和 @用户 都用不了），其余功能照常 |
 | `memoryDir` | 共享记忆放哪 | 绝对路径；和 youtube-channel 用同一个目录，两边的值守和工作室就共用一份记忆。建议用 `/bili-init` 在会话目录里建家，它会自动填这一项 |
 | `dataDir` | 凭据和账本放哪 | 一般用默认；迁移见上文 |
@@ -77,7 +80,7 @@ $BILI login status --json
 
 1. **在后台**运行 `$BILI login`（它会一直等用户扫码，最多 3 分钟）。
 2. 它会在数据目录写一张 `login-qr.png`，路径在输出里。读出这张图发给用户（有发文件的工具就用它），请用户用 B站 App 扫码并在手机上点「确认登录」。终端里也画了二维码，但在对话里一般看不清，以图片为准。
-3. 等后台命令结束，看到 `✓ 已登录：<昵称>（mid …）` 就成功了；把 mid 和昵称填进 `self`。
+3. 等后台命令结束，看到 `✓ 已登录：<昵称>（mid …）` 就成功了，`self` 会自动写进配置；输出提示「self 和刚登录的号不同」时问用户是不是换号，是的话把 `self` 改成新号。
 4. 过期或失败就重来一次。用户不方便扫码时，可以从浏览器导出 Cookie 存成文件，用 `$BILI login cookie <文件>` 导入，导入后提醒他删掉那个文件。
 
 ## 4. 共享记忆和数据

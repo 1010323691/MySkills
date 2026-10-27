@@ -9,7 +9,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import QRCode from 'qrcode'
-import { credentialsPath, DATA_DIR } from '../lib/paths.mjs'
+import { credentialsPath, DATA_DIR, configPath } from '../lib/paths.mjs'
 
 const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36'
 const PASSPORT = 'https://passport.bilibili.com'
@@ -41,7 +41,17 @@ function load() {
   try { const j = JSON.parse(fs.readFileSync(credentialsPath, 'utf8').replace(/^﻿/, '')); return { sessdata: clean(j.sessdata), bili_jct: clean(j.bili_jct), buvid3: clean(j.buvid3) } }
   catch { return null }
 }
-const hint = who => `  下一步：把配置里的 self.mid 填成 ${who.mid}（bili-setup 会帮你填）`
+// 登录成功后把 self 记进配置：没填就直接填；填的是别的号就提醒（可能是换号，不擅自改）
+function hint(who) {
+  let raw
+  try { raw = JSON.parse(fs.readFileSync(configPath, 'utf8').replace(/^﻿/, '')) } catch { return `  配置文件还没有：/bili-init 会把 self 填成 ${who.mid}` }
+  const cur = String(raw.self?.mid ?? '').trim()
+  if (cur && cur !== who.mid) return `  ⚠ 配置里的 self.mid 是 ${cur}，和刚登录的号（${who.mid}）不同：换号的话把 self 改成 ${who.mid}（/bili-setup）`
+  if (cur === who.mid && raw.self?.name) return ''
+  raw.self = { ...(raw.self ?? {}), mid: who.mid, name: raw.self?.name || who.name }
+  fs.writeFileSync(configPath, JSON.stringify(raw, null, 2) + '\n')
+  return `  ✓ 已把配置的 self 填成 ${who.name}（mid ${who.mid}）`
+}
 
 async function qrLogin() {
   const { j } = await getJson(PASSPORT + '/x/passport-login/web/qrcode/generate')
@@ -80,7 +90,7 @@ async function qrLogin() {
       save(c)
       const who = await whoami(c)
       console.log(who ? `✓ 已登录：${who.name}（mid ${who.mid}，Lv${who.level}）` : '✓ 凭据已保存，但没能确认账号；运行 bili login status 看看')
-      if (who) console.log(hint(who))
+      if (who) { const h = hint(who); if (h) console.log(h) }
       return
     }
     throw new Error('等了 3 分钟没人确认，重新运行 bili login')
@@ -119,7 +129,7 @@ try {
     if (!who) throw new Error('这份 cookie 登录不了（过期或复制错了），没有保存')
     save(c)
     console.log(`✓ 已导入：${who.name}（mid ${who.mid}）。原文件里有登录凭据，导入后可以删掉`)
-    console.log(hint(who))
+    { const h = hint(who); if (h) console.log(h) }
   } else if (sub === 'logout') {
     try { fs.unlinkSync(credentialsPath); console.log('✓ 已删除本机凭据（B站 那边的登录设备可在「账号安全」里移除）') } catch { console.log('本来就没有凭据') }
   } else throw new Error('login 子命令：（空）扫码 / status / cookie <文件> / logout')
