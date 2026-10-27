@@ -41,7 +41,7 @@ $BILI login status --json
 |---|---|---|
 | `channelName` | 频道叫什么 | 只用于汇报 |
 | `self.mid` / `self.name` | 她用的 B站 号 | 第 3 步登录后 `$BILI login status` 会显示，直接填进去 |
-| `owner.mid` / `owner.name` | 主人的 B站 号 | 私信只发给他、分享 @ 他、`duty.onlyOwner` 只认他；不知道 UID 就让主人打开自己空间页，网址里的数字就是 |
+| `owner.mid` / `owner.name` | 主人的 B站 号 | 私信只发给他、分享 @ 他、`duty.onlyOwner` 只认他；不知道 UID 就让主人打开自己空间页，网址里的数字就是。主人和她用同一个号时照填，再把 `share.enabled` 设为 false、`notify.type` 设为 `none`（私信和 @主人 都用不了），其余功能照常 |
 | `memoryDir` | 共享记忆放哪 | 绝对路径；和 youtube-channel 用同一个目录，两边的值守和工作室就共用一份记忆 |
 | `dataDir` | 凭据和账本放哪 | 一般用默认；迁移见上文 |
 

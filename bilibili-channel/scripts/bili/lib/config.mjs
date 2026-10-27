@@ -91,6 +91,7 @@ export function checkConfig() {
   // 主人和她共用一个号是合法用法（不算问题，不会每轮值守都报 ⚠），只在 config check 里提示一次
   const notes = []
   if (c.owner.mid && String(c.owner.mid) === String(c.self.mid)) notes.push('owner.mid 和 self.mid 是同一个号：私信报备（不能给自己发）、分享时 @主人、duty.onlyOwner 用不了，其余功能照常；要用这些就让她换一个单独的号')
+  if (c.owner.mid && String(c.owner.mid) === String(c.self.mid) && c.share.enabled !== false) notes.push('建议把 share.enabled 设为 false：同一个号分享只会 @ 自己')
   const P = c.persona
   if (P.file && !fs.existsSync(P.file)) problems.push(`persona.file 指向的文件不存在：${P.file}`)
   if (!P.name && !P.file) problems.push('persona 没填（至少填 name 或 file）：回复没有人设可依')

@@ -77,6 +77,7 @@ bili login
 | `duty.maxAgeHours` | 72 | 只看最近多少小时的回复和 @；第一轮值守只把现有消息记为已读，从第二轮开始回新的 |
 | `duty.videoStats` | true | 汇报里带逐个投稿的播放 / 评论 / 弹幕；拿不到时那几行省略，其余照常。false = 不拉投稿列表 |
 | `risk.*` | 旧版实测值 | 请求和写操作的节流、每小时 / 每天上限；B站 风控严，没把握别调 |
+| `share.enabled` | true | 逛 B站 时要不要把好视频分享给主人；主人和她共用一个号时设 false |
 | `quota.shareDaily` | 3 | 每天最多分享几次 |
 | `share.via` | `comment` | 分享走评论区 @主人（`comment`）还是私信（`dm`） |
 | `notify.type` | `none` | 她自主发言后怎么报备：`none` / `desktop` / `webhook` / `command` |
