@@ -18,7 +18,7 @@
 //   yt disclose <视频ID> --ai yes|no --dry|--go   # 设 AI 合成内容声明
 //   yt caption <视频ID> --caption en=字幕.srt [--caption ja=…] --dry|--go   # 给已发布的视频补字幕
 //   yt localize <视频ID> [--language en] [--audio-language en] [--localize ja=标题简介.txt …] --dry|--go   # 设语言、补多语言标题简介
-//   yt config [show | path | init | check]             # 配置文件（模板见 config.template.json，skill channel-setup 引导填写）
+//   yt config [show | path | init | check]             # 配置文件（模板见 config.template.json，skill yt-setup 引导填写）
 //   yt memory [init | dossier <视频ID> [--file 档案.md] | feedback --message "…" | log --message "…"]   # 频道共享记忆
 //
 // 所有读命令都可加 --json。写操作是 reply、upload、caption、localize，必须显式 --dry（只打印请求）或 --go（真的发）。
@@ -367,7 +367,7 @@ async function main() {
     if (sub === 'init') {
       const r = initConfig()
       console.log(r.created ? `✓ 已从模板生成配置：${r.path}
-  下一步：按 skill channel-setup 填写，再 yt config check` : `配置已经存在，没动它：${r.path}`)
+  下一步：按 skill yt-setup 填写，再 yt config check` : `配置已经存在，没动它：${r.path}`)
       return
     }
     if (sub === 'check') {

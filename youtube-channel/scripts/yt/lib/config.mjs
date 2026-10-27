@@ -1,7 +1,7 @@
 // 配置：一个 JSON 文件承载所有使用者自己的参数，代码里不写死
 //
 //   位置：$YOUTUBE_CHANNEL_CONFIG → ~/.youtube-channel/config.json（见 paths.mjs）
-//   模板：插件根目录的 config.template.json；`yt config init` 复制过去，skill `channel-setup` 引导填写
+//   模板：插件根目录的 config.template.json；`yt config init` 复制过去，skill `yt-setup` 引导填写
 //
 // 没有配置文件也能跑（全用默认值），但 `yt config check` 会报出来
 import fs from 'node:fs'

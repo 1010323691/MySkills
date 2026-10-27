@@ -4,15 +4,15 @@
 
 | 组成 | 做什么 |
 |---|---|
-| `skills/channel-setup` | 配置向导：从模板生成 `config.json`，逐项问你并填好、校验，再带你接通 Google 授权，最后给出启动值守的命令 |
-| `skills/channel-duty` | 值守一轮：查新评论 → 按配置回几条（默认按评论语言）→ 记观众反馈 → 晚上给工作室写值守日志 → 每轮给你一份汇报（订阅、总播放、最近视频的播放 / 评论 / 赞及较上轮变化、待回评论、额度）。回复前先读人设提示词。配合 `/loop <间隔>m /channel-duty` 常驻 |
-| `skills/channel-publish` | 发布：`--dry` 给主人确认 → `--go` 上传 → 把这期档案写进共享记忆、更新对外口径 |
+| `skills/yt-setup` | 配置向导：从模板生成 `config.json`，逐项问你并填好、校验，再带你接通 Google 授权，最后给出启动值守的命令 |
+| `skills/yt-duty` | 值守一轮：查新评论 → 按配置回几条（默认按评论语言）→ 记观众反馈 → 晚上给工作室写值守日志 → 每轮给你一份汇报（订阅、总播放、最近视频的播放 / 评论 / 赞及较上轮变化、待回评论、额度）。回复前先读人设提示词。配合 `/loop <间隔>m /yt-duty` 常驻 |
+| `skills/yt-publish` | 发布：`--dry` 给主人确认 → `--go` 上传 → 把这期档案写进共享记忆、更新对外口径 |
 | `scripts/yt/` | YouTube 命令行：登录、看评论、回复、上传、共享记忆（来自已退役的 DSH 插件 dsh-bili-whale，只保留 YouTube 这一路） |
 | `scripts/duty/duty.mjs` | 值守巡视器：和上一轮比有没有新评论、今天回了几条、该不该写日志，连同这一轮的规矩一起输出 JSON 给 skill |
 | `config.template.json` | 配置模板。所有可调的参数都在这里，代码里不写死 |
 
 ```
-做视频的会话 ──/channel-publish──▶ YouTube ◀──/loop 30m /channel-duty── 值守会话
+做视频的会话 ──/yt-publish──▶ YouTube ◀──/loop 30m /yt-duty── 值守会话
         │                                                          │
         └──────────── 共享记忆目录（now.md / videos / feedback / replies / journal）─┘
 ```
@@ -35,7 +35,7 @@ node MySkills/youtube-channel/install.mjs
 2. 把三个 skill 复制到 `~/.claude/skills/`。
 3. 把 skill 里的命令路径写成绝对路径。
 
-装好后在 Claude Code 里运行 **`/channel-setup`**：它会生成配置、逐项问你、校验，再带你接通 YouTube 授权。下面「配置」「接通 YouTube」两节是它做的事的完整说明，想手动配置也可以照着做。
+装好后在 Claude Code 里运行 **`/yt-setup`**：它会生成配置、逐项问你、校验，再带你接通 YouTube 授权。下面「配置」「接通 YouTube」两节是它做的事的完整说明，想手动配置也可以照着做。
 
 重跑安装脚本就是升级：`scripts/` 会整个替换，不会碰你的配置、令牌和共享记忆。加 `--dry` 只打印要做什么，不实际执行。
 
@@ -127,7 +127,7 @@ yt auth status
 - 位置：`~/.youtube-channel/config.json`。可以用环境变量 `YOUTUBE_CHANNEL_CONFIG` 指定别的文件，`yt config path` 显示实际用的是哪个。
 - 生成：`yt config init` 从模板复制一份，已有的不覆盖。
 - 校验：`yt config check` 列出每个问题，没问题时显示 ✓。`yt config show` 显示合并默认值之后的完整配置。
-- 推荐用 `/channel-setup` 填写，它会一项项问你。
+- 推荐用 `/yt-setup` 填写，它会一项项问你。
 
 模板（[config.template.json](./config.template.json)）：
 
@@ -205,7 +205,7 @@ yt auth status
 
 **人设提示词**：`yt persona` 把 `persona` 段和人设文件拼成一段提示词。值守回复评论、写值守日志，发布时写标题和简介，都先读它，所以对外说话始终是同一个角色。1.1 版的 `personaFile` 仍然兼容，`config check` 会提示改成 `persona.file`。
 
-**从 dsh-bili-whale 迁移**：旧登录在 `~/.bili-ai/`，把 `dataDir` 填成 `"~/.bili-ai"` 就能直接沿用，不用重新授权。旧配置 `~/.dsh/bili-whale.config.json` 不再读取，里面 `youtube` 段的值要搬到新配置的 `memoryDir`、`proxy` 和 `limits` 里；`persona` 段的 `name`、`ownerTitle`、`selfClaim` 搬到新配置的同名字段，`~/.bili-ai/persona.md` 填进 `persona.file`。`/channel-setup` 会检测到旧数据并带你迁移。
+**从 dsh-bili-whale 迁移**：旧登录在 `~/.bili-ai/`，把 `dataDir` 填成 `"~/.bili-ai"` 就能直接沿用，不用重新授权。旧配置 `~/.dsh/bili-whale.config.json` 不再读取，里面 `youtube` 段的值要搬到新配置的 `memoryDir`、`proxy` 和 `limits` 里；`persona` 段的 `name`、`ownerTitle`、`selfClaim` 搬到新配置的同名字段，`~/.bili-ai/persona.md` 填进 `persona.file`。`/yt-setup` 会检测到旧数据并带你迁移。
 
 ## 共享记忆
 
@@ -226,7 +226,7 @@ yt auth status
 **值守**：在桌面版新建一个会话，工作目录放在共享记忆所在的项目，然后发送（30 换成你配置的 `duty.everyMin`）
 
 ```
-/loop 30m /channel-duty
+/loop 30m /yt-duty
 ```
 
 间隔和 skill 要写在**同一条命令**里。只写 `/loop 30m` 会进入通用的自主巡检，不会去查评论。
@@ -236,7 +236,7 @@ yt auth status
 - 改了配置不用重启循环，下一轮就按新配置执行；只有改 `everyMin` 时要重新发一次 `/loop`。
 - 要求：桌面应用一直开着，电脑不睡眠；`/loop` 7 天后过期，到时重发一次。
 
-**发布**：在做视频的会话里说「发布到 YouTube」，或运行 `/channel-publish`。它会先给你看 `--dry` 的结果，你确认了才真的上传。
+**发布**：在做视频的会话里说「发布到 YouTube」，或运行 `/yt-publish`。它会先给你看 `--dry` 的结果，你确认了才真的上传。
 
 **多语言与 AI 声明**：
 

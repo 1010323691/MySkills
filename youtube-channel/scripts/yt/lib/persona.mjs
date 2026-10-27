@@ -1,7 +1,7 @@
 // 人设提示词：配置里的 persona 段（名字 / 怎么称呼主人 / 自称 / 补充）+ 人设文件全文，拼成一段给模型读
 //
 //   配置：{ persona: { name, ownerTitle, selfClaim, file, notes: [] } }
-//   `yt persona` 打印这段提示词；channel-duty 回复前、channel-publish 写简介前都先读它
+//   `yt persona` 打印这段提示词；yt-duty 回复前、yt-publish 写简介前都先读它
 //
 // 和旧版 DSH 插件的「身份注入」一致：身份字段在前，人设文件在后；两者冲突时以人设文件为准
 import fs from 'node:fs'

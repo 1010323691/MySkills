@@ -29,7 +29,7 @@ step('安装依赖（npm install）', () => {
   const r = spawnSync('npm install --no-audit --no-fund --omit=dev', { cwd: path.join(scripts, 'yt'), stdio: 'inherit', shell: true })
   if (r.status !== 0) { console.error('npm install 失败'); process.exit(1) }
 })
-for (const name of ['channel-setup', 'channel-duty', 'channel-publish']) {
+for (const name of ['yt-setup', 'yt-duty', 'yt-publish']) {
   const to = path.join(SKILLS, name)
   step(`安装 skill → ${to}`, () => {
     fs.mkdirSync(to, { recursive: true })
@@ -38,7 +38,15 @@ for (const name of ['channel-setup', 'channel-duty', 'channel-publish']) {
     fs.writeFileSync(path.join(to, 'SKILL.md'), md)
   })
 }
-console.log(`\n完成。下一步：在 Claude Code 里运行 /channel-setup，它会生成配置、逐项问你、再带你接通 YouTube 授权。
+// 2026-10-27 改名 channel-* → yt-*：清掉旧版装过的三个（只删确认是本插件装的，别人的同名 skill 不碰）
+for (const old of ['channel-setup', 'channel-duty', 'channel-publish']) {
+  const dir = path.join(SKILLS, old)
+  let md = ''
+  try { md = fs.readFileSync(path.join(dir, 'SKILL.md'), 'utf8') } catch { continue }
+  if (!md.includes(`name: ${old}`) || !/yt\.mjs|youtube-channel/.test(md)) { console.log(`跳过 ${dir}：不像是本插件装的，没动`); continue }
+  step(`删除旧名字的 skill → ${dir}（已改名为 ${old.replace('channel-', 'yt-')}）`, () => fs.rmSync(dir, { recursive: true, force: true }))
+}
+console.log(`\n完成。下一步：在 Claude Code 里运行 /yt-setup，它会生成配置、逐项问你、再带你接通 YouTube 授权。
 不用向导的话：
   node "${path.join(scripts, 'yt', 'commands', 'yt.mjs')}" config init     # 生成 ${path.join(DEST, 'config.json')}，照 README 填写
 详见 README 的「配置」和「接通 YouTube」两节。`)

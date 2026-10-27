@@ -1,5 +1,5 @@
 ---
-name: channel-publish
+name: yt-publish
 description: 把做好的成片发布到自己的 YouTube 频道：先 --dry 给主人确认，再 --go 上传，同时把这期档案写进共享记忆、更新对外口径。在任何做视频的会话里，主人说「发布」「上传到 YouTube」「发视频」时使用；主人没在本会话里明确说发，绝不上传。
 ---
 
@@ -11,7 +11,7 @@ description: 把做好的成片发布到自己的 YouTube 频道：先 --dry 给
 $YT = node "<skill>/../../scripts/yt/commands/yt.mjs"
 ```
 
-运行时换成真实的绝对路径，任何工作目录都能用。先跑 `$YT auth status` 和 `$YT config show`：确认已登录、今天还有上传额度，并记下共享记忆目录 `memoryDir`（下文 `<mem>`）和 `publish` 段的默认值。没登录或配置有问题，先跑 `/channel-setup`。
+运行时换成真实的绝对路径，任何工作目录都能用。先跑 `$YT auth status` 和 `$YT config show`：确认已登录、今天还有上传额度，并记下共享记忆目录 `memoryDir`（下文 `<mem>`）和 `publish` 段的默认值。没登录或配置有问题，先跑 `/yt-setup`。
 
 ## 规矩
 

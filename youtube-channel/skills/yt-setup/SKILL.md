@@ -1,6 +1,6 @@
 ---
-name: channel-setup
-description: youtube-channel 插件的配置向导：从模板生成 config.json，逐项问主人并填好（频道、共享记忆目录、人设、代理、值守频率与每轮回复数、额度、发布默认值），校验通过后引导接通 Google / YouTube 授权，最后给出启动值守的命令。第一次安装、改配置、换机器、授权失效时使用；channel-duty 或 channel-publish 报配置问题时也先跑这个。
+name: yt-setup
+description: youtube-channel 插件的配置向导：从模板生成 config.json，逐项问主人并填好（频道、共享记忆目录、人设、代理、值守频率与每轮回复数、额度、发布默认值），校验通过后引导接通 Google / YouTube 授权，最后给出启动值守的命令。第一次安装、改配置、换机器、授权失效时使用；yt-duty 或 yt-publish 报配置问题时也先跑这个。
 ---
 
 # youtube-channel 配置向导
@@ -114,6 +114,6 @@ $YT auth status --json
 ## 5. 收尾
 
 1. 最后运行一次 `$YT config check` 和 `$YT auth status`，两个都要通过。
-2. 告诉主人怎么启动值守：在共享记忆所在的项目里新建一个会话，发送 `/loop <everyMin>m /channel-duty`。间隔和 skill 要写在同一条命令里。
+2. 告诉主人怎么启动值守：在共享记忆所在的项目里新建一个会话，发送 `/loop <everyMin>m /yt-duty`。间隔和 skill 要写在同一条命令里。
 3. 建议主人在值守项目的 `.claude/settings.json` 里放行 `duty.mjs`，以及 `yt.mjs` 的 `inbox`、`reply`、`memory` 子命令，避免挂着时卡在授权提示上。`upload` 不要放行。
 4. 用三五行总结配置了什么，只写字段和值，不写令牌。

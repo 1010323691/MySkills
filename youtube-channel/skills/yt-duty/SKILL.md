@@ -1,6 +1,6 @@
 ---
-name: channel-duty
-description: YouTube 频道值守的一轮巡视：查新评论、按配置挑几条回复（默认按评论语言）、记观众反馈，晚上给工作室写值守日志。在常驻值守会话里用 `/loop <间隔>m /channel-duty` 定时触发，也可手动运行一次。参数都在 config.json，没配置先跑 channel-setup。
+name: yt-duty
+description: YouTube 频道值守的一轮巡视：查新评论、按配置挑几条回复（默认按评论语言）、记观众反馈，晚上给工作室写值守日志。在常驻值守会话里用 `/loop <间隔>m /yt-duty` 定时触发，也可手动运行一次。参数都在 config.json，没配置先跑 yt-setup。
 ---
 
 # 频道值守（一轮）
@@ -25,7 +25,7 @@ $DUTY check
   - `memoryDir`：共享记忆目录（下文 `<mem>`）。为 null 时跳过所有读写记忆的步骤。
   - `persona`：人设状态。**写任何回复或日志之前必须先运行 `$YT persona`**，把输出的整段人设提示词（名字、怎么称呼主人、自称、补充说明、人设文件全文）当作你这一轮的身份；自称、口吻、口头禅、禁区都以它为准，两处冲突时以人设文件为准。`loaded: false` 时照常回复但语气保持中性，并在汇报里标 ⚠。
   - `rules.repliesThisRound`：这一轮最多回几条；`rules.replyLanguage`：用什么语言回；`rules.recordFeedback`：要不要记反馈。
-  - `configProblems`：不为空就在总结里提醒主人跑 `/channel-setup`，能做的照常做。
+  - `configProblems`：不为空就在总结里提醒主人跑 `/yt-setup`，能做的照常做。
 
 ## 2. 回评论（`rules.repliesThisRound` > 0 且有 `isNew` 的评论时）
 
@@ -77,6 +77,6 @@ $DUTY done          # 写过值守日志就加 --diary
 
 ## 不做的事
 
-- 不上传视频、不改视频信息。发视频走 `channel-publish`，而且要主人在会话里亲口说。
+- 不上传视频、不改视频信息。发视频走 `yt-publish`，而且要主人在会话里亲口说。
 - 一轮回复不超过 `repliesThisRound` 条，不追发、不刷屏。
 - 不打印令牌和 client_secret。

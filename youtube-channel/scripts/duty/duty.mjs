@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 频道值守的巡视器：给 Claude Code 里常驻的值守会话用，配合 skill `channel-duty`
+// 频道值守的巡视器：给 Claude Code 里常驻的值守会话用，配合 skill `yt-duty`
 //
 //   node scripts/duty/duty.mjs check          # 拉未回评论，和上一轮比 → 打印 JSON：这一轮要不要干活、干什么
 //   node scripts/duty/duty.mjs done [--diary] # 这一轮做完了：记下看过的评论（--diary 记下今天已写值守日志）
