@@ -33,7 +33,9 @@ async function stats(n, withVideos = true) {
   const cred = loadCred()
   const H = makeHeaders(cred)
   const nav = await apiGet('https://api.bilibili.com/x/web-interface/nav', H, { noCache: true })
-  if (nav.code !== 0 || !nav.data?.isLogin) throw new Error('没登录或凭据失效：运行 bili login')
+  // 只有 -101 / isLogin=false 才是没登录；限流暂停、网络错误照实说，别把人支去重新扫码 ✗
+  if (nav.code === -101 || (nav.code === 0 && !nav.data?.isLogin) || /人工处理登录/.test(String(nav.message))) throw new Error('没登录或凭据失效（或要过验证码）：运行 bili login 重新扫码；是验证码的话过完再 bili traffic resume --go')
+  if (nav.code !== 0) throw new Error(`账号信息没取到（code=${nav.code} ${nav.message ?? ''}）`)
   const mid = String(cfg.self.mid || nav.data.mid)
   const rel = await apiGet(`https://api.bilibili.com/x/relation/stat?vmid=${mid}`, H, { noCache: true })
   const up = await apiGet(`https://api.bilibili.com/x/space/upstat?mid=${mid}`, H, { noCache: true })
@@ -44,29 +46,32 @@ async function stats(n, withVideos = true) {
   let cache = null
   try { cache = JSON.parse(fs.readFileSync(CACHE, 'utf8')) } catch {}
   const warnings = [rel, up].filter(x => x.code !== 0).map(x => `code=${x.code} ${x.message ?? ''}`)
-  let list = withVideos && cache?.mid === mid ? cache : null
-  if (withVideos && (!list || flags.has('fresh') || Date.now() - Date.parse(list.at) > TTL)) {
+  const ps = Math.min(20, Math.max(1, n))
+  // 缓存按 mid + 条数命中：用小 --n 拉过一次，要更多条就重新拉；at 坏了（NaN）也当过期
+  let list = withVideos && cache?.mid === mid && Number(cache.ps ?? 0) >= ps ? cache : null
+  if (withVideos && (!list || flags.has('fresh') || !(Date.now() - Date.parse(list.at) <= TTL))) {
     try {
       if (String(nav.data.mid) !== mid) throw new Error(`登录的号（mid ${nav.data.mid}）和 self.mid 不一致，创作中心只能看自己的稿件`)
-      const q = new URLSearchParams({ status: 'is_pubing,pubed,not_pubed', pn: '1', ps: String(Math.min(20, Math.max(1, n))), coop: '1', interactive: '1' })
+      const q = new URLSearchParams({ status: 'pubed', pn: '1', ps: String(ps), coop: '1', interactive: '1' })
       const arc = await apiGet(`https://member.bilibili.com/x/web/archives?${q}`, { ...H, referer: 'https://member.bilibili.com/platform/upload-manager/article' }, { noCache: true })
       if (arc.code !== 0) throw new Error(`code=${arc.code} ${arc.message ?? ''}`)
       const videos = (arc.data?.arc_audits ?? []).map(({ Archive: a = {}, stat: st = {} }) => ({ id: a.bvid, title: a.title ?? '',
         publishedAt: (a.ptime || a.ctime) ? new Date((a.ptime || a.ctime) * 1000).toISOString() : null,
         views: Number(st.view ?? 0), comments: Number(st.reply ?? 0), danmaku: Number(st.danmaku ?? 0), likes: Number(st.like ?? 0) }))
-      list = { mid, at: new Date().toISOString(), count: Number(arc.data?.page?.count ?? videos.length), videos }
+      list = { mid, ps, at: new Date().toISOString(), count: Number(arc.data?.page?.count ?? videos.length), videos }
       fs.mkdirSync(DATA_DIR, { recursive: true })
       fs.writeFileSync(CACHE, JSON.stringify(list, null, 2))
     } catch (e) {
       warnings.push(`投稿列表没取到（${String(e.message).slice(0, 80)}）${list ? `，用的是 ${new Date(list.at).toLocaleString('zh-CN', { hour12: false })} 的缓存` : ''}`)
     }
   }
-  const videos = list?.videos ?? []
+  const videos = (list?.videos ?? []).slice(0, ps)
   const sum = k => videos.reduce((a, v) => a + (Number(v[k]) || 0), 0)
   return {
     at: new Date().toISOString(),
-    channel: { id: mid, title: nav.data.uname, subscribers: Number(rel.data?.follower ?? 0), views: Number(up.data?.archive?.view ?? 0),
-      likes: Number(up.data?.likes ?? 0), videos: list?.count ?? null },
+    // 接口没取到就是 null，不是 0（不然汇报会出现「粉丝 0（-28）」的假掉粉）
+    channel: { id: mid, title: nav.data.uname, subscribers: rel.code === 0 ? Number(rel.data?.follower ?? 0) : null,
+      views: up.code === 0 ? Number(up.data?.archive?.view ?? 0) : null, likes: up.code === 0 ? Number(up.data?.likes ?? 0) : null, videos: list?.count ?? null },
     // 投稿列表没拉（--no-videos）或拉不到又没缓存：recent 为 null，汇报省略逐个投稿那几行
     recent: list ? { count: videos.length, views: sum('views'), comments: sum('comments'), danmaku: sum('danmaku'), cachedAt: list.at } : null,
     videos,
@@ -115,7 +120,8 @@ try {
     const r = await stats(Number(text('n')) || 10, !flags.has('no-videos'))
     out(r, x => {
       const c = x.channel
-      console.log(`${c.title}：粉丝 ${c.subscribers} · 总播放 ${c.views} · 获赞 ${c.likes}${c.videos == null ? '' : ` · 投稿 ${c.videos} 个`}`)
+      const v = x => x ?? '—'
+      console.log(`${c.title}：粉丝 ${v(c.subscribers)} · 总播放 ${v(c.views)} · 获赞 ${v(c.likes)}${c.videos == null ? '' : ` · 投稿 ${c.videos} 个`}`)
       if (x.recent) console.log(`最近 ${x.recent.count} 个投稿合计：播放 ${x.recent.views} · 评论 ${x.recent.comments} · 弹幕 ${x.recent.danmaku}${x.recent.cachedAt ? `（投稿数据 ${new Date(x.recent.cachedAt).toLocaleString('zh-CN', { hour12: false }).slice(5, -3)} 更新，6 小时刷新一次）` : ""}`)
       for (const v of x.videos) console.log(`  ${v.id}  ${v.publishedAt?.slice(0, 10) ?? ''}  播放 ${v.views} · 评论 ${v.comments} · 弹幕 ${v.danmaku}  ${v.title.slice(0, 40)}`)
       for (const w of x.warnings) console.log('  ⚠ 部分数据没取到：' + w)

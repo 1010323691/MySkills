@@ -103,6 +103,11 @@ function bannedUntilNow() {
   const b = readJson(BAN_FILE, {})
   return Number(b.until ?? 0) > Date.now() ? Number(b.until) : 0
 }
+/** 下一次熔断的连击数：上一次熔断结束已超过 6 小时就从 1 重新算 */
+function nextStreak(prev) {
+  const cold = Date.now() - Number(prev.until ?? 0) > 6 * 3600_000
+  return (cold ? 0 : Number(prev.streak ?? 0)) + 1
+}
 function setBan(ms, why) {
   writeJson(BAN_FILE, { until: Date.now() + ms, why, at: new Date().toISOString() })
 }
@@ -168,7 +173,7 @@ export async function apiGet(input, headers = {}, opts = {}) {
     // HTTP 412/429：平台级风控 → 熔断（默认 5 分钟，指数退避封顶 30 分钟）
     if (biliHost && (response.status === 412 || response.status === 429)) {
       const prev = readJson(BAN_FILE, {})
-      const streak = Number(prev.streak ?? 0) + 1
+      const streak = nextStreak(prev)
       const mins = Math.min(30, 5 * 2 ** (streak - 1))
       if (!noCacheEnv()) setBan(mins * 60_000, `HTTP ${response.status}`)
       if (!noCacheEnv()) writeJson(BAN_FILE, { ...readJson(BAN_FILE, {}), streak, endpoint: url.pathname })
@@ -190,7 +195,7 @@ export async function apiGet(input, headers = {}, opts = {}) {
     // 接口层风控码：同样熔断（B站 有时 HTTP 200 但 code=-412）
     if (biliHost && BAN_CODES.has(Number(data.code))) {
       const prev = readJson(BAN_FILE, {})
-      const streak = Number(prev.streak ?? 0) + 1
+      const streak = nextStreak(prev)
       const mins = Math.min(30, 5 * 2 ** (streak - 1))
       if (!noCacheEnv()) writeJson(BAN_FILE, { until: Date.now() + mins * 60_000, why: `code=${data.code}`, at: new Date().toISOString(), streak, endpoint: url.pathname })
       return { ...data, message: `${data.message ?? ''}（B站 风控 ${data.code}）—— 已熔断 ${mins} 分钟` }

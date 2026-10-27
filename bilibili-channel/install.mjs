@@ -10,7 +10,9 @@ import { fileURLToPath } from 'node:url'
 
 const SRC = path.dirname(fileURLToPath(import.meta.url))
 const HOME = os.homedir()
-const DEST = process.env.BILIBILI_CHANNEL_HOME || path.join(HOME, '.bilibili-channel')
+// 和 scripts/bili/lib/paths.mjs 一样展开 ~，不然两边算出来的家目录不同
+const expandHome = p => { const s = String(p).trim(); return s === '~' ? HOME : /^~[\\/]/.test(s) ? path.join(HOME, s.slice(2)) : s }
+const DEST = path.resolve(expandHome(process.env.BILIBILI_CHANNEL_HOME || path.join(HOME, '.bilibili-channel')))
 const SKILLS = path.join(HOME, '.claude', 'skills')
 const dry = process.argv.includes('--dry')
 const step = (msg, fn) => { console.log((dry ? '[dry] ' : '') + msg); if (!dry) fn() }

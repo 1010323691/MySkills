@@ -59,9 +59,9 @@ export function looksLikeJct(v) {
 /** 常见返回码 → 人话 + 怎么办 */
 export const CODE_HINTS = {
   0: '成功',
-  '-101': '账号未登录 —— SESSDATA 失效了，重新复制一次 cookie',
+  '-101': '账号未登录 —— 登录过期了，运行 bili login 重新扫码',
   '-111': 'CSRF 校验失败 —— bili_jct 和当前 SESSDATA 不是同一个账号，或者 bili_jct 已经过期\n' +
-    '        怎么办：重新登录 B站 → F12 复制一次【两个都要重抄】（SESSDATA + bili_jct）✓\n' +
+    '        怎么办：运行 bili login 重新扫码（手动导入的话 SESSDATA 和 bili_jct 要一起重抄）✓\n' +
     '        提示：只读接口（体检 / 查账号 / 看评论）还能用，所以"体检全绿"不代表能发东西 ✗',
   '-400': '请求参数错误（少见：通常是参数没传对）',
   '-352': '风控拦截 —— 请求太快或太像机器人，等几分钟再来',

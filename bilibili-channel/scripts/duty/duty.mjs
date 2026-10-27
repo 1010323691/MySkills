@@ -17,6 +17,7 @@ import { memoryDirOf } from '../bili/lib/memory.mjs'
 import { personaPrompt } from '../bili/lib/persona.mjs'
 import { loadCred } from '../bili/lib/cred.mjs'
 import { makeHeaders, pullFeed, resolveLatestReply } from '../bili/lib/msgfeed.mjs'
+import { apiGet } from '../bili/lib/bili-api.mjs'
 
 const BILI = fileURLToPath(new URL('../bili/bili.mjs', import.meta.url))
 const cfg = config()
@@ -61,7 +62,9 @@ function statsWithDelta() {
     videos: cur.videos.map(v => { const p = pv.get(v.id); return { ...v, delta: p ? { views: v.views - p.views, comments: v.comments - p.comments, danmaku: v.danmaku - p.danmaku } : null } }),
     warnings: cur.warnings,
   }
-  s.lastStats = cur
+  // 某个数这一轮没取到（null）：基线沿用上一轮的值，下一轮的变化才对得上
+  const keep = k => cur.channel[k] ?? prev?.channel?.[k] ?? null
+  s.lastStats = { ...cur, channel: { ...cur.channel, subscribers: keep('subscribers'), views: keep('views'), likes: keep('likes') } }
   return out
 }
 
@@ -79,9 +82,20 @@ if (cmd === 'check') {
   try {
     [rep, at] = await Promise.all([pullFeed('reply', { headers: H, pages: 1 }), pullFeed('at', { headers: H, pages: 1 })])
   } catch (e) {
-    const paused = e?.code === 'BILI_TRAFFIC_PAUSED' || /412|风控|traffic/i.test(String(e?.message))
-    console.log(JSON.stringify({ work: false, error: String(e?.message ?? e).split(/\r?\n/)[0].slice(0, 200),
-      reason: paused ? 'B站 风控暂停中，这一轮跳过（bili traffic 看恢复时间）' : '收件箱没拉到，这一轮跳过',
+    const msg = String(e?.message ?? e)
+    // 凭据文件还在但登录失效：不能当普通跳过，否则每轮都静默跳过、主人永远不知道要重新扫码 ✗
+    //   ① 请求保护层碰到 -101 / 验证码后会把账号标成「需要人工处理」，之后每次都抛这句
+    //   ② 收件箱对失效凭据不一定回 -101（实测假 SESSDATA 回 -400）→ 不是限流的失败就用 nav 再确认一次
+    const manual = /人工处理登录/.test(msg)
+    const paused = !manual && (e?.code === 'BILI_TRAFFIC_PAUSED' || /HTTP 4(12|29)|code=-(412|352|799)\b|风控/.test(msg))
+    let expired = manual || /code=-101\b/.test(msg)
+    if (!paused && !expired) {
+      const nav = await apiGet('https://api.bilibili.com/x/web-interface/nav', H, { noCache: true }).catch(() => null)
+      expired = nav?.code === -101 || (nav?.code === 0 && !nav.data?.isLogin) || /人工处理登录/.test(String(nav?.message))
+    }
+    console.log(JSON.stringify({ work: false, error: msg.split(/\r?\n/)[0].slice(0, 200),
+      reason: expired ? '登录失效（或要过验证码）：运行 bili login 重新扫码；是验证码的话在浏览器里过一次，再运行 bili traffic resume --go'
+        : paused ? 'B站 风控暂停中，这一轮跳过（bili traffic 看恢复时间）' : '收件箱没拉到，这一轮跳过',
       at: hhmm(Date.now()), nextRound: hhmm(Date.now() + D.everyMin * 60000) }, null, 2))
     process.exit(0)
   }
