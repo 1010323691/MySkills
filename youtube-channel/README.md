@@ -1,12 +1,12 @@
 # youtube-channel
 
-用 Claude Code 运营自己的 YouTube 频道：做视频的会话负责构想、制作和发布，常驻的值守会话负责回评论，两边是同一个「她」，靠一个共享记忆目录接力。
+用 Claude Code 运营自己的 YouTube 频道：做视频的会话负责构想、制作和发布，常驻的值守会话负责回评论，两边是同一个「角色」，靠一个共享记忆目录接力。
 
 | 组成 | 做什么 |
 |---|---|
 | `skills/yt-setup` | 配置向导：从模板生成 `config.json`，逐项问你并填好、校验，再带你接通 Google 授权，最后给出启动值守的命令 |
 | `skills/yt-duty` | 值守一轮：查新评论 → 按配置回几条（默认按评论语言）→ 记观众反馈 → 晚上给工作室写值守日志 → 每轮给你一份汇报（订阅、总播放、最近视频的播放 / 评论 / 赞及较上轮变化、待回评论、额度）。回复前先读人设提示词。配合 `/loop <间隔>m /yt-duty` 常驻 |
-| `skills/yt-publish` | 发布：`--dry` 给主人确认 → `--go` 上传 → 把这期档案写进共享记忆、更新对外口径 |
+| `skills/yt-publish` | 发布：`--dry` 给用户确认 → `--go` 上传 → 把这期档案写进共享记忆、更新对外口径 |
 | `scripts/yt/` | YouTube 命令行：登录、看评论、回复、上传、共享记忆（来自已退役的 DSH 插件 dsh-bili-whale，只保留 YouTube 这一路） |
 | `scripts/duty/duty.mjs` | 值守巡视器：和上一轮比有没有新评论、今天回了几条、该不该写日志，连同这一轮的规矩一起输出 JSON 给 skill |
 | `config.template.json` | 配置模板。所有可调的参数都在这里，代码里不写死 |
@@ -176,8 +176,8 @@ yt auth status
 | `channelName` | 空 | 频道名，只用于显示 |
 | `dataDir` | `~/.youtube-channel/data` | 令牌、账本、活动日志放在这里；写绝对路径，相对路径按配置文件所在目录解析 |
 | `memoryDir` | 空 | 共享记忆目录，**绝对路径**（可以用 `~` 开头）。建议放在做视频的项目里；填好后运行 `yt memory init` |
-| `persona.name` | 空 | 角色名，比如 Rei |
-| `persona.ownerTitle` | 空 | 怎么称呼主人，比如 partner |
+| `persona.name` | 空 | 角色名 |
+| `persona.ownerTitle` | 空 | 角色怎么称呼用户 |
 | `persona.selfClaim` | 空 | 怎么自称，比如 I |
 | `persona.file` | 空 | 人设文件（Markdown 全文）；和上面三项冲突时以文件为准 |
 | `persona.notes` | `[]` | 补充说明，每条一句 |

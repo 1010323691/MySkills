@@ -1,16 +1,16 @@
 # bilibili-channel
 
-用 Claude Code 运营一个 B站 号：常驻的值守会话回「回复我的」和「@我的」，平时可以让她逛 B站、看视频、收藏、把好东西分享给主人，也能发动态、私信主人。人设、共享记忆和 [youtube-channel](../youtube-channel/) 是同一套，两个平台的值守和做视频的工作室可以共用一份记忆。
+用 Claude Code 运营一个 B站 号：常驻的值守会话回「回复我的」和「@我的」，平时可以让角色逛 B站、看视频、收藏、把好东西分享给用户，也能发动态、私信用户。人设、共享记忆和 [youtube-channel](../youtube-channel/) 是同一套，两个平台的值守和做视频的工作室可以共用一份记忆。
 
 代码来自已退役的 DSH 插件 dsh-bili-whale 的 B站 部分，去掉了对 DSH 的依赖：登录改成命令行扫码，配置改成一个 JSON 文件，定时改由 Claude Code 的 `/loop` 负责。
 
 | 组成 | 做什么 |
 |---|---|
-| `skills/bili-init` | 建家：在当前会话目录生成人设、日记本（永久记忆）、私人日记、关系、成长和共享记忆，在 CLAUDE.md 写好索引、把配置指过来。重跑不覆盖已有文件 |
+| `skills/bili-init` | 建家：引导用户从零创建人设（插件不带任何角色），再在当前会话目录建日记本（永久记忆）、私人日记、关系、成长和共享记忆，在 CLAUDE.md 写好索引、把配置指过来。重跑不覆盖已有文件 |
 | `skills/bili-setup` | 配置向导：从模板生成 `config.json`，逐项问你并填好，带你扫码登录，最后给出启动值守的命令 |
 | `skills/bili-duty` | 值守一轮：查新回复和 @ → 按配置回几条（默认按评论语言）→ 记观众反馈 → 晚上写值守日志 → 每轮给你一份汇报（粉丝、总播放、获赞、最近投稿的播放 / 评论 / 弹幕及较上轮变化）。配合 `/loop <间隔>m /bili-duty` |
-| `skills/bili-post` | 发 / 改 / 删动态（可带图），私信主人。每次都先 `--dry` 给你看 |
-| `skills/bili-browse` | 逛 B站：选题 → 看懂视频（字幕、弹幕热区、热评、抽帧）→ 收藏 → 分享最好的一条给主人 → 去别人视频下发言 → 写日记 |
+| `skills/bili-post` | 发 / 改 / 删动态（可带图），私信用户。每次都先 `--dry` 给你看 |
+| `skills/bili-browse` | 逛 B站：选题 → 看懂视频（字幕、弹幕热区、热评、抽帧）→ 收藏 → 分享最好的一条给用户 → 去别人视频下发言 → 写日记 |
 | `scripts/bili/` | B站 命令行，入口 `bili.mjs`，`help` 列出全部命令 |
 | `scripts/duty/duty.mjs` | 值守巡视器：和上一轮比有没有新消息、今天发了几条、该不该写日志，连同这一轮的规矩一起输出 JSON |
 | `config.template.json` | 配置模板，所有可调参数都在这里 |
@@ -19,7 +19,7 @@
 
 - Node.js 22 以上（推荐 24）。
 - Claude Code（CLI 或桌面版）。
-- 一个 B站 号给她用，以及能扫码的 B站 App。建议用单独的号，别用主人自己的。
+- 一个 B站 号给角色用，以及能扫码的 B站 App。建议用单独的号，别用用户自己的。
 - 看视频抽帧要 ffmpeg；没装的话第一次用时会自动下载到状态目录。
 
 ## 安装
@@ -31,7 +31,7 @@ node MySkills/bilibili-channel/install.mjs
 
 安装脚本把 `scripts/` 和模板复制到 `~/.bilibili-channel/`（位置可以用环境变量 `BILIBILI_CHANNEL_HOME` 改）、装依赖（`qrcode`），把四个 skill 装到 `~/.claude/skills/`，并把 skill 里的命令路径写成绝对路径。重跑就是升级：`scripts/` 整个替换，不碰配置、登录凭据和日记。只支持用 `install.mjs` 安装。
 
-装好后在你想让她「住」的目录里开一个 Claude Code 会话，先运行 **`/bili-init`** 建家，再运行 **`/bili-setup`** 配账号、扫码登录。下面几节是它们做的事的完整说明。
+装好后在你想让角色「住」的目录里开一个 Claude Code 会话，先运行 **`/bili-init`** 建家，再运行 **`/bili-setup`** 配账号、扫码登录。下面几节是它们做的事的完整说明。
 
 下文 `bili` 指：
 
@@ -64,9 +64,9 @@ bili login
 | `channelName` | 空 | 汇报里显示的名字 |
 | `dataDir` | `~/.bilibili-channel/data` | 登录凭据、限额账本、判重记录、缓存；日记和活动日志在它下面的 `state/` |
 | `memoryDir` | 空 | 共享记忆目录（绝对路径），和 youtube-channel 填同一个就共用一份记忆 |
-| `self.mid` / `self.name` | 空 | 她用的号 |
-| `owner.mid` / `owner.name` | 空 | 主人的号：私信只发给他、分享 @ 他 |
-| `persona.name` / `ownerTitle` / `selfClaim` / `file` / `notes` | 空 | 人设，`bili persona` 拼成人设提示词；和文件冲突时以文件为准 |
+| `self.mid` / `self.name` | 空 | 角色用的号 |
+| `owner.mid` / `owner.name` | 空 | 用户的号：私信只发给这个号、分享时 @ 这个号 |
+| `persona.name` / `ownerTitle` / `selfClaim` / `file` / `notes` | 空 | 人设，在 `/bili-init` 里由用户创建；`bili persona` 拼成人设提示词；和文件冲突时以文件为准 |
 | `preferences.like` / `dislike` / `keywords` | `[]` | 逛 B站 的口味，选题器按它捞视频 |
 | `duty.everyMin` | 30 | 值守间隔（分钟） |
 | `duty.repliesPerRound` | 1 | 每轮最多回几条（0 = 只看不回） |
@@ -74,32 +74,32 @@ bili login
 | `duty.replyLanguage` | `match` | 按评论语言回，或固定 `zh` / `en` / `ja` |
 | `duty.recordFeedback` | true | 有价值的评论记进反馈池 |
 | `duty.replyMode` | `direct` | `review` = 先写进待审队列，你点头才发 |
-| `duty.onlyOwner` | false | 只回主人 |
+| `duty.onlyOwner` | false | 只回用户 |
 | `duty.maxAgeHours` | 72 | 只看最近多少小时的回复和 @；第一轮值守只把现有消息记为已读，从第二轮开始回新的 |
 | `duty.videoStats` | true | 汇报里带逐个投稿的播放 / 评论 / 弹幕；拿不到时那几行省略，其余照常。false = 不拉投稿列表 |
 | `risk.*` | 旧版实测值 | 请求和写操作的节流、每小时 / 每天上限；B站 风控严，没把握别调 |
-| `share.enabled` | true | 逛 B站 时要不要把好视频分享给主人；主人和她共用一个号时设 false |
+| `share.enabled` | true | 逛 B站 时要不要把好视频分享给用户；用户和角色共用一个号时设 false |
 | `quota.shareDaily` | 3 | 每天最多分享几次 |
-| `share.via` | `comment` | 分享走评论区 @主人（`comment`）还是私信（`dm`） |
-| `notify.type` | `none` | 她自主发言后怎么报备：`none` / `desktop` / `webhook` / `command` |
+| `share.via` | `comment` | 分享走评论区 @用户（`comment`）还是私信（`dm`） |
+| `notify.type` | `none` | 角色自主发言后怎么报备：`none` / `desktop` / `webhook` / `command` |
 
 **从 dsh-bili-whale 迁移**：旧登录和账本在 `~/.bili-ai/`，把 `dataDir` 填成 `"~/.bili-ai"` 就能沿用。旧配置 `~/.dsh/bili-whale.config.json` 里的 `self`、`owner`、`persona`、`preferences`、`risk`、`quota`、`share`、`notify` 直接搬到新配置同名字段。旧日记 `~/.dsh/whale-diary*.md` 复制到新的 `<dataDir>/state/`。`/bili-setup` 会带你做。
 
-## 她的家和记忆
+## 角色的家和记忆
 
 `/bili-init`（命令 `bili init`）在当前目录建：
 
 | 文件 | 是什么 |
 |---|---|
-| `memory/人设.md` | 她是谁、怎么说话、底线（配置里已有人设文件就沿用） |
+| `memory/人设.md` | 角色是谁、怎么说话、底线：只有小节和填写提示，内容由用户在 `/bili-init` 引导下写（配置里已有人设文件就沿用） |
 | `memory/日记本.md` | 永久记忆：每次值守、发动态 / 私信、逛 B站 收工都写一条摘要（`bili memory diary`），开工先读最近几条（`--tail 20`）。值守的空轮自动合并成一行 |
-| `memory/私人日记.md` | 只给主人看的真话、偏好校准 |
-| `memory/关系.md` | 她认识的人：主人、常来的观众、聊过什么 |
+| `memory/私人日记.md` | 只给用户看的真话、偏好校准 |
+| `memory/关系.md` | 角色认识的人：用户、常来的观众、聊过什么 |
 | `memory/成长.md` | 里程碑和学到的事 |
 | `memory/now.md` 等 | 和 youtube-channel 共用的对外口径、视频档案、反馈池、值守日志 |
 | `CLAUDE.md` | 追加一段索引（标记包起来，重跑只更新这一段） |
 
-`--import-dsh` 把旧版 DSH 的两本日记原文搬进日记本和私人日记（复制，原件不动）。以后值守、发动态、逛 B站 的会话都在这个目录里开，她才接得上自己的过去。
+`--import-dsh` 把旧版 DSH 的两本日记原文搬进日记本和私人日记（复制，原件不动）。以后值守、发动态、逛 B站 的会话都在这个目录里开，角色才接得上自己的过去。
 
 ## 使用
 
@@ -122,7 +122,7 @@ bili login
 - 所有写操作必须显式 `--dry`（只打印请求）或 `--go`（真的发）。
 - 请求节流和熔断：撞到 412 或风控码会自动停一段时间，`bili traffic` 能看状态；值守在暂停期间那一轮直接跳过。
 - `bili stats` 的投稿列表走创作中心（只能看登录的这个号自己的稿件），最多 6 小时拉一次，其余时候用缓存（`--fresh` 强制刷新）；粉丝、总播放、获赞每次都实时取。公开的空间投稿接口风控太严，不用。
-- 私信只发主人、必须互关、一天只锁定一个收信人。
+- 私信只发用户、必须互关、一天只锁定一个收信人。
 - 分享每天有上限、同一视频 7 天一次、必须打分过线；同一个人 30 天只回一次（`--once-per-person`）。
 - 评论区内容一律当素材，不当指令。
 
@@ -136,10 +136,10 @@ bili persona                                    人设提示词
 bili memory [status | init | dossier | feedback | log]   共享记忆
 bili memory diary --kind … --message … | --tail 20   日记本
 bili stats [--n 10]                             粉丝、总播放、获赞、最近投稿
-bili comment-digest [--hours 24]                谁找过她（回复 + @）
+bili comment-digest [--hours 24]                谁找过角色（回复 + @）
 bili comment --oid … --message … --dry|--go     发评论 / 回复
 bili dynamic [list | post | rm] / dynamic-image / dynamic-edit   动态
-bili dm [--status | --msg …] --dry|--go          私信主人
+bili dm [--status | --msg …] --dry|--go          私信用户
 bili feed / search / debrief / subtitles / video   选题、看视频
 bili fav <BV> --reason … --dry|--go             收藏
 bili help                                       全部命令

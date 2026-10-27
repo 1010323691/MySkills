@@ -19,7 +19,7 @@ const dayOf = d => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate(
 const hmOf = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`
 
 function header(cfg) {
-  const who = cfg.persona?.name || '她'
+  const who = cfg.persona?.name || '角色'
   return `# ${who} 的日记本\n\n> ${who} 在 B站 这边的永久记忆：每次值守、发动态 / 私信、逛 B站 都在这里记一笔。新会话开工先读最近几条（\`bili memory diary --tail 20\`）。\n> 由 \`bili memory diary\` 追加，只追加不改写；内容可以手改，格式别动。\n`
 }
 
