@@ -37,6 +37,7 @@ for (const name of ['bili-init', 'bili-setup', 'bili-duty', 'bili-post', 'bili-b
     fs.mkdirSync(to, { recursive: true })
     const md = fs.readFileSync(path.join(SRC, 'skills', name, 'SKILL.md'), 'utf8')
       .replaceAll('<skill>/../../scripts', scripts.replaceAll('\\', '/'))
+      .replaceAll('<skill>/../', SKILLS.replaceAll('\\', '/') + '/')   // 引用同级 skill（bili-init 读 bili-setup 的字段说明）
     fs.writeFileSync(path.join(to, 'SKILL.md'), md)
   })
 }
