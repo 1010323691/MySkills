@@ -30,8 +30,8 @@ export const DEFAULTS = {
   quota: { shareDaily: 3 },
   share: { aiCommentGuard: false, aiThreshold: 30, enabled: true, via: 'comment', minScore: 13, silentAfterDays: 3 },
   notify: { type: 'none', url: '', template: 'text', cmd: '' },
-  // 值守：每轮间隔、每轮最多回几条、几点后写值守日志、回复语言、要不要记反馈、要不要先审后发
-  duty: { everyMin: 30, repliesPerRound: 1, journalAfterHour: 21, replyLanguage: 'match', recordFeedback: true, replyMode: 'direct', onlyOwner: false },
+  // 值守：每轮间隔、每轮最多回几条、几点后写值守日志、回复语言、要不要记反馈、要不要先审后发、汇报里要不要逐个投稿的数据
+  duty: { everyMin: 30, repliesPerRound: 1, journalAfterHour: 21, replyLanguage: 'match', recordFeedback: true, replyMode: 'direct', onlyOwner: false, maxAgeHours: 72, videoStats: true },
   // 旧版字段：几个命令还会读，保持中性默认
   listen: { comment: false, commentIntervalSec: 60, scope: 'both', oncePerPerson: true, allDay: false, dm: true, dmIntervalSec: 60, live: false, liveRoom: '', liveScope: 'owner' },
   diary: { push: false },
@@ -88,6 +88,9 @@ export function checkConfig() {
   if (!MID(c.self.mid)) problems.push('self.mid 要是纯数字（B站 UID）')
   if (!MID(c.owner.mid)) problems.push('owner.mid 要是纯数字（B站 UID）')
   if (!c.owner.mid) problems.push('owner.mid 没填：私信报备、只认主人回复、@主人 都用不了')
+  // 主人和她共用一个号是合法用法（不算问题，不会每轮值守都报 ⚠），只在 config check 里提示一次
+  const notes = []
+  if (c.owner.mid && String(c.owner.mid) === String(c.self.mid)) notes.push('owner.mid 和 self.mid 是同一个号：私信报备（不能给自己发）、分享时 @主人、duty.onlyOwner 用不了，其余功能照常；要用这些就让她换一个单独的号')
   const P = c.persona
   if (P.file && !fs.existsSync(P.file)) problems.push(`persona.file 指向的文件不存在：${P.file}`)
   if (!P.name && !P.file) problems.push('persona 没填（至少填 name 或 file）：回复没有人设可依')
@@ -98,11 +101,13 @@ export function checkConfig() {
   if (!int(D.repliesPerRound, 0, 10)) problems.push('duty.repliesPerRound 要是 0–10 的整数')
   if (!int(D.journalAfterHour, 0, 24)) problems.push('duty.journalAfterHour 要是 0–24 的整数（24 = 不写值守日志）')
   if (!['match', 'en', 'ja', 'zh'].includes(D.replyLanguage)) problems.push('duty.replyLanguage 只能是 match / en / ja / zh')
+  if (!int(D.maxAgeHours, 1, 720)) problems.push('duty.maxAgeHours 要是 1–720 的整数（小时）')
+  if (typeof D.videoStats !== 'boolean') problems.push('duty.videoStats 只能是 true / false')
   if (!['direct', 'review'].includes(D.replyMode)) problems.push('duty.replyMode 只能是 direct（直接回）或 review（先进待审队列）')
   if (!int(R.writeDaily, 1, 200)) problems.push('risk.writeDaily 要是 1–200 的整数')
   if (!int(R.writeGapSec, 30, 86400)) problems.push('risk.writeGapSec 至少 30（B站 风控）')
   if (!['none', 'desktop', 'webhook', 'command'].includes(c.notify.type)) problems.push('notify.type 只能是 none / desktop / webhook / command')
-  return { path: configPath, exists, problems }
+  return { path: configPath, exists, problems, notes }
 }
 
 /** 从模板生成配置文件；已有就不动 */

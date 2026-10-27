@@ -23,7 +23,9 @@
     "replyLanguage": "match",
     "recordFeedback": true,
     "replyMode": "direct",
-    "onlyOwner": false
+    "onlyOwner": false,
+    "maxAgeHours": 72,
+    "videoStats": true
   },
   "risk": {
     "minGapMs": 1500,

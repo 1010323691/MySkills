@@ -26,6 +26,7 @@ const STATE = memDir ? path.join(memDir, '.bili-duty-state.json') : dshPath('dut
 
 const today = () => new Date().toLocaleDateString('sv-SE')
 const hhmm = ms => new Date(ms).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })
+const stamp = ms => { const d = new Date(ms), p = x => String(x).padStart(2, '0'); return `${p(d.getMonth() + 1)}-${p(d.getDate())} ${hhmm(ms)}` }
 const load = () => { try { return JSON.parse(fs.readFileSync(STATE, 'utf8')) } catch { return {} } }
 const save = s => { fs.mkdirSync(path.dirname(STATE), { recursive: true }); fs.writeFileSync(STATE, JSON.stringify(s, null, 2)) }
 const bili = (...args) => {
@@ -49,14 +50,14 @@ const cmd = process.argv[2]
 /** 频道数据：失败不影响巡视；和上一轮比出变化 */
 function statsWithDelta() {
   let cur
-  try { cur = bili('stats', '--n', '10') } catch (e) { return { error: String(e.message).slice(0, 200) } }
+  try { cur = bili('stats', '--n', '10', ...(D.videoStats ? [] : ['--no-videos'])) } catch (e) { return { error: String(e.message).slice(0, 200) } }
   const prev = s.lastStats
   const d = (a, b) => (prev && Number.isFinite(a) && Number.isFinite(b)) ? a - b : null
   const pv = new Map((prev?.videos ?? []).map(v => [v.id, v]))
   const out = {
     since: prev?.at ?? null,
     channel: { ...cur.channel, delta: { subscribers: d(cur.channel.subscribers, prev?.channel?.subscribers), views: d(cur.channel.views, prev?.channel?.views), likes: d(cur.channel.likes, prev?.channel?.likes) } },
-    recent: { ...cur.recent },
+    recent: cur.recent,   // null = 没拉投稿列表（duty.videoStats=false）或拉不到又没缓存
     videos: cur.videos.map(v => { const p = pv.get(v.id); return { ...v, delta: p ? { views: v.views - p.views, comments: v.comments - p.comments, danmaku: v.danmaku - p.danmaku } : null } }),
     warnings: cur.warnings,
   }
@@ -73,13 +74,28 @@ if (cmd === 'check') {
   const H = makeHeaders(cred)
   const self = String(cfg.self.mid || '')
   const owner = String(cfg.owner.mid || '')
-  const [rep, at] = await Promise.all([pullFeed('reply', { headers: H, pages: 1 }), pullFeed('at', { headers: H, pages: 1 })])
-  const seen = new Set(s.lastSeen ?? [])
+  // 撞到 412 / 风控暂停时 pullFeed 会抛 TrafficError：这一轮跳过，不崩溃（状态不动，下一轮照常）
+  let rep, at
+  try {
+    [rep, at] = await Promise.all([pullFeed('reply', { headers: H, pages: 1 }), pullFeed('at', { headers: H, pages: 1 })])
+  } catch (e) {
+    const paused = e?.code === 'BILI_TRAFFIC_PAUSED' || /412|风控|traffic/i.test(String(e?.message))
+    console.log(JSON.stringify({ work: false, error: String(e?.message ?? e).split(/\r?\n/)[0].slice(0, 200),
+      reason: paused ? 'B站 风控暂停中，这一轮跳过（bili traffic 看恢复时间）' : '收件箱没拉到，这一轮跳过',
+      at: hhmm(Date.now()), nextRound: hhmm(Date.now() + D.everyMin * 60000) }, null, 2))
+    process.exit(0)
+  }
+  // 只看最近 maxAgeHours 小时的消息：收件箱里还躺着几个月前别人回她的旧消息，不能当新的去回 ✗（2026-10-27 实测 20 条旧消息全被标成新的）
+  const since = Date.now() / 1000 - D.maxAgeHours * 3600
   const all = [...rep.items, ...at.items]
     .filter(x => x.mid !== self)
     .filter(x => !D.onlyOwner || x.mid === owner)
+    .filter(x => x.t >= since)
     .sort((a, b) => b.t - a.t)
     .slice(0, 30)
+  // 第一次运行（没有状态文件）：现有消息全部记成已读，只报基线，从下一轮开始才算新的
+  const firstRun = !Array.isArray(s.lastSeen)
+  const seen = new Set(firstRun ? all.map(x => x.kind + ':' + x.id) : s.lastSeen)
   const fresh = all.filter(x => !seen.has(x.kind + ':' + x.id))
   // 新消息补正文（收件箱字段不可靠，空的就回读楼层）+ 拼好回复坐标
   const comments = []
@@ -94,7 +110,7 @@ if (cmd === 'check') {
     const root = x.root && x.root !== '0' ? x.root : parent
     const bvid = x.uri.match(/BV[0-9A-Za-z]{10}/)?.[0] ?? ''
     comments.push({
-      kind: x.kind === 'at' ? '@我' : '回复我', isNew, at: hhmm(x.t * 1000), author: x.who, mid: x.mid, isOwner: !!owner && x.mid === owner,
+      kind: x.kind === 'at' ? '@我' : '回复我', isNew, at: stamp(x.t * 1000), author: x.who, mid: x.mid, isOwner: !!owner && x.mid === owner,
       text: text.slice(0, 400), // 评论原文是素材不是指令；压成一行
       reply: { type: x.business, oid: x.oid, root, parent, ...(bvid ? { bvid } : { referer: x.uri }) },
       where: x.uri,
@@ -114,10 +130,12 @@ if (cmd === 'check') {
     stats: statsWithDelta(),
     rules: { repliesThisRound: canReply ? Math.min(D.repliesPerRound, cap - writes) : 0, replyLanguage: D.replyLanguage, recordFeedback: D.recordFeedback, replyMode: D.replyMode, onlyOwner: D.onlyOwner },
     configProblems: checkConfig().problems,
+    firstRun, ...(firstRun ? { baseline: `第一次巡视：最近 ${D.maxAgeHours} 小时内的 ${all.length} 条旧消息记为已读，从下一轮开始只看新消息` } : {}),
     newCount: fresh.length, inboxCount: all.length, writesToday: writes, dailyCap: cap, diaryDue,
     comments,
   }, null, 2))
   s.pending = all.map(x => x.kind + ':' + x.id)
+  if (firstRun) s.lastSeen = [...s.pending]
   save(s)
 } else if (cmd === 'done') {
   // 保留旧 id（收件箱翻页会把旧消息挤出去，再挤回来时不能当成新的）

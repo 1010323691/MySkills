@@ -58,6 +58,10 @@ $BILI login status --json
 | `recordFeedback` | true | 有价值的评论记进反馈池 |
 | `replyMode` | `direct` | `direct` 直接回；`review` 先写进待审队列，主人在会话里点头才发 |
 | `onlyOwner` | false | 只回主人，观众的只看不回 |
+| `maxAgeHours` | 72 | 只看最近多少小时的回复和 @（1–720），更早的旧消息不当新的回 |
+| `videoStats` | true | 汇报里要不要逐个投稿的播放 / 评论 / 弹幕（走创作中心，6 小时拉一次）；false 就只报粉丝、总播放、获赞 |
+
+第一次值守那一轮只记基线：收件箱里现有的消息全部记为已读、不回复，从第二轮开始才处理新消息。
 
 **D. 刷 B站 的口味（`preferences`）**：`like` 爱看的方向、`dislike` 不看的、`keywords` 额外搜索词（都是字符串数组）。选题器按它捞视频。
 
