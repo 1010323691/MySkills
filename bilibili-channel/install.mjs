@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// 安装：把脚本放到 ~/.bilibili-channel/（装依赖），四个 skill 放到 ~/.claude/skills/，并把 skill 里的命令路径写成绝对路径
+// 安装：把脚本放到 ~/.bilibili-channel/（装依赖），五个 skill 放到 ~/.claude/skills/，并把 skill 里的命令路径写成绝对路径
 //   node install.mjs            # 安装 / 升级（不碰登录凭据、配置、共享记忆）
 //   node install.mjs --dry      # 只打印要做什么
 import fs from 'node:fs'
@@ -31,7 +31,7 @@ step('安装依赖（npm install）', () => {
   const r = spawnSync('npm install --no-audit --no-fund --omit=dev', { cwd: path.join(scripts, 'bili'), stdio: 'inherit', shell: true })
   if (r.status !== 0) { console.error('npm install 失败'); process.exit(1) }
 })
-for (const name of ['bili-setup', 'bili-duty', 'bili-post', 'bili-browse']) {
+for (const name of ['bili-init', 'bili-setup', 'bili-duty', 'bili-post', 'bili-browse']) {
   const to = path.join(SKILLS, name)
   step(`安装 skill → ${to}`, () => {
     fs.mkdirSync(to, { recursive: true })

@@ -42,10 +42,10 @@ $BILI login status --json
 | `channelName` | 频道叫什么 | 只用于汇报 |
 | `self.mid` / `self.name` | 她用的 B站 号 | 第 3 步登录后 `$BILI login status` 会显示，直接填进去 |
 | `owner.mid` / `owner.name` | 主人的 B站 号 | 私信只发给他、分享 @ 他、`duty.onlyOwner` 只认他；不知道 UID 就让主人打开自己空间页，网址里的数字就是。主人和她用同一个号时照填，再把 `share.enabled` 设为 false、`notify.type` 设为 `none`（私信和 @主人 都用不了），其余功能照常 |
-| `memoryDir` | 共享记忆放哪 | 绝对路径；和 youtube-channel 用同一个目录，两边的值守和工作室就共用一份记忆 |
+| `memoryDir` | 共享记忆放哪 | 绝对路径；和 youtube-channel 用同一个目录，两边的值守和工作室就共用一份记忆。建议用 `/bili-init` 在会话目录里建家，它会自动填这一项 |
 | `dataDir` | 凭据和账本放哪 | 一般用默认；迁移见上文 |
 
-**B. 人设（`persona`）**：`name` 角色名、`ownerTitle` 怎么称呼主人、`selfClaim` 怎么自称、`file` 人设文件（Markdown 全文）、`notes` 补充规矩。填完运行 `$BILI persona` 给主人看拼出来的人设提示词。
+**B. 人设（`persona`）**：已经跑过 `/bili-init` 就跳过这组（它和主人一起写好了人设文件）；没跑过建议先跑。手填的话：`name` 角色名、`ownerTitle` 怎么称呼主人、`selfClaim` 怎么自称、`file` 人设文件（Markdown 全文）、`notes` 补充规矩。填完运行 `$BILI persona` 给主人看拼出来的人设提示词。
 
 **C. 值守（`duty`）**
 
@@ -82,7 +82,7 @@ $BILI login status --json
 
 ## 4. 共享记忆和数据
 
-1. 填了 `memoryDir` 就 `$BILI memory init`（已有文件不覆盖）。
+1. 填了 `memoryDir` 就 `$BILI memory init`（已有文件不覆盖）。日记本、私人日记、关系、成长这几本由 `/bili-init` 建，没建过就提醒主人在会话目录里跑一次。
 2. `$BILI stats` 能看到粉丝、总播放、最近投稿，就说明登录和读接口都通了。
 
 ## 5. 收尾

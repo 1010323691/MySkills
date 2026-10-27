@@ -3,6 +3,8 @@
 //   node bili.mjs config [show | path | init | check] [--json]
 //   node bili.mjs persona [--json]                  人设提示词（回复、发动态、私信前先读）
 //   node bili.mjs memory [status | init | dossier <BV号> --file 档案.md | feedback --message … | log --message …]
+//   node bili.mjs memory diary --kind 值守|动态|私信|逛|里程碑|其他 --message "…" [--idle]   日记本：每次执行写一条摘要
+//   node bili.mjs memory diary --tail 20             日记本：最近几条（开工先读）
 //   node bili.mjs stats [--n 10] [--fresh] [--no-videos] [--json]   自己账号的数据：粉丝、总播放、获赞 + 最近投稿的播放 / 评论 / 弹幕
 //                                                   （--no-videos 不拉投稿列表，值守 duty.videoStats=false 时用）
 import fs from 'node:fs'
@@ -14,6 +16,7 @@ import { createMemory, memoryDirOf, MemoryError } from '../lib/memory.mjs'
 import { loadCred } from '../lib/cred.mjs'
 import { apiGet } from '../lib/bili-api.mjs'
 import { makeHeaders } from '../lib/msgfeed.mjs'
+import { appendDiary, tailDiary, diaryPath } from '../lib/diary-book.mjs'
 
 const [cmd, ...rest] = process.argv.slice(2)
 const positional = [], flags = new Map()
@@ -101,8 +104,9 @@ try {
     out(personaPrompt(cfg), x => { if (x.problem) console.error('⚠ ' + x.problem); console.log(x.prompt || '（没有人设）') })
   } else if (cmd === 'memory') {
     const mem = createMemory(memoryDirOf(cfg))
-    if (!sub || sub === 'status') out(mem.info(), m => {
+    if (!sub || sub === 'status') out({ ...mem.info(), diary: diaryPath(cfg) }, m => {
       console.log(`共享记忆：${m.dir}${m.ready ? '' : '（还没初始化：bili memory init）'}`)
+      console.log(`  日记本：${m.diary}${fs.existsSync(m.diary) ? '' : '（还没有，第一次写时创建）'}`)
       console.log(`  视频档案 ${m.videos.length} 期${m.videos.length ? '：' + m.videos.join('、') : ''} · 待处理反馈 ${m.openFeedback} 条`)
     })
     else if (sub === 'init') { const r = mem.init(); console.log(`✓ 已建好 ${r.dir}${r.created.length ? `（新建：${r.created.join('、')}）` : '（文件都在，没动）'}`) }
@@ -115,7 +119,17 @@ try {
       console.log('✓ 已记进反馈池：' + mem.appendFeedback({ videoId: text('video') ?? '', commentId: text('comment-id') ?? '', author: text('who') ?? '', kind: text('kind') ?? '其他', message: text('message') ?? '' }))
     } else if (sub === 'log') {
       console.log('✓ 已记进值守日志：' + mem.appendJournal({ message: `[B站] ${text('message') ?? ''}` }))
-    } else throw new Error('memory 子命令：status / init / dossier / feedback / log')
+    } else if (sub === 'diary') {
+      if (flags.has('tail')) out(tailDiary(cfg, Number(text('tail')) || 20), d => {
+        if (!d.exists) return console.log(`日记本还没有：${d.file}（第一次写时创建）`)
+        console.log(`日记本：${d.file}（最近 ${d.entries.length} 条）`)
+        for (const e of d.entries) console.log('  ' + e)
+      })
+      else {
+        const r = appendDiary(cfg, { kind: text('kind') ?? '其他', message: text('message') ?? '', idle: flags.has('idle') })
+        console.log(`✓ ${r.merged ? '已合并进上一条空轮' : '已记进日记本'}：${r.line}`)
+      }
+    } else throw new Error('memory 子命令：status / init / dossier / feedback / log / diary')
   } else if (cmd === 'stats') {
     const r = await stats(Number(text('n')) || 10, !flags.has('no-videos'))
     out(r, x => {

@@ -9,10 +9,11 @@ import { NODE_EXE } from './lib/nodebin.mjs'   // 2026-10-21：别用 process.ex
 const here = path.dirname(fileURLToPath(import.meta.url))
 const map = {
   // —— 准备（2026-10-27 独立版）：登录、配置、人设、共享记忆、自己账号的数据 ——
+  init: ['commands/init.mjs', '建家：在当前目录生成人设、日记本、私人日记、关系、成长、共享记忆，并在 CLAUDE.md 加索引：[--dry] [--import-dsh] [--use-here]'],
   login: ['commands/login.mjs', '登录：（空）扫码 / status 看是哪个号 / cookie <文件> 手动导入 / logout'],
   config: ['commands/setup.mjs', '配置文件：show / path / init / check', ['config']],
   persona: ['commands/setup.mjs', '人设提示词（回复、发动态、私信前先读）', ['persona']],
-  memory: ['commands/setup.mjs', '共享记忆：status / init / dossier <BV> --file / feedback --message / log --message', ['memory']],
+  memory: ['commands/setup.mjs', '共享记忆：status / init / dossier <BV> --file / feedback --message / log --message / diary --kind … --message …（日记本）', ['memory']],
   stats: ['commands/setup.mjs', '自己账号的数据：粉丝、总播放、获赞 + 最近投稿的播放 / 评论 / 弹幕：[--n 10]', ['stats']],
   traffic: ['commands/traffic.mjs', '请求保护状态 / 人工核查后恢复'],
   // —— 读（不需要写操作，安全） ——

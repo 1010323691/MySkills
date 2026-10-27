@@ -6,6 +6,7 @@
 
 | 组成 | 做什么 |
 |---|---|
+| `skills/bili-init` | 建家：在当前会话目录生成人设、日记本（永久记忆）、私人日记、关系、成长和共享记忆，在 CLAUDE.md 写好索引、把配置指过来。重跑不覆盖已有文件 |
 | `skills/bili-setup` | 配置向导：从模板生成 `config.json`，逐项问你并填好，带你扫码登录，最后给出启动值守的命令 |
 | `skills/bili-duty` | 值守一轮：查新回复和 @ → 按配置回几条（默认按评论语言）→ 记观众反馈 → 晚上写值守日志 → 每轮给你一份汇报（粉丝、总播放、获赞、最近投稿的播放 / 评论 / 弹幕及较上轮变化）。配合 `/loop <间隔>m /bili-duty` |
 | `skills/bili-post` | 发 / 改 / 删动态（可带图），私信主人。每次都先 `--dry` 给你看 |
@@ -30,7 +31,7 @@ node MySkills/bilibili-channel/install.mjs
 
 安装脚本把 `scripts/` 和模板复制到 `~/.bilibili-channel/`（位置可以用环境变量 `BILIBILI_CHANNEL_HOME` 改）、装依赖（`qrcode`），把四个 skill 装到 `~/.claude/skills/`，并把 skill 里的命令路径写成绝对路径。重跑就是升级：`scripts/` 整个替换，不碰配置、登录凭据和日记。只支持用 `install.mjs` 安装。
 
-装好后在 Claude Code 里运行 **`/bili-setup`**。下面几节是它做的事的完整说明。
+装好后在你想让她「住」的目录里开一个 Claude Code 会话，先运行 **`/bili-init`** 建家，再运行 **`/bili-setup`** 配账号、扫码登录。下面几节是它们做的事的完整说明。
 
 下文 `bili` 指：
 
@@ -84,6 +85,22 @@ bili login
 
 **从 dsh-bili-whale 迁移**：旧登录和账本在 `~/.bili-ai/`，把 `dataDir` 填成 `"~/.bili-ai"` 就能沿用。旧配置 `~/.dsh/bili-whale.config.json` 里的 `self`、`owner`、`persona`、`preferences`、`risk`、`quota`、`share`、`notify` 直接搬到新配置同名字段。旧日记 `~/.dsh/whale-diary*.md` 复制到新的 `<dataDir>/state/`。`/bili-setup` 会带你做。
 
+## 她的家和记忆
+
+`/bili-init`（命令 `bili init`）在当前目录建：
+
+| 文件 | 是什么 |
+|---|---|
+| `memory/人设.md` | 她是谁、怎么说话、底线（配置里已有人设文件就沿用） |
+| `memory/日记本.md` | 永久记忆：每次值守、发动态 / 私信、逛 B站 收工都写一条摘要（`bili memory diary`），开工先读最近几条（`--tail 20`）。值守的空轮自动合并成一行 |
+| `memory/私人日记.md` | 只给主人看的真话、偏好校准 |
+| `memory/关系.md` | 她认识的人：主人、常来的观众、聊过什么 |
+| `memory/成长.md` | 里程碑和学到的事 |
+| `memory/now.md` 等 | 和 youtube-channel 共用的对外口径、视频档案、反馈池、值守日志 |
+| `CLAUDE.md` | 追加一段索引（标记包起来，重跑只更新这一段） |
+
+`--import-dsh` 把旧版 DSH 的两本日记原文搬进日记本和私人日记（复制，原件不动）。以后值守、发动态、逛 B站 的会话都在这个目录里开，她才接得上自己的过去。
+
 ## 使用
 
 **值守**：在共享记忆所在的项目里新建会话，发
@@ -112,10 +129,12 @@ bili login
 ## 命令速查
 
 ```
+bili init [--dry] [--import-dsh] [--use-here]   建家
 bili login [status | cookie <文件> | logout]   登录
 bili config [show | path | init | check]        配置
 bili persona                                    人设提示词
 bili memory [status | init | dossier | feedback | log]   共享记忆
+bili memory diary --kind … --message … | --tail 20   日记本
 bili stats [--n 10]                             粉丝、总播放、获赞、最近投稿
 bili comment-digest [--hours 24]                谁找过她（回复 + @）
 bili comment --oid … --message … --dry|--go     发评论 / 回复
