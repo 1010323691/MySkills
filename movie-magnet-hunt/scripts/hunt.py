@@ -90,6 +90,19 @@ def res_tier(name):
             return v
     return 0
 
+def fps_of(name):
+    """Frame rate advertised in a release name (60帧/60FPS -> 60; HFR without number -> 50); 0 = unstated."""
+    m = re.search(r'(\d{2,3})\s*(?:fps|帧)', name, re.I)
+    if m:
+        return int(m.group(1))
+    return 50 if re.search(r'HFR|高帧', name, re.I) else 0
+
+PREFER_FPS = 0   # set from --prefer-fps; 0 = ignore frame rate
+
+def fps_match(name):
+    """1 if the release advertises exactly the preferred fps, else 0 (always 0 when no preference)."""
+    return int(bool(PREFER_FPS) and fps_of(name) == PREFER_FPS)
+
 def subs_tier(name):
     if any(k.lower() in name.lower() for k in SUBS_NONE):
         return 0
@@ -134,9 +147,9 @@ def score(cand, movie, priority):
     r, s, rc = cand['res'], cand['subs'], cand['rec']
     y = year_ok(cand['name'], movie)
     if priority == 'res':
-        key = (y, r, s == 2, rc, -cand['gb'])
+        key = (y, r, fps_match(cand['name']), s == 2, rc, -cand['gb'])
     else:  # 'subs'
-        key = (y, s == 2, r, rc, -cand['gb'])
+        key = (y, s == 2, r, fps_match(cand['name']), rc, -cand['gb'])
     cand['score'] = key
     return key
 
@@ -231,8 +244,11 @@ def main():
     ap.add_argument('--per-movie', type=int, default=1, help='magnets per movie in magnets.txt')
     ap.add_argument('--top', type=int, default=3, help='candidates per movie for which we fetch real magnets')
     ap.add_argument('--priority', default='subs', choices=['subs', 'res'])
+    ap.add_argument('--prefer-fps', type=int, default=0, help='prefer releases advertising this frame rate (e.g. 60); ranked right after resolution')
     ap.add_argument('--strict', action='store_true')
     a = ap.parse_args()
+    global PREFER_FPS
+    PREFER_FPS = a.prefer_fps
     try:
         sys.stdout.reconfigure(encoding='utf-8', errors='replace')
     except Exception:

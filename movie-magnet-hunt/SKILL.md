@@ -107,6 +107,8 @@ python -X utf8 <skill>/scripts/hunt.py --list movies.json --outdir <输出目录
 参数含义：
 - `--priority subs`（默认）：字幕优先——没有 1080p 中字时会退到 720p 中字而不是 1080p 日字。
   用户明说"要 1080p，字幕无所谓"时用 `--priority res`。
+- `--prefer-fps N`：用户要高帧率（如"4K@60hz"→`--prefer-fps 60`）时必加。发布名里 `60帧`/`60FPS` 的候选在同分辨率内排前面；
+  否则 60 帧版会被排到 `--top` 之外、根本没抓磁力（2026-11 流浪地球2 踩过）。
 - `--top N`：每片抓 N 个候选的真实磁力（默认 3，控制请求量）。
 - `--per-movie N`：magnets.txt 每片保留几条（默认 1）。
 - `--strict`：有片子零磁力时退出码 1。
@@ -231,6 +233,10 @@ python -X utf8 <skill>/scripts/hunt.py --list movies.json --outdir <输出目录
 | TMDB 搜"中"了别的片（复仇(2018) → 果戈里·复仇） | TMDB 搜索是模糊匹配，+年份过滤后像唯一命中 | 脚本只接受标题精确相等（归一化后）的自动通过，其余一律 `ambiguous`；用原语言片名重查，或对照 top_cast 确认后用 `--list`+`tmdb_id` 补全 |
 
 ## 常见陷阱（踩过的，按优先级）
+
+0. **帧率偏好被忽略**：排序键原本没有帧率，60 帧版排在 `--top` 之外没抓磁力，误报"没有 60 帧版"。
+   规避：加 `--prefer-fps 60`；宣布"没有 X 帧版"前，必须用 `sites.sidhub_movie` 扫完电影页全部 seeds 的名字，
+   不能只看脚本输出的前几名。
 
 1. **同名不同片**（最危险，交付错片比没交付更糟）
    - 现象：`你的婚礼` 同时命中 2021 大陆版（My.Love.2021）与 2018 韩版（On Your Wedding Day）；
