@@ -5,6 +5,7 @@
 | Skill | 用途 |
 |---|---|
 | [claude-terminal-workbench](./claude-terminal-workbench/) | Claude 米白 Ghostty + tmux 工作台：左辅助右主区，含完整配置、自动部署、备份回退与[使用说明](./claude-terminal-workbench/README.md) |
+| [codex-image-gen](./codex-image-gen/) | 用本机 Codex CLI（ChatGPT 账号）调用 GPT 生图：单张 / 带参考图保持系列风格一致 / 提示词目录并发批量出图，失败重跑只补缺的；附总览图脚本 |
 | [huashu-design](./huashu-design/) | 花叔 Design：用 HTML 制作高保真原型、幻灯片、动画与信息图，先提供三个设计方向供选择，支持设计评审与导出 |
 | [ui-style-lab](./ui-style-lab/) | 单独调用先选择追加或使用组件；复用时列出已有样式库，按图设计时保存到 skill 并同步仓库，更新[静态展示页](./ui-style-lab/gallery/index.html)后返回用户确认效果 |
 | [shadcn-admin-design](./shadcn-admin-design/) | 基于 shadcn-admin 的后台设计向导：设计 / 优化 / 重构 → [六组完整风格模板](./shadcn-admin-design/assets/templates/gallery.html) → 需求与配色 → 效果图确认 → 实现与验证；含列表、图表、表单、滑块与滚动等常用组件 |
@@ -104,6 +105,7 @@ Remove-Item -Recurse "$HOME\.claude\skills\<skill名>"
 
 ## 备注
 
+- `codex-image-gen` 为自制（2026-11-11 实战固化）；依赖登录 ChatGPT 账号且开启 `image_generation` 的 Codex CLI（macOS 装了 ChatGPT 桌面版即自带，路径见目录内 README；也可 `npm i -g @openai/codex`），bash 兼容 macOS 自带 3.2；总览图需要 Pillow；每张图消耗 ChatGPT 账号额度。
 - `huashu-design` 为上游 [alchaincyf/huashu-design](https://github.com/alchaincyf/huashu-design) 的完整副本（MIT，版本 2.0，来源提交 `3bd465d7ad29ffcb284113beb48910b469f00797`）；安装时须保留 `references/`、`assets/`、`scripts/`、`demos/`。导出功能按需使用 Node.js 依赖（见目录内 `package.json`），动画导出还需 FFmpeg。
 - `start-context` / `end-context` 实现 `context-protocol/v2` 交接协议，交接文档存放在目标项目的 `docs/agent-context/`，建议成对安装；`scripts/context_check.py` 为可选的只读结构检查脚本（Python 3.9+）。
 - `deep-research` 依赖 Exa MCP（可选，未安装时走 DuckDuckGo 兜底通道）与子 agent 工具。
